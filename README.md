@@ -94,13 +94,53 @@ Do not keep an older theme script alongside the new one, even if its markers dif
 To remove LumaaGlaass, restore your backed-up CSS and JavaScript configuration.
 No installer or build step is needed.
 
+## Customization
+
+### Hide count indicators
+
+This optional stylesheet hides Jellyfin's numeric count badges. They remain
+visible unless you enable it.
+
+**Hidden:** unplayed/unwatched item counts, including episodes on series and season
+cards; item-count badges on container cards; and their `99+` variants.
+
+**Unchanged:** watched checkmarks, favorites, playback progress, ratings, years,
+media-source indicators, and counts written as ordinary text.
+
+To enable it, use these two lines at the top of **Custom CSS**:
+
+```css
+@import url('https://cdn.jsdelivr.net/gh/Dyhlio/LumaaGlaass@main/assets/branding.css');
+@import url('https://cdn.jsdelivr.net/gh/Dyhlio/LumaaGlaass@main/assets/hide-count-indicators.css');
+```
+
+If the theme import is already present, add only the second line, before any
+other CSS rules. No JavaScript change is needed.
+
+Alternatively, copy [hide-count-indicators.css](assets/hide-count-indicators.css)
+after your existing CSS. Its complete rule is:
+
+```css
+.countIndicator {
+  display: none !important;
+}
+```
+
+Save and fully reload the client. To restore the badges, remove the optional
+import or pasted rule and reload again. If you added both, remove both.
+
+Only elements using Jellyfin's `countIndicator` class are hidden. This is a visual
+change: no counts or watch history are deleted. The rule also works with the
+v1.0.0 base theme; the optional file is available on `main`, not in older release tags.
+
 ## Repository
 
 ```text
 LumaaGlaass/
 ├── assets/
 │   ├── branding.css
-│   └── branding.js
+│   ├── branding.js
+│   └── hide-count-indicators.css
 ├── LICENSE
 └── README.md
 ```

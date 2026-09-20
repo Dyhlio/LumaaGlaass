@@ -1,0 +1,6 @@
+/* LumaaGlaass - Optional numeric count visibility. */
+/* Scope - Unplayed and contained-item count badges, including 99+ variants. */
+/* Badges - Preserve watched states, favorites and playback progress. */
+.countIndicator {
+    display: none !important;
+}
