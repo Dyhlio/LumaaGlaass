@@ -1,4 +1,4 @@
-/* LumaaGlaass v1.1.0 - Optional mixed collection filter. */
+/* LumaaGlaass - Optional mixed collection filter. */
 ;(() => {
   'use strict';
   const KEY = '__lumaaGlaassCollectionFilter';

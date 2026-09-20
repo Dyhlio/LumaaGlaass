@@ -1,4 +1,4 @@
-/* LumaaGlaass v1.1.0 - Optional playback selection dialog. */
+/* LumaaGlaass - Optional playback selection dialog. */
 (() => {
     'use strict';
     const key = '__lumaaGlaassPlaybackDialog';
