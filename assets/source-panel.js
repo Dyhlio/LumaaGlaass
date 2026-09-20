@@ -24,6 +24,7 @@
         .lg-source-provider { font-weight:600; }
         @media(min-width:1200px) {
             body #itemDetailPage#itemDetailPage.lg-source-layout .detailPagePrimaryContainer { grid-template-columns:clamp(150px,12vw,220px) minmax(0,1fr) clamp(360px,38vw,760px)!important; column-gap:clamp(24px,2vw,40px)!important; }
+            body #itemDetailPage#itemDetailPage.lg-source-layout:has(.detailImageContainer .portraitCard) .detailPagePrimaryContainer { grid-template-columns:clamp(200px,17vw,340px) minmax(0,1fr) clamp(360px,36vw,760px)!important; }
             .lg-source-panel { grid-column:3; grid-row:1 / span 6; align-self:start; margin:0; }
             .lg-source-list { max-height:var(--lg-source-list-height,560px); }
         }

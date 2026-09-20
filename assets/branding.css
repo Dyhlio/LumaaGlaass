@@ -3408,6 +3408,11 @@ body #itemDetailPage.itemDetailPage:not(.aa-collection-page):not(:has(.collectio
  background:var(--aa-surface)!important; border:1px solid rgba(255,255,255,.12);
  border-radius:24px; box-sizing:border-box;
 }
+@media(min-width:1000px) {
+ body #itemDetailPage.itemDetailPage:not(.aa-collection-page):not(:has(.collectionItems:not(.hide):not([hidden]))):has(.detailImageContainer .portraitCard) .detailPagePrimaryContainer {
+  grid-template-columns:clamp(220px,22vw,340px) minmax(0,1fr);
+ }
+}
 body #itemDetailPage.itemDetailPage:not(.aa-collection-page):not(:has(.collectionItems:not(.hide):not([hidden]))):has(.detailImageContainer :is(.portraitCard,.backdropCard,.squareCard)) .detailPagePrimaryContainer > .detailImageContainer {
  grid-area:1 / 1; display:block!important; position:static!important;
  width:100%!important; max-width:none!important; margin:0!important; padding:0!important;
