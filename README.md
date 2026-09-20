@@ -105,17 +105,19 @@ LumaaGlaass/
 ├── assets/
 │   ├── branding.css
 │   ├── branding.js
-│   ├── collection-filter.js
-│   ├── hide-count-indicators.css
-│   ├── playback-dialog.js
-│   └── source-panel.js
+│   └── extensions/
+│       ├── collection-filter.js
+│       ├── hide-count-indicators.css
+│       ├── playback-dialog.js
+│       └── source-panel.js
 ├── docs/
 │   └── customization.md
 ├── LICENSE
 └── README.md
 ```
 
-The files in `assets/` are used directly; no compilation is needed. jsDelivr
+The main theme files live in `assets/`; optional features live in
+`assets/extensions/`. All files are used directly; no compilation is needed. jsDelivr
 serves them from the public GitHub repository without GitHub Pages or Actions.
 The CDN import becomes available once `assets/branding.css` is published on `main`.
 

@@ -64,7 +64,7 @@ Add this separate loader to **Custom JS**, keeping the main theme loader:
 
   const script = document.createElement('script');
   script.id = id;
-  script.src = 'https://cdn.jsdelivr.net/gh/Dyhlio/LumaaGlaass@main/assets/playback-dialog.js';
+  script.src = 'https://cdn.jsdelivr.net/gh/Dyhlio/LumaaGlaass@main/assets/extensions/playback-dialog.js';
   script.onerror = () => {
     script.remove();
     console.error('LumaaGlaass playback dialog could not be loaded.');
@@ -73,7 +73,7 @@ Add this separate loader to **Custom JS**, keeping the main theme loader:
 })();
 ```
 
-Alternatively, paste [playback-dialog.js](../assets/playback-dialog.js) after the main
+Alternatively, paste [playback-dialog.js](../assets/extensions/playback-dialog.js) after the main
 theme script. Use only one method and remove any pasted playback dialog prototype.
 Styles are included; no extra CSS import is needed. Native labels and typography
 are reused; Close and Play have English fallbacks if native labels are unavailable.
@@ -107,7 +107,7 @@ Add this separate loader to **Custom JS**, keeping the main theme loader:
 
   const script = document.createElement('script');
   script.id = id;
-  script.src = 'https://cdn.jsdelivr.net/gh/Dyhlio/LumaaGlaass@main/assets/source-panel.js';
+  script.src = 'https://cdn.jsdelivr.net/gh/Dyhlio/LumaaGlaass@main/assets/extensions/source-panel.js';
   script.onerror = () => {
     script.remove();
     console.error('LumaaGlaass source panel could not be loaded.');
@@ -116,7 +116,7 @@ Add this separate loader to **Custom JS**, keeping the main theme loader:
 })();
 ```
 
-Alternatively, paste [source-panel.js](../assets/source-panel.js) after the main theme
+Alternatively, paste [source-panel.js](../assets/extensions/source-panel.js) after the main theme
 script. Use only one method and remove any previously pasted source panel prototype.
 The extension includes its own styles; no additional CSS import is needed.
 
@@ -138,7 +138,7 @@ Add this separate loader to **Custom JS**, keeping the main theme loader:
 
   const script = document.createElement('script');
   script.id = id;
-  script.src = 'https://cdn.jsdelivr.net/gh/Dyhlio/LumaaGlaass@main/assets/collection-filter.js';
+  script.src = 'https://cdn.jsdelivr.net/gh/Dyhlio/LumaaGlaass@main/assets/extensions/collection-filter.js';
   script.onerror = () => {
     script.remove();
     console.error('LumaaGlaass collection filter could not be loaded.');
@@ -147,7 +147,7 @@ Add this separate loader to **Custom JS**, keeping the main theme loader:
 })();
 ```
 
-Alternatively, paste [collection-filter.js](../assets/collection-filter.js) after
+Alternatively, paste [collection-filter.js](../assets/extensions/collection-filter.js) after
 the main theme script. Use only one method. The extension includes its own styles;
 the main CSS and JavaScript do not need to be replaced.
 
@@ -177,13 +177,13 @@ To enable it, use these two lines at the top of **Custom CSS**:
 
 ```css
 @import url('https://cdn.jsdelivr.net/gh/Dyhlio/LumaaGlaass@main/assets/branding.css');
-@import url('https://cdn.jsdelivr.net/gh/Dyhlio/LumaaGlaass@main/assets/hide-count-indicators.css');
+@import url('https://cdn.jsdelivr.net/gh/Dyhlio/LumaaGlaass@main/assets/extensions/hide-count-indicators.css');
 ```
 
 If the theme import is already present, add only the second line, before any
 other CSS rules. No JavaScript change is needed.
 
-Alternatively, copy [hide-count-indicators.css](../assets/hide-count-indicators.css)
+Alternatively, copy [hide-count-indicators.css](../assets/extensions/hide-count-indicators.css)
 after your existing CSS. Its complete rule is:
 
 ```css
