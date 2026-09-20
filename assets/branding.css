@@ -3066,6 +3066,8 @@ body:has(.skinHeader:not(.osdHeader)) .absolutePageTabContent { top:calc(88px + 
 }
 
 /* Collections - Full-width composition with native content and controls. */
+/* Libraries - Reuse collection artwork without changing native list layouts. */
+.aa-library-page { background:transparent!important; }
 html.aa-collection-art .backgroundContainer { background:#30333a!important; position:fixed!important; inset:0!important; height:100vh!important; pointer-events:none; }
 html.aa-collection-art .backgroundContainer::before {
  content:""; position:fixed; inset:-60px; pointer-events:none;

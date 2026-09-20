@@ -329,22 +329,39 @@
   }
   // Collections - Keep the background during the visit and ignore stale responses.
   let collectionScene = null;
+  // Backdrops - Library lists use parentId; collection details use id.
+  function collectionArtContext() {
+    if (route() === '#/list') {
+      const id = params().get('parentId');
+      const page = id && [...document.querySelectorAll('.libraryPage')].find(node =>
+        visible(node) && node.querySelector('.itemsViewSettingsContainer'));
+      return page ? { page, id, kind: 'library', className: 'aa-library-page' } : null;
+    }
+    if (route() !== '#/details') return null;
+    const id = params().get('id');
+    const page = id && [...document.querySelectorAll('.itemDetailPage')].find(node =>
+      visible(node) && node.querySelector('.collectionItems:not(.hide):not([hidden])'));
+    return page ? { page, id, kind: 'collection', className: 'aa-collection-page' } : null;
+  }
   function clearCollection() {
     collectionScene?.cancelImage?.(); collectionScene = null;
-    document.querySelectorAll('.aa-collection-page').forEach(n => { n.classList.remove('aa-collection-page'); n.style.removeProperty('--aa-collection-art'); });
+    document.querySelectorAll('.aa-collection-page,.aa-library-page').forEach(n => { n.classList.remove('aa-collection-page', 'aa-library-page'); n.style.removeProperty('--aa-collection-art'); });
     if(document.documentElement.classList.contains('aa-collection-art')) document.documentElement.classList.remove('aa-collection-art');
     document.documentElement.style.removeProperty('--aa-collection-art');
   }
   function syncCollection() {
-    const page = route() === '#/details' && [...document.querySelectorAll('.itemDetailPage')].find(n => visible(n) && n.querySelector('.collectionItems:not(.hide):not([hidden])'));
-    if (!page) { clearCollection(); return; }
-    document.querySelectorAll('.aa-collection-page').forEach(n => { if(n !== page) { n.classList.remove('aa-collection-page'); n.style.removeProperty('--aa-collection-art'); } });
-    if(!page.classList.contains('aa-collection-page')) page.classList.add('aa-collection-page');
-    const api = currentClient(), id = params().get('id'), key = sessionKey(api);
+    const context = collectionArtContext();
+    if (!context) { clearCollection(); return; }
+    const { page, id, kind, className } = context;
+    document.querySelectorAll('.aa-collection-page,.aa-library-page').forEach(n => { if(n !== page) { n.classList.remove('aa-collection-page', 'aa-library-page'); n.style.removeProperty('--aa-collection-art'); } });
+    const otherClass = kind === 'library' ? 'aa-collection-page' : 'aa-library-page';
+    if(page.classList.contains(otherClass)) page.classList.remove(otherClass);
+    if(!page.classList.contains(className)) page.classList.add(className);
+    const api = currentClient(), key = sessionKey(api);
     if (!id || !key) { clearCollection(); return; }
-    if (!collectionScene || collectionScene.id !== id || collectionScene.key !== key) {
+    if (!collectionScene || collectionScene.id !== id || collectionScene.key !== key || collectionScene.kind !== kind || collectionScene.page !== page) {
       collectionScene?.cancelImage?.();
-      collectionScene = {id,key,art:'none',loading:false,retry:0};
+      collectionScene = {id,key,kind,page,art:'none',loading:false,retry:0};
     }
     const scene = collectionScene, art = scene.art;
     for(const node of [page, document.documentElement]) if(node.style.getPropertyValue('--aa-collection-art') !== art) node.style.setProperty('--aa-collection-art',art);
@@ -353,10 +370,13 @@
   }
   async function loadCollectionScene(scene, api, page) {
     scene.loading = true;
-    const current = () => !stopped && enabled() && collectionScene === scene && route() === '#/details' &&
-      params().get('id') === scene.id && sessionKey(currentClient()) === scene.key && visible(page) && !!page.querySelector('.collectionItems:not(.hide):not([hidden])');
+    const current = () => {
+      const context = collectionArtContext();
+      return !stopped && enabled() && collectionScene === scene && context?.page === page &&
+        context.id === scene.id && context.kind === scene.kind && sessionKey(currentClient()) === scene.key;
+    };
     try {
-      // Collections - Restrict image selection to the open collection.
+      // Backdrops - Restrict image selection to the open collection or library.
       const result = await api.getItems(api.getCurrentUserId(), {
         ParentId:scene.id, IncludeItemTypes:'Movie,Series', Recursive:true, SortBy:'Random', Limit:30,
         Fields:'BackdropImageTags,ParentBackdropImageTags,ParentBackdropItemId', EnableImages:true, ImageTypes:'Backdrop'
