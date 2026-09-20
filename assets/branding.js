@@ -1,4 +1,4 @@
-/* LumaaGlaass v1.0.0 - Jellyfin theme. */
+/* LumaaGlaass v1.1.0 - Jellyfin theme. */
 /* LUMAAGLAASS:START v1 */
 ;(() => {
   'use strict';
