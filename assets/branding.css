@@ -2943,7 +2943,8 @@ html:is(.aa-home-art,.aa-search-art) .backgroundContainer::before { content:""; 
 
 /* Navigation - Floating controls without a full-width background. */
 /* Navigation - Follow the native drawer state without changing button geometry. */
-body:has(.mainDrawer.drawer-open) .skinHeader:not(.osdHeader) .mainDrawerButton {
+body:has(.mainDrawer.drawer-open) .skinHeader:not(.osdHeader) :is(.mainDrawerButton,.headerBackButton,.headerHomeButton) {
+ visibility:hidden!important;
  opacity:0!important;
  pointer-events:none!important;
  transition:none!important;
