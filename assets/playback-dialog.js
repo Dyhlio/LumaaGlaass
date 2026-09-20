@@ -43,6 +43,8 @@
       }
       .lg-playback-footer { bottom:0; border-top:1px solid #ffffff20; justify-content:center; }
       .lg-playback-launch { padding:12px 30px; min-height:46px; border:0; border-radius:30px; background:#f5f5f7; color:#151518; font:inherit; font-weight:600; cursor:pointer; }
+      .lg-playback-launch:not(:disabled):hover { transform:scale(1.03); box-shadow:none; }
+      @media(prefers-reduced-motion:reduce) { .lg-playback-launch { transition:none!important; } .lg-playback-launch:not(:disabled):hover { transform:none; } }
       .lg-playback-launch::before { content:''; display:inline-block; border-block:6px solid transparent; border-inline-start:9px solid currentColor; margin-inline-end:12px; vertical-align:-1px; }
       .lg-playback-dialog button:disabled { opacity:.45; cursor:default; }
       .lg-playback-dialog :focus-visible { outline:2px solid white; outline-offset:2px; }
@@ -208,6 +210,8 @@
         const launch = document.createElement('button');
         launch.type = 'button';
         launch.className = 'lg-playback-launch';
+        // Match the native playback button's transition without duplicating its timing.
+        launch.style.transition = getComputedStyle(trigger).transition;
         const buttonCopy = trigger.cloneNode(true);
         buttonCopy.querySelectorAll('.material-icons').forEach(icon => icon.remove());
         const nativeTitle = trigger.getAttribute('title') || '';
