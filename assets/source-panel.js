@@ -1,4 +1,4 @@
-/* LumaaGlaass - Optional source selection panel. */
+/* LumaaGlaass v1.1.0 - Optional source selection panel. */
 (() => {
     'use strict';
 
