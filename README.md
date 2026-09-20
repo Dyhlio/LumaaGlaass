@@ -96,6 +96,44 @@ No installer or build step is needed.
 
 ## Customization
 
+### Source selection panel
+
+The optional source panel replaces the Version dropdown with a scrollable list
+on media details pages that offer multiple versions. It requires the main theme.
+
+- Select a source, then use **Play** to start playback. Selecting a source does not autoplay.
+- Uses the native version selector and its labels. Audio, video, and subtitle controls remain native.
+- On desktop, the panel appears on the right and ends no lower than the Studio row
+  when available, otherwise the remaining metadata. Up to six sources are visible;
+  longer lists scroll within the panel.
+- On mobile and tablet, it appears above the audio/video controls with a compact scroll area.
+- A bottom chevron indicates that more sources are available below.
+
+Add this separate loader to **Custom JS**, keeping the main theme loader:
+
+```js
+(() => {
+  const id = 'lumaaglaass-source-panel-script';
+  if (document.getElementById(id)) return;
+
+  const script = document.createElement('script');
+  script.id = id;
+  script.src = 'https://cdn.jsdelivr.net/gh/Dyhlio/LumaaGlaass@main/assets/source-panel.js';
+  script.onerror = () => {
+    script.remove();
+    console.error('LumaaGlaass source panel could not be loaded.');
+  };
+  document.head.appendChild(script);
+})();
+```
+
+Alternatively, paste [source-panel.js](assets/source-panel.js) after the main theme
+script. Use only one method and remove any previously pasted source panel prototype.
+The extension includes its own styles; no additional CSS import is needed.
+
+Save and fully reload. To disable it, remove only its loader or pasted script and
+reload. The main theme files remain unchanged. Available on `main`, not in v1.0.0.
+
 ### Filter mixed collections
 
 The optional collection filter adds **All / Movies / Shows** above collections
@@ -180,7 +218,8 @@ LumaaGlaass/
 │   ├── branding.css
 │   ├── branding.js
 │   ├── collection-filter.js
-│   └── hide-count-indicators.css
+│   ├── hide-count-indicators.css
+│   └── source-panel.js
 ├── LICENSE
 └── README.md
 ```
