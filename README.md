@@ -96,10 +96,58 @@ No installer or build step is needed.
 
 ## Customization
 
+### Playback selection dialog
+
+This optional extension hides the version and track block on supported media
+details pages. **Play** or **Resume** opens a dialog instead of starting playback:
+
+1. Choose a version from the source list.
+2. Adjust the available audio and subtitle tracks, if needed.
+3. Press the playback button inside the dialog to start.
+
+Source selection alone does not start playback. The dialog mirrors the native
+selectors and uses the original playback button, preserving its Play/Resume action.
+Closing the dialog does not start playback; selected settings remain on the page.
+The read-only video summary is hidden with the original track block.
+
+The main theme is required. **Choose this dialog or the source selection panel
+below, not both.** Remove the source panel loader or pasted script when enabling
+the dialog. If both are loaded, the dialog takes priority and stops the panel.
+
+Add this separate loader to **Custom JS**, keeping the main theme loader:
+
+```js
+(() => {
+  const id = 'lumaaglaass-playback-dialog-script';
+  if (document.getElementById(id)) return;
+
+  const script = document.createElement('script');
+  script.id = id;
+  script.src = 'https://cdn.jsdelivr.net/gh/Dyhlio/LumaaGlaass@main/assets/playback-dialog.js';
+  script.onerror = () => {
+    script.remove();
+    console.error('LumaaGlaass playback dialog could not be loaded.');
+  };
+  document.head.appendChild(script);
+})();
+```
+
+Alternatively, paste [playback-dialog.js](assets/playback-dialog.js) after the main
+theme script. Use only one method and remove any pasted playback dialog prototype.
+Styles are included; no extra CSS import is needed. Native labels and typography
+are reused; Close and Play have English fallbacks if native labels are unavailable.
+
+Save and fully reload. To disable it, remove its loader or pasted script and
+reload. Restore the source panel loader only if you want that alternative.
+Pages without a usable native version selector retain their normal playback
+behavior. Home banner, trailer, and shuffle actions are not intercepted.
+Native dropdown rendering may vary by browser. Available on `main`, not in v1.0.0.
+
 ### Source selection panel
 
 The optional source panel replaces the Version dropdown with a scrollable list
 on media details pages that offer multiple versions. It requires the main theme.
+Use it instead of the playback selection dialog, not alongside it.
 
 - Select a source, then use **Play** to start playback. Selecting a source does not autoplay.
 - Uses the native version selector and its labels. Audio, video, and subtitle controls remain native.
@@ -219,6 +267,7 @@ LumaaGlaass/
 │   ├── branding.js
 │   ├── collection-filter.js
 │   ├── hide-count-indicators.css
+│   ├── playback-dialog.js
 │   └── source-panel.js
 ├── LICENSE
 └── README.md
