@@ -33,7 +33,7 @@
             body #itemDetailPage#itemDetailPage.lg-source-layout .trackSelections:not(.hide) { grid-column:2; grid-row:3; margin-top:16px!important; }
             body #itemDetailPage#itemDetailPage.lg-source-layout .detailSectionContent { grid-column:2; grid-row:4; }
             body #itemDetailPage#itemDetailPage.lg-source-layout .itemDetailsGroup { grid-column:2; grid-row:5; }
-            .lg-source-list { max-height:min(var(--lg-source-list-height,560px),40vh); }
+            .lg-source-list { max-height:max(var(--lg-source-two-rows,0px),min(var(--lg-source-list-height,560px),40vh)); }
         }
         @media(max-width:640px) {
             .lg-source-option { padding:14px; }
@@ -147,6 +147,10 @@
         }
         const listHeight = `${height}px`;
         if (list.style.getPropertyValue('--lg-source-list-height') !== listHeight) list.style.setProperty('--lg-source-list-height', listHeight);
+        // Show two complete sources on narrow screens, even with long filenames.
+        const firstTwo = rows.slice(0, 2);
+        const twoRowsHeight = `${Math.ceil(firstTwo.reduce((total, button) => total + button.getBoundingClientRect().height, 0) + Math.max(0, firstTwo.length - 1) * 8)}px`;
+        if (list.style.getPropertyValue('--lg-source-two-rows') !== twoRowsHeight) list.style.setProperty('--lg-source-two-rows', twoRowsHeight);
         syncScrollHint();
     }
 
