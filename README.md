@@ -96,6 +96,45 @@ No installer or build step is needed.
 
 ## Customization
 
+### Filter mixed collections
+
+The optional collection filter adds **All / Movies / Shows** above collections
+containing both movies and series. It uses Jellyfin's internal media types,
+not translated titles, and follows the language selected in Jellyfin.
+
+Add this separate loader to **Custom JS**, keeping the main theme loader:
+
+```js
+(() => {
+  const id = 'lumaaglaass-collection-filter-script';
+  if (document.getElementById(id)) return;
+
+  const script = document.createElement('script');
+  script.id = id;
+  script.src = 'https://cdn.jsdelivr.net/gh/Dyhlio/LumaaGlaass@main/assets/collection-filter.js';
+  script.onerror = () => {
+    script.remove();
+    console.error('LumaaGlaass collection filter could not be loaded.');
+  };
+  document.head.appendChild(script);
+})();
+```
+
+Alternatively, paste [collection-filter.js](assets/collection-filter.js) after
+the main theme script. Use only one method. The extension includes its own styles;
+the main CSS and JavaScript do not need to be replaced.
+
+- Filters the native cards and section headings without changing their order.
+- Does not alter collection membership, watch history, or the main Play/Shuffle actions.
+- Shows other media types under **All** only.
+- Resets to **All** when switching collections; single-type collections have no filter.
+- Supports keyboard navigation, right-to-left layouts, and pointer feedback.
+- Uses the client translator when exposed, otherwise bundled native Jellyfin strings.
+  Missing translations fall back to English. No translation service or extra library query is used.
+
+Save and fully reload. To disable it, remove its loader or pasted script and
+reload again. This extension is available on `main`, not in the v1.0.0 release.
+
 ### Hide count indicators
 
 This optional stylesheet hides Jellyfin's numeric count badges. They remain
@@ -140,6 +179,7 @@ LumaaGlaass/
 ├── assets/
 │   ├── branding.css
 │   ├── branding.js
+│   ├── collection-filter.js
 │   └── hide-count-indicators.css
 ├── LICENSE
 └── README.md
