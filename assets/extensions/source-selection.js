@@ -71,6 +71,7 @@
         const style = document.createElement('style');
         style.textContent = `
             body #itemDetailPage#itemDetailPage .trackSelections > .selectSourceContainer[data-lg-source-hidden] { display:none!important; }
+            body #itemDetailPage#itemDetailPage .trackSelections[data-lg-source-empty] { display:none!important; }
             .lg-source-panel { position:relative; grid-column:1 / -1; grid-row:20; min-width:0; margin-top:24px; padding:18px 18px 28px; box-sizing:border-box; background:var(--aa-surface,rgba(30,30,32,.4)); border:1px solid rgba(255,255,255,.12); border-radius:14px; color:inherit; }
             .lg-source-panel h2 { margin:0 0 16px; font-family:inherit; font-weight:600; font-size:18px; line-height:1.4; }
             .lg-source-list { display:flex; flex-direction:column; gap:8px; max-height:min(var(--lg-source-list-height,560px),65vh); overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; scrollbar-color:rgba(255,255,255,.55) rgba(255,255,255,.08); scrollbar-gutter:stable; padding:3px; padding-inline-end:14px; }
@@ -118,6 +119,7 @@
 
         function clear() {
             if (!current) return;
+            current.form.removeAttribute('data-lg-source-empty');
             current.row.removeAttribute('data-lg-source-hidden');
             current.page.classList.remove('lg-source-layout');
             current.panel.remove();
@@ -146,7 +148,7 @@
                 panel.append(heading, list);
                 // Match keyboard reading order without changing the native track form.
                 form.before(panel);
-                current = { page, select, row, panel, heading, list, route:location.hash, signature:'' };
+                current = { page, select, form, row, panel, heading, list, route:location.hash, signature:'' };
                 page.classList.add('lg-source-layout');
                 row.setAttribute('data-lg-source-hidden', '');
                 list.addEventListener('click', event => {
@@ -159,6 +161,22 @@
                 });
             }
             const { heading, list } = current;
+            // Inspect children independently of our own form visibility so late tracks
+            // can restore the block. Preserve read-only video summaries as content.
+            const rowVisible = node => {
+                for (let element = node; element && element !== form; element = element.parentElement) {
+                    const css = getComputedStyle(element);
+                    if (element.hidden || element.classList.contains('hide') || css.display === 'none' || css.visibility === 'hidden') return false;
+                }
+                return true;
+            };
+            const hasContent = Array.from(form.children).some(child => {
+                if (child === row || !rowVisible(child)) return false;
+                if (child.getAttribute('data-aa-video-summary')?.trim()) return true;
+                return Array.from(child.querySelectorAll('select')).some(control =>
+                    rowVisible(control) && Array.from(control.options).some(option => option.textContent.trim()));
+            });
+            form.toggleAttribute('data-lg-source-empty', !hasContent);
             if (heading.textContent !== label) heading.textContent = label;
             list.setAttribute('aria-label', label);
             const options = Array.from(select.options);
