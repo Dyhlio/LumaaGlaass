@@ -1,6 +1,40 @@
 /* LumaaGlaass - Optional playback selection dialog. */
 (() => {
     'use strict';
+
+    // Localization - Share access to Jellyfin's translator across independent scripts.
+    const nativeI18n = window.__lumaaGlaassI18n ||= (() => {
+        let translator = null, runtime = null, retryAt = 0;
+        function resolve() {
+            const exposed = window.globalize || window.Globalize;
+            if (typeof exposed?.translate === 'function') return exposed;
+            if (translator) return translator;
+            if (Date.now() < retryAt) return null;
+            retryAt = Date.now() + 5000;
+            const chunks = window.webpackChunk;
+            if (!runtime && Array.isArray(chunks) && chunks.push !== Array.prototype.push) {
+                chunks.push([['lg-i18n-' + Date.now()], {}, value => { runtime = value; }]);
+            }
+            if (!runtime?.m) return null;
+            const matches = Object.entries(runtime.m).filter(([, factory]) => {
+                const source = String(factory);
+                return source.includes('Translation dictionary is empty.') && source.includes('data-culture');
+            });
+            if (matches.length === 1) {
+                translator = Object.values(runtime(matches[0][0])).find(value =>
+                    value && typeof value.translate === 'function' && typeof value.getCurrentLocale === 'function');
+            }
+            return translator;
+        }
+        return {
+            translate(key) {
+                try {
+                    const value = resolve()?.translate(key);
+                    return typeof value === 'string' && value.trim() && value !== key ? value : null;
+                } catch { return null; }
+            }
+        };
+    })();
     const key = '__lumaaGlaassPlaybackDialog';
     window[key]?.stop();
     if (typeof HTMLDialogElement === 'undefined' || !HTMLDialogElement.prototype.showModal) return;
@@ -167,7 +201,7 @@
         dismiss.type = 'button';
         dismiss.className = 'lg-playback-close';
         dismiss.textContent = '×';
-        const translator = window.globalize || window.Globalize;
+        const translator = nativeI18n;
         let closeLabel = 'Close';
         try { closeLabel = translator?.translate?.('ButtonClose') || closeLabel; } catch {}
         dismiss.setAttribute('aria-label', closeLabel);
