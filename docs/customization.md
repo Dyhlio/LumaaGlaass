@@ -20,6 +20,7 @@ Keep the **Dark** base theme selected.
 | --- | --- | --- |
 | [Playback selection dialog](#playback-selection-dialog) | Choose a version and its tracks after pressing Play | Custom JS |
 | [Source selection panel](#source-selection-panel) | Browse versions directly on the details page | Custom JS |
+| [In-player version switcher](#in-player-version-switcher) | Change versions during playback and resume at the current timestamp | Custom JS |
 | [Filter mixed collections](#filter-mixed-collections) | Show all items, movies only, or series only | Custom JS |
 | [Hide count indicators](#hide-count-indicators) | Hide numeric badges on cards and lists | Custom CSS |
 | [Visual adjustments](#visual-adjustments) | Adjust shared panel and selection colors | Custom CSS |
@@ -27,6 +28,48 @@ Keep the **Dark** base theme selected.
 **Choose either the playback dialog or the source panel.** They are alternative
 ways to choose a version. The collection filter and hidden count badges can be
 used with either one, or with the default version dropdown.
+The in-player version switcher can also be used with either option or on its own.
+
+## In-player version switcher
+
+Adds a **Version** button beside the settings button in the integrated player.
+Choose another version to restart playback at the current timestamp. A loading
+delay is expected; this is not a seamless stream switch.
+
+- Supports seekable movies and episodes in the local integrated player, not casting or external players.
+- Keeps the current queue and requests the same playback position.
+- Matches audio and subtitle languages when the new source offers them; otherwise its defaults apply. Subtitles set to Off stay off.
+- Uses Jellyfin's selected interface language and shared theme styling.
+- Scrolling inside the dialog does not change player volume.
+
+Different cuts of a movie can show different scenes at the same timestamp.
+Switching to a version shorter than the current position is rejected. This option
+uses internal Jellyfin modules and has only been tested on the Remux setup noted
+above; future client changes may require an update. If switching remains pending,
+close the window and reload the client if needed. Closing does not cancel a
+playback request already sent to Jellyfin.
+
+Add this loader to **Custom JS**, keeping the main theme loader:
+
+```javascript
+(() => {
+  const id = 'lumaaglaass-player-version-switcher-script';
+  if (document.getElementById(id)) return;
+
+  const script = document.createElement('script');
+  script.id = id;
+  script.src = 'https://cdn.jsdelivr.net/gh/Dyhlio/LumaaGlaass@main/assets/extensions/player-version-switcher.js';
+  script.onerror = () => {
+    script.remove();
+    console.error('LumaaGlaass player version switcher could not be loaded.');
+  };
+  document.head.appendChild(script);
+})();
+```
+
+Alternatively, paste [player-version-switcher.js](../assets/extensions/player-version-switcher.js)
+after the main script. Use only one method and remove the local prototype first.
+Styles are included. To remove the option, remove its loader or pasted script and reload.
 
 ## Copying the code
 

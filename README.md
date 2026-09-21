@@ -109,6 +109,7 @@ LumaaGlaass/
 │       ├── collection-filter.js
 │       ├── hide-count-indicators.css
 │       ├── playback-dialog.js
+│       ├── player-version-switcher.js
 │       └── source-panel.js
 ├── docs/
 │   └── customization.md
