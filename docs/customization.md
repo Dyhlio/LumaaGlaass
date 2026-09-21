@@ -18,25 +18,23 @@ Keep the **Dark** base theme selected.
 
 | Option | What it does | Where to add it |
 | --- | --- | --- |
-| [Playback selection dialog](#playback-selection-dialog) | Choose a version and its tracks after pressing Play | Custom JS |
-| [Source selection panel](#source-selection-panel) | Browse versions directly on the details page | Custom JS |
+| [Source selection](#source-selection) | Choose native controls, an inline panel or a playback dialog | Custom JS |
 | [In-player version switcher](#in-player-version-switcher) | Change versions during playback and resume at the current timestamp | Custom JS |
 | [Media actions](#media-actions) | Configure native, information or hidden shortcuts by media type and context | Custom JS |
 | [Filter mixed collections](#filter-mixed-collections) | Show all items, movies only, or series only | Custom JS |
 | [Hide count indicators](#hide-count-indicators) | Hide numeric badges on cards and lists | Custom CSS |
 | [Visual adjustments](#visual-adjustments) | Adjust shared panel and selection colors | Custom CSS |
 
-**Choose either the playback dialog or the source panel.** They are alternative
-ways to choose a version. The collection filter and hidden count badges can be
-used with either one, or with the default version dropdown.
-The in-player version switcher can also be used with either option or on its own.
+**Source selection provides one mode at a time: native, panel or dialog.**
+The collection filter, hidden count badges, media actions and in-player version
+switcher can be used with any mode or independently.
 
 ## Media actions
 
 One optional script controls thumbnail shortcuts and selected details-page buttons.
 It replaces details-first navigation and image button hiding. Remove their loaders
 or pasted scripts before installing this option. Keep the main theme and unrelated
-extensions. The source panel, playback dialog and in-player version switcher remain
+extensions. Source selection and the in-player version switcher remain
 independent.
 
 ### Install and configure
@@ -201,91 +199,90 @@ Styles are included. To remove the option, remove its loader or pasted script an
 - Remove old prototypes of the same feature before enabling its published file.
 - No download, build step, or extra plugin is required for these options in Remux.
 
-## Playback selection dialog
+## Source selection
 
-This optional extension hides the version and track block on supported media
-details pages. **Play** or **Resume** opens a dialog instead of starting playback:
+One optional extension provides three mutually exclusive modes. The main theme
+remains required; the selected mode adapts to desktop, tablet and mobile.
 
-1. Choose a version from the source list.
-2. Adjust the available audio and subtitle tracks, if needed.
-3. Press the playback button inside the dialog to start.
+| Mode | Behavior |
+| --- | --- |
+| `native` | Keep Jellyfin's original version and track controls (default) |
+| `panel` | Show a source list on the details page |
+| `dialog` | Choose a version and available tracks after pressing Play or Resume |
 
-Source selection alone does not start playback. The dialog mirrors the native
-selectors and uses the original playback button, preserving its Play/Resume action.
-Closing the dialog does not start playback; selected settings remain on the page.
-The read-only video summary is hidden with the original track block.
+### Installation and mode selection
 
-The main theme is required. **Choose this dialog or the source selection panel
-below, not both.** Remove the source panel loader or pasted script when enabling
-the dialog. If both are loaded, the dialog takes priority and stops the panel.
+Remove the old `source-panel.js` and `playback-dialog.js` loaders or pasted scripts,
+including local prototypes. Those files have been replaced by this extension.
+Then add this loader to **Custom JS**, keeping the main theme:
 
-Add this separate loader to **Custom JS**, keeping the main theme loader:
-
-```js
+```javascript
 (() => {
-  const id = 'lumaaglaass-playback-dialog-script';
+  window.LumaaGlaassSourceSelectionOptions = {
+    mode: 'native' // Change to 'panel' or 'dialog', save and fully reload.
+  };
+  const id = 'lumaaglaass-source-selection-script';
   if (document.getElementById(id)) return;
 
   const script = document.createElement('script');
   script.id = id;
-  script.src = 'https://cdn.jsdelivr.net/gh/Dyhlio/LumaaGlaass@main/assets/extensions/playback-dialog.js';
+  script.src = 'https://cdn.jsdelivr.net/gh/Dyhlio/LumaaGlaass@main/assets/extensions/source-selection.js';
   script.onerror = () => {
     script.remove();
-    console.error('LumaaGlaass playback dialog could not be loaded.');
+    console.error('LumaaGlaass source selection could not be loaded.');
   };
   document.head.appendChild(script);
 })();
 ```
 
-Alternatively, paste [playback-dialog.js](../assets/extensions/playback-dialog.js) after the main
-theme script. Use only one method and remove any pasted playback dialog prototype.
-Styles are included; no extra CSS import is needed. Native labels and typography
-are reused; Close and Play have English fallbacks if native labels are unavailable.
+Change only `mode` in this loader to select the interface. For example,
+`mode: 'panel'` enables the panel. Missing or invalid modes use `native`.
+Changing the object after loading does not switch modes until a full reload.
 
-Save and fully reload. To disable it, remove its loader or pasted script and
-reload. Restore the source panel loader only if you want that alternative.
-Pages without a usable native version selector retain their normal playback
-behavior. Home banner, trailer, and shuffle actions are not intercepted.
-Native dropdown rendering may vary by browser. Available on `main`, not in v1.0.0.
+Alternatively, define the configuration object and paste the complete
+[source-selection.js](../assets/extensions/source-selection.js) below it.
+Use one installation method only; pasted copies need manual updates.
+Styles are included, with no extra CSS import.
 
-## Source selection panel
+### Panel mode
 
-The optional source panel replaces the Version dropdown with a scrollable list
-on media details pages that offer multiple versions. It requires the main theme.
-Use it instead of the playback selection dialog, not alongside it.
+- Selecting a version updates the native selector without starting playback.
+- Audio, subtitle and video controls remain native. Use Play to start.
+- The panel appears only when the details page offers multiple versions.
+- On desktop it appears on the right, with up to six sources and internal scrolling,
+  limited by the Studio row or remaining metadata when available.
+- On mobile and tablet it sits above the audio/video controls, with space for two
+  complete sources when available. A chevron indicates more sources below.
 
-- Select a source, then use **Play** to start playback. Selecting a source does not autoplay.
-- Uses the native version selector and its labels. Audio, video, and subtitle controls remain native.
-- On desktop, the panel appears on the right and ends no lower than the Studio row
-  when available, otherwise the remaining metadata. Up to six sources are visible;
-  longer lists scroll within the panel.
-- On mobile and tablet, it appears above the audio/video controls, with space for at least two complete sources when available.
-- A bottom chevron indicates that more sources are available below.
+### Dialog mode
 
-Add this separate loader to **Custom JS**, keeping the main theme loader:
+Play or Resume opens the dialog on supported media details pages. Choose a version,
+adjust available audio/subtitle tracks, then confirm playback. Selecting a source
+alone never starts playback. The original Play/Resume action is preserved.
+Closing without confirmation does not start playback; chosen settings remain on
+the native form. The native track block, including its video summary, is hidden
+while this mode is active.
 
-```js
-(() => {
-  const id = 'lumaaglaass-source-panel-script';
-  if (document.getElementById(id)) return;
+Native labels, typography and controls are reused; Close and Play have English
+fallbacks if native translations are unavailable. Unsupported browsers or pages
+without a usable native version selector retain native behavior. Home banners,
+trailers and shuffle are not intercepted.
 
-  const script = document.createElement('script');
-  script.id = id;
-  script.src = 'https://cdn.jsdelivr.net/gh/Dyhlio/LumaaGlaass@main/assets/extensions/source-panel.js';
-  script.onerror = () => {
-    script.remove();
-    console.error('LumaaGlaass source panel could not be loaded.');
-  };
-  document.head.appendChild(script);
-})();
-```
+### Compatibility and removal
 
-Alternatively, paste [source-panel.js](../assets/extensions/source-panel.js) after the main theme
-script. Use only one method and remove any previously pasted source panel prototype.
-The extension includes its own styles; no additional CSS import is needed.
+Use only this loader, not the retired panel/dialog loaders. The extension stops
+already-running legacy instances when loaded, but their loaders must be removed
+to prevent later asynchronous reactivation.
 
-Save and fully reload. To disable it, remove only its loader or pasted script and
-reload. The main theme files remain unchanged. Available on `main`, not in v1.0.0.
+Media actions and the in-player version switcher remain separate options.
+The latter changes versions during playback and works with all three modes.
+No mode manufactures audio/subtitle tracks missing from Remux.
+Native dropdown rendering can vary by browser. Tested on Remux using Jellyfin Web
+10.11.11; other clients and versions have not been validated.
+
+To return to native controls, set `mode: 'native'` or remove this extension and
+reload. Keep the main theme installed. Available on `main`; older release tags
+may not contain this file.
 
 ## Filter mixed collections
 
@@ -403,8 +400,8 @@ the CDN files or replace the whole theme just to change these values.
 
 - **An option does not appear:** save and fully reload first. Confirm that its code
   is in the correct field and that the base theme is still installed.
-- **No source panel:** it appears only when the native details page offers multiple
-  versions. It is stopped when the playback dialog is enabled.
+- **No source panel:** set source selection to `panel` and reload. The panel appears
+  only when the native details page offers multiple versions.
 - **No collection filter:** it appears only in collections containing both movies
   and series.
 - **No audio or subtitle choices:** the dialog mirrors the options exposed by
