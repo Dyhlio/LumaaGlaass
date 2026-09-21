@@ -21,6 +21,7 @@ Keep the **Dark** base theme selected.
 | [Playback selection dialog](#playback-selection-dialog) | Choose a version and its tracks after pressing Play | Custom JS |
 | [Source selection panel](#source-selection-panel) | Browse versions directly on the details page | Custom JS |
 | [In-player version switcher](#in-player-version-switcher) | Change versions during playback and resume at the current timestamp | Custom JS |
+| [Media actions](#media-actions) | Configure native, information or hidden shortcuts by media type and context | Custom JS |
 | [Filter mixed collections](#filter-mixed-collections) | Show all items, movies only, or series only | Custom JS |
 | [Hide count indicators](#hide-count-indicators) | Hide numeric badges on cards and lists | Custom CSS |
 | [Visual adjustments](#visual-adjustments) | Adjust shared panel and selection colors | Custom CSS |
@@ -29,6 +30,126 @@ Keep the **Dark** base theme selected.
 ways to choose a version. The collection filter and hidden count badges can be
 used with either one, or with the default version dropdown.
 The in-player version switcher can also be used with either option or on its own.
+
+## Media actions
+
+One optional script controls thumbnail shortcuts and selected details-page buttons.
+It replaces details-first navigation and image button hiding. Remove their loaders
+or pasted scripts before installing this option. Keep the main theme and unrelated
+extensions. The source panel, playback dialog and in-player version switcher remain
+independent.
+
+### Install and configure
+
+Paste this complete loader into **Remux > Branding > Custom JS** after the main
+theme loader. The values below are the defaults. Edit modes here, save and fully
+reload Remux; there is no need to edit the downloaded script.
+
+```javascript
+(() => {
+  window.LumaaGlaassMediaActionsOptions = {
+    catalog: {
+      movies: 'hide',
+      episodes: 'hide',
+      series: 'hide',
+      seasons: 'hide',
+      collections: 'hide',
+      libraries: 'hide',
+      folders: 'hide'
+    },
+    seasonEpisodeImages: 'details',
+    resumeImages: {
+      home: { movies: 'native', episodes: 'native' },
+      elsewhere: { movies: 'hide', episodes: 'hide' }
+    },
+    resumeDetailButtons: { movies: 'native', episodes: 'native' },
+    detailPages: {
+      collections: 'hide',
+      series: 'details',
+      seasons: 'details'
+    }
+  };
+
+  const id = 'lumaaglaass-media-actions-script';
+  if (document.getElementById(id)) return;
+  const script = document.createElement('script');
+  script.id = id;
+  script.src = 'https://cdn.jsdelivr.net/gh/Dyhlio/LumaaGlaass@main/assets/extensions/media-actions.js';
+  script.onerror = () => {
+    script.remove();
+    console.error('LumaaGlaass media actions could not be loaded.');
+  };
+  document.head.appendChild(script);
+})();
+```
+
+Alternatively, define the same configuration object and paste the complete
+[media-actions.js](../assets/extensions/media-actions.js) below it. Use one method
+only. Pasted copies require manual updates. To remove the feature, remove its
+configuration and loader or pasted script, then reload.
+
+### Modes
+
+| Mode | Image shortcuts | Collection, series or season main button |
+| --- | --- | --- |
+| `native` | Keep native controls and actions | Keep the original button |
+| `details` | Replace an existing Play shortcut with an information icon opening its details | Show Open and navigate to the selected content's details |
+| `hide` | Hide overlay controls, preserving image links, progress and badges | Hide the main Play/Open button |
+
+The information mode does not create buttons where none existed. Favorites, watched
+and menu controls stay unchanged in information mode; image hide mode hides those
+overlay controls too. Clicks on the image itself retain their native action.
+
+### Settings and priority
+
+| Setting | Scope |
+| --- | --- |
+| `catalog.movies` | Movie thumbnails |
+| `catalog.episodes` | Episode thumbnails outside the higher-priority cases below |
+| `catalog.series` | Series thumbnails |
+| `catalog.seasons` | Season thumbnails |
+| `catalog.collections` | BoxSet collection thumbnails |
+| `catalog.libraries` | CollectionFolder and UserView library thumbnails |
+| `catalog.folders` | Folder thumbnails |
+| `seasonEpisodeImages` | Episode images in a details page's child list |
+| `resumeImages.home.movies/episodes` | Started movie/episode thumbnails on the home page |
+| `resumeImages.elsewhere.movies/episodes` | Started movie/episode thumbnails on other pages |
+| `resumeDetailButtons.movies/episodes` | Resume button on a started movie/episode details page |
+| `detailPages.collections/series/seasons` | Main button on the corresponding container details page |
+
+Types are determined from Jellyfin metadata, never names such as Netflix or
+Populaire. Films inside a collection follow movie rules, not collection rules.
+Home detection uses the home route and home page container, not translated headings.
+Resume image rules apply to saved positive playback positions and override both
+season episode image and catalog rules. Season episode image rules override catalog
+episode rules. No setting deletes or rewrites saved playback progress.
+
+`resumeDetailButtons` accepts only `native` or `hide`: opening details when already
+on the same page would be redundant. It does not hide the separate restart button.
+Unstarted movie/episode main buttons and player controls remain unchanged.
+Resumable series, seasons and collections retain native controls.
+
+Missing options use the defaults shown above. Invalid modes fall back to native
+behavior. For example, set `catalog.collections: 'native'` to preserve collection
+image controls, or `resumeImages.elsewhere.episodes: 'details'` to open details
+from episode resume shortcuts outside the home page.
+
+### Compatibility and limitations
+
+Open on a series uses Next Up; a season stays within its own episodes, selecting
+the first unplayed episode or the first episode if all are watched. A collection
+opens the first item in native collection playback order. Metadata failures do
+not hide native controls; failed target lookup displays a translated status.
+
+Labels use Jellyfin's native translator. If translation is unavailable, information
+replacements remain native. Music, live TV, chapters, playlist items and player
+controls are excluded. Only Remux using Jellyfin Web 10.11.11 has been validated.
+
+Do not also load `details-first.js` or `hide-image-buttons.js`. Those retired
+installation URLs are replaced by this single option. Their settings objects are
+not automatically migrated: use the explicit configuration above. The new script
+stops already-running legacy instances when loaded, but removing their loaders is
+still necessary to avoid asynchronous reactivation.
 
 ## In-player version switcher
 
