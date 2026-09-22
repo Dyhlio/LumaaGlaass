@@ -156,7 +156,8 @@
   let elapsed = 0, lastTick = 0, frame = 0, wasRunning = false;
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
   let hero = null, items = [], client = null, identity = '', index = 0;
-  let lastHomeArt = '', lastHomeArtKey = '';
+  let lastBackgroundArt = '', lastBackgroundKey = '';
+  let backgroundRequest = null;
   let stopped = false, loading = false, retryAt = 0, generation = 0;
   let hovered = false, focused = false, touching = false, pending = null;
   let action = 0, scheduled = 0, lastError = '';
@@ -204,25 +205,55 @@
     document.documentElement.style.removeProperty('--aa-art');
     hovered = focused = touching = false;
   }
-  // Backgrounds - Reuse home artwork on neutral pages within the same session.
+  // Backgrounds - Keep only loaded artwork from the currently visible view.
+  // Memory is session-scoped; late image loads must never replace a newer view.
+  function rememberBackground(art, key, page) {
+    if (stopped || !enabled() || !key || key !== sessionKey(currentClient()) || !visible(page)) return;
+    const match = /^url\(["']?(.*?)["']?\)$/.exec(art || '');
+    if (!match || !match[1]) return;
+    if (art === lastBackgroundArt && key === lastBackgroundKey) {
+      if (backgroundRequest && backgroundRequest.art !== art) {
+        backgroundRequest.image.onload = backgroundRequest.image.onerror = null;
+        backgroundRequest = null;
+      }
+      return;
+    }
+    const hash = location.hash;
+    if (backgroundRequest?.art === art && backgroundRequest.key === key && backgroundRequest.page === page && backgroundRequest.hash === hash) return;
+    if (backgroundRequest) backgroundRequest.image.onload = backgroundRequest.image.onerror = null;
+    const image = new Image(), request = { art, key, page, hash, image };
+    backgroundRequest = request;
+    image.onload = () => {
+      image.onload = image.onerror = null;
+      if (backgroundRequest !== request || stopped || !enabled() || !image.naturalWidth ||
+          key !== sessionKey(currentClient()) || location.hash !== hash || !visible(page)) return;
+      lastBackgroundArt = art; lastBackgroundKey = key;
+    };
+    // Retain a failed candidate until the view or URL changes; do not poll-fetch it.
+    image.onerror = () => { image.onload = image.onerror = null; };
+    image.src = match[1];
+  }
+  // Backgrounds - Reuse the last valid artwork on neutral pages in this session.
   function syncSearchArt() {
     const root = document.documentElement, key = sessionKey(currentClient());
-    if (!enabled() || !key || (lastHomeArtKey && key !== lastHomeArtKey)) {
-      lastHomeArt = ''; lastHomeArtKey = '';
+    if (!enabled() || !key || (lastBackgroundKey && key !== lastBackgroundKey)) {
+      lastBackgroundArt = ''; lastBackgroundKey = '';
+      if (backgroundRequest) backgroundRequest.image.onload = backgroundRequest.image.onerror = null;
+      backgroundRequest = null;
     }
     const currentRoute = route();
     const page = [...document.querySelectorAll('.page')].find(visible);
     // Match whole route segments, not preference names containing "home" or "playback".
     const excluded = /^#\/(?:home|details|video|playback|queue|login|signin|wizard|setup)(?:\/|$)/i.test(currentRoute);
-    const hasOwnArt = page && (page.matches('.itemDetailPage,.aa-collection-page') ||
+    const hasOwnArt = page && (page.matches('.itemDetailPage,.aa-collection-page,.aa-library-page') ||
       [...page.querySelectorAll('.itemBackdrop')].some(visible));
     // Loading routes may have no visible page. Keep the state boolean so the
     // class observer settles instead of repeatedly toggling an absent class.
     const eligible = currentRoute === '#/search' || Boolean(page && !excluded && !hasOwnArt);
-    const active = !stopped && eligible && !!lastHomeArt && key === lastHomeArtKey;
+    const active = !stopped && eligible && !!lastBackgroundArt && key === lastBackgroundKey;
     if (root.classList.contains('aa-search-art') !== active) root.classList.toggle('aa-search-art', active);
     if (active) {
-      if (root.style.getPropertyValue('--aa-search-art') !== lastHomeArt) root.style.setProperty('--aa-search-art', lastHomeArt);
+      if (root.style.getPropertyValue('--aa-search-art') !== lastBackgroundArt) root.style.setProperty('--aa-search-art', lastBackgroundArt);
     } else root.style.removeProperty('--aa-search-art');
   }
   function setStatus(key) {
@@ -278,9 +309,9 @@
     elapsed = 0; lastTick = performance.now(); wasRunning = false;
     index = (next + items.length) % items.length;
     const item = items[index];
-    lastHomeArt = 'url(' + JSON.stringify(backdrop(item)) + ')';
-    lastHomeArtKey = identity;
-    document.documentElement.style.setProperty('--aa-art', lastHomeArt);
+    const art = 'url(' + JSON.stringify(backdrop(item)) + ')';
+    document.documentElement.style.setProperty('--aa-art', art);
+    rememberBackground(art, identity, hero);
     document.documentElement.classList.add('aa-home-art');
     hero.querySelectorAll('.aa-hero-backdrops > div').forEach((n, i) => n.classList.toggle('aa-active', i === index));
     hero.querySelectorAll('.aa-hero-dot').forEach((n, i) => {
@@ -407,6 +438,7 @@
       collectionScene = {id,key,kind,page,art:'none',loading:false,retry:0};
     }
     const scene = collectionScene, art = scene.art;
+    rememberBackground(art, key, page);
     for(const node of [page, document.documentElement]) if(node.style.getPropertyValue('--aa-collection-art') !== art) node.style.setProperty('--aa-collection-art',art);
     if(!document.documentElement.classList.contains('aa-collection-art')) document.documentElement.classList.add('aa-collection-art');
     if (!scene.loading && scene.art === 'none' && Date.now() >= scene.retry && typeof api.getItems === 'function') void loadCollectionScene(scene, api, page);
@@ -521,6 +553,10 @@
       if (background && background !== 'none' && backdrop.style.getPropertyValue('--aa-detail-fallback') !== background) {
         backdrop.style.setProperty('--aa-detail-fallback', background); detailFallbacks.set(backdrop, true);
       }
+      if (route() === '#/details' && visible(page)) {
+        rememberBackground(missing ? background : getComputedStyle(backdrop).backgroundImage,
+          sessionKey(currentClient()), page);
+      }
     });
     // Compatibility - Preserve native selectors and options.
     // ChildList mutations, including selectedcontent, trigger Remux resets.
@@ -563,13 +599,13 @@
   // Synchronization - Handle route and content changes without unnecessary home remounts.
   const schedule = () => {
     if (stopped) return;
-    syncSearchArt();
     syncDetailMetadata();
     syncLanguage();
     // Navigation - Apply collection layout before the next paint.
     // Only the heavier home mounting work is debounced.
     if (enabled() && sessionKey(currentClient())) syncCollection();
     else clearCollection();
+    syncSearchArt();
     if (scheduled) return;
     scheduled = setTimeout(() => { scheduled = 0; void mount(); }, 150);
   };
@@ -666,6 +702,8 @@
   // Lifecycle - Expose status and remove theme effects when stopped.
   window[KEY] = { get status() { return { active: !!hero?.isConnected, items: items.length, loading, error: lastError }; }, stop() {
     stopped = true; generation++; action++; pending = null;
+    if (backgroundRequest) backgroundRequest.image.onload = backgroundRequest.image.onerror = null;
+    backgroundRequest = null;
     observer.disconnect(); listeners.forEach(fn => fn());
     for (const [tags, wrapper] of detailMetadata) { if (wrapper.isConnected && tags.parentNode === wrapper) wrapper.before(tags); wrapper.remove(); }
     detailMetadata.clear();
@@ -674,7 +712,7 @@
     for (const backdrop of detailFallbacks.keys()) { backdrop.style.removeProperty('--aa-detail-fallback'); backdrop.classList.remove('aa-detail-no-backdrop'); }
     detailFallbacks.clear();
     clearTimeout(scheduled); clearInterval(poll); cancelAnimationFrame(frame); stopGlass(); removeHero(); clearCollection();
-    lastHomeArt = ''; lastHomeArtKey = ''; syncSearchArt();
+    lastBackgroundArt = ''; lastBackgroundKey = ''; syncSearchArt();
     delete window[KEY];
   } };
   schedule();
