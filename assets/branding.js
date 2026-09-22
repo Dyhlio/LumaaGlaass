@@ -204,13 +204,22 @@
     document.documentElement.style.removeProperty('--aa-art');
     hovered = focused = touching = false;
   }
-  // Search - Reuse the last home background only for the same account and server.
+  // Backgrounds - Reuse home artwork on neutral pages within the same session.
   function syncSearchArt() {
     const root = document.documentElement, key = sessionKey(currentClient());
     if (!enabled() || !key || (lastHomeArtKey && key !== lastHomeArtKey)) {
       lastHomeArt = ''; lastHomeArtKey = '';
     }
-    const active = !stopped && route() === '#/search' && !!lastHomeArt && key === lastHomeArtKey;
+    const currentRoute = route();
+    const page = [...document.querySelectorAll('.page')].find(visible);
+    // Match whole route segments, not preference names containing "home" or "playback".
+    const excluded = /^#\/(?:home|details|video|playback|queue|login|signin|wizard|setup)(?:\/|$)/i.test(currentRoute);
+    const hasOwnArt = page && (page.matches('.itemDetailPage,.aa-collection-page') ||
+      [...page.querySelectorAll('.itemBackdrop')].some(visible));
+    // Loading routes may have no visible page. Keep the state boolean so the
+    // class observer settles instead of repeatedly toggling an absent class.
+    const eligible = currentRoute === '#/search' || Boolean(page && !excluded && !hasOwnArt);
+    const active = !stopped && eligible && !!lastHomeArt && key === lastHomeArtKey;
     if (root.classList.contains('aa-search-art') !== active) root.classList.toggle('aa-search-art', active);
     if (active) {
       if (root.style.getPropertyValue('--aa-search-art') !== lastHomeArt) root.style.setProperty('--aa-search-art', lastHomeArt);

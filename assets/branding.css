@@ -3482,6 +3482,8 @@ html body .listItem:is([data-id],[data-type]):is(:hover,:focus-within) {
  }
 }
 
+/* Reuse the search backdrop only where the companion theme script enables it. */
+html.aa-search-art .page:not(.hide):not([hidden]) { background-color:transparent!important; }
 @supports(appearance:base-select) {
  html body select.emby-select:not([multiple]):not([size]:not([size="0"]):not([size="1"])):not(.detailTrackSelect),
  html body select.emby-select:not([multiple]):not([size]:not([size="0"]):not([size="1"])):not(.detailTrackSelect)::picker(select) {
