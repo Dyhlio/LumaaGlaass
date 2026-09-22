@@ -3482,6 +3482,25 @@ html body .listItem:is([data-id],[data-type]):is(:hover,:focus-within) {
  }
 }
 
+/* Native image fallbacks: reuse Remux placeholders and theme colors.
+   Color stays beneath background images; no new overlay, timer or loading state. */
+html body :is(.cardPadder:has(.cardImageIcon),.defaultCardBackground,.listItemImage.lazy) {
+ background-color:var(--aa-surface,rgba(30,30,32,.4))!important;
+}
+html body :is(.cardPadder,.defaultCardBackground,.listItemImage) .cardImageIcon {
+ color:var(--aa-text,#f5f5f7)!important;
+ opacity:.45;
+ text-shadow:none;
+}
+@media(forced-colors:active) {
+ html body :is(.cardPadder:has(.cardImageIcon),.defaultCardBackground,.listItemImage.lazy) {
+  background-color:Canvas!important;
+ }
+ html body :is(.cardPadder,.defaultCardBackground,.listItemImage) .cardImageIcon {
+  color:CanvasText!important; opacity:1;
+ }
+}
+
 /* Native secondary controls: glass on interaction only, no new resting surface. */
 @layer lg-glass-controls {
  html body :is(#videoOsdPage .paper-icon-button-light,
