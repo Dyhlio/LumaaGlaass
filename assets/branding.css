@@ -3482,6 +3482,63 @@ html body .listItem:is([data-id],[data-type]):is(:hover,:focus-within) {
  }
 }
 
+@supports(appearance:base-select) {
+ html body select.emby-select:not([multiple]):not([size]:not([size="0"]):not([size="1"])):not(.detailTrackSelect),
+ html body select.emby-select:not([multiple]):not([size]:not([size="0"]):not([size="1"])):not(.detailTrackSelect)::picker(select) {
+  appearance:base-select!important;
+ }
+ html body select.emby-select:not([multiple]):not([size]:not([size="0"]):not([size="1"])):not(.detailTrackSelect) {
+  background-color:var(--aa-surface)!important; background-image:none!important;
+  color:var(--aa-text)!important; border:1px solid var(--aa-surface-edge)!important;
+  /* Match version controls: one flex row and one native glass picker icon. */
+  display:flex!important; align-items:center; column-gap:12px;
+  box-sizing:border-box; border-radius:14px!important;
+  min-height:48px; padding:7px 10px 7px 14px!important;
+ }
+ html body select.emby-select:not([multiple]):not([size]:not([size="0"]):not([size="1"])):not(.detailTrackSelect) ~ .selectArrowContainer {
+  display:none!important;
+ }
+ html body select.emby-select:not([multiple]):not([size]:not([size="0"]):not([size="1"])):not(.detailTrackSelect)::picker-icon {
+  content:""; display:block; flex:0 0 32px; width:32px; height:32px;
+  margin-inline-start:auto;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='white' fill-opacity='.12' stroke='white' stroke-opacity='.3'/%3E%3Cpath d='m12 14 4 4 4-4' fill='none' stroke='%23f5f5f7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/32px 32px no-repeat;
+ }
+ html body select.emby-select:not([multiple]):not([size]:not([size="0"]):not([size="1"])):not(.detailTrackSelect)::picker(select) {
+  background:var(--aa-surface)!important; color:var(--aa-text)!important;
+  backdrop-filter:blur(var(--aa-panel-blur,32px)); -webkit-backdrop-filter:blur(var(--aa-panel-blur,32px));
+  border:1px solid var(--aa-surface-edge); border-radius:16px;
+  padding:6px; margin-block:8px; box-sizing:border-box; width:anchor-size(width);
+  max-width:calc(100vw - 24px); max-height:min(360px,55dvh); overflow:auto;
+  overscroll-behavior:contain; box-shadow:0 12px 36px rgba(0,0,0,.3);
+ }
+ html body select.emby-select:not([multiple]):not([size]:not([size="0"]):not([size="1"])):not(.detailTrackSelect) option {
+  background:transparent!important; color:var(--aa-text)!important;
+  padding:12px; min-height:44px; box-sizing:border-box; border-radius:10px; white-space:normal;
+  overflow-wrap:anywhere; font:inherit; line-height:1.5; cursor:pointer; gap:12px;
+ }
+ html body select.emby-select:not([multiple]):not([size]:not([size="0"]):not([size="1"])):not(.detailTrackSelect) option + option {
+  margin-block-start:var(--aa-option-gap);
+ }
+ html body select.emby-select:not([multiple]):not([size]:not([size="0"]):not([size="1"])):not(.detailTrackSelect) option:disabled {
+  opacity:.5; cursor:default;
+ }
+ html body select.emby-select:not([multiple]):not([size]:not([size="0"]):not([size="1"])):not(.detailTrackSelect) option:not(:checked):not(:disabled):is(:hover,:focus-visible) {
+  background:var(--aa-ui-hover-surface)!important;
+ }
+ html body select.emby-select:not([multiple]):not([size]:not([size="0"]):not([size="1"])):not(.detailTrackSelect) option:checked {
+  background:var(--aa-ui-selected-surface)!important; font-weight:600;
+ }
+ html body select.emby-select:not([multiple]):not([size]:not([size="0"]):not([size="1"])):not(.detailTrackSelect):focus-visible {
+  outline:2px solid var(--aa-text)!important; outline-offset:2px;
+ }
+ @media(prefers-reduced-transparency:reduce),(forced-colors:active) {
+  html body select.emby-select::picker(select) {
+   background:Canvas!important; color:CanvasText!important; backdrop-filter:none; -webkit-backdrop-filter:none;
+  }
+  html body select.emby-select option { color:CanvasText!important; }
+  html body select.emby-select option:checked { background:Highlight!important; color:HighlightText!important; }
+ }
+}
 /* Native image fallbacks: reuse Remux placeholders and theme colors.
    Color stays beneath background images; no new overlay, timer or loading state. */
 html body :is(.cardPadder:has(.cardImageIcon),.defaultCardBackground,.listItemImage.lazy) {
@@ -3632,11 +3689,21 @@ html body :is(.cardPadder,.defaultCardBackground,.listItemImage) .cardImageIcon 
   filter:none!important;
  }
  @supports(appearance:base-select) {
-  html body :is(.detailTrackSelect,.lg-playback-field select) option:checked {
+  /* Native dropdowns share persistent selection and independent pointer/keyboard feedback. */
+  html body :is(.detailTrackSelect,.lg-playback-field select,select.emby-select:not([multiple]):not([size]:not([size="0"]):not([size="1"]))) option:checked {
    background-color:var(--aa-ui-selected-surface)!important;
   }
-  html body :is(.detailTrackSelect,.lg-playback-field select) option:not(:checked):not(:disabled):hover {
+  html body :is(.detailTrackSelect,.lg-playback-field select,select.emby-select:not([multiple]):not([size]:not([size="0"]):not([size="1"]))) option:not(:checked):not(:disabled):is(:hover,:focus-visible) {
    background-color:var(--aa-ui-hover-surface,rgba(30,30,32,.4))!important;
+  }
+  html body :is(.detailTrackSelect,.lg-playback-field select,select.emby-select:not([multiple]):not([size]:not([size="0"]):not([size="1"]))) option:not(:disabled):is(:hover,:focus-visible) {
+   outline:1px solid rgba(255,255,255,.3); outline-offset:-1px;
+  }
+  @media(forced-colors:active) {
+   html body :is(.detailTrackSelect,.lg-playback-field select,select.emby-select:not([multiple]):not([size]:not([size="0"]):not([size="1"]))) option:checked {
+    background-color:Highlight!important; color:HighlightText!important;
+   }
+   html body :is(.detailTrackSelect,.lg-playback-field select,select.emby-select:not([multiple]):not([size]:not([size="0"]):not([size="1"]))) option:not(:disabled):is(:hover,:focus-visible) { outline-color:Highlight; }
   }
  }
  @media(forced-colors:active) {
