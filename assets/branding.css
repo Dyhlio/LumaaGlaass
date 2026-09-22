@@ -2364,10 +2364,6 @@ body:has(#videoOsdPage) .skinHeader .MuiTypography-root.MuiTypography-body1 {
         background-color: #00000000 !important;
     }
 
-    .cardOverlayContainer {
-        background-color: rgba(0, 0, 0, 0.7);
-    }
-
     .headerTabs.sectionTabs {
         margin-top: -4.9em !important;
     }
@@ -2380,10 +2376,6 @@ body:has(#videoOsdPage) .skinHeader .MuiTypography-root.MuiTypography-body1 {
 
     .cardOverlayButtonIcon {
         background-color: #00000000 !important;
-    }
-
-    .cardOverlayContainer {
-        background-color: rgba(0, 0, 0, 0.7);
     }
 
     .cardOverlayButton {
@@ -3360,6 +3352,386 @@ body #itemDetailPage > .itemBackdrop::after {
 }
 @media(prefers-reduced-transparency:reduce), (forced-colors:active) {
  html body .paperList { background:Canvas!important; color:CanvasText!important; backdrop-filter:none!important; -webkit-backdrop-filter:none!important; }
+}
+@layer lg-glass-controls, lg-interactions;
+
+/* Media - Shared dark glass hover for artwork, rows and their actions. */
+:root {
+ /* Artwork needs a stronger veil than an already tinted menu or panel. */
+ --aa-media-hover-surface:rgba(30,30,32,.6);
+ --aa-ui-hover-surface:rgba(30,30,32,.4);
+ --aa-ui-selected-surface:rgba(255,255,255,.16);
+ --aa-ui-selected-edge:rgba(255,255,255,.45);
+ --aa-ui-hover-edge:rgba(255,255,255,.24);
+ --aa-media-image-action-size:64px;
+}
+html body button:has(.playstatebutton-icon-played) {
+ --aa-media-hover-surface:#f5f5f7;
+}
+html body .cardOverlayContainer {
+ /* An opacity animation creates a temporary backdrop root and changes the glass. */
+ opacity:1!important;
+ visibility:hidden;
+ transition:none!important;
+ /* Overlap the veil beneath the button edge to prevent a bright antialiasing seam. */
+ --aa-media-image-action-radius:calc(var(--aa-media-image-action-size) / 2 - 2px);
+ background:var(--aa-media-hover-surface)!important;
+ border:1px solid var(--aa-surface-edge)!important;
+ backdrop-filter:none!important; -webkit-backdrop-filter:none!important;
+}
+html body .card:is(:hover,:focus-within) .cardOverlayContainer { visibility:visible; }
+html body .cardOverlayButton-hover { opacity:1!important; }
+html body :is(.cardOverlayButton,.listItemImageButton,.listItemButton) {
+ background:var(--aa-surface)!important; color:var(--aa-text)!important;
+ border:1px solid var(--aa-surface-edge)!important; border-radius:50%!important;
+ box-shadow:none!important;
+ backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+ transition:background .2s var(--lumaaglaass-ease),border-color .2s var(--lumaaglaass-ease),transform .2s var(--lumaaglaass-ease)!important;
+}
+html body .cardOverlayButtonIcon {
+ background:transparent!important; border-radius:50%!important;
+ /* The button owns the glass; the glyph must not blur it a second time. */
+ backdrop-filter:none!important; -webkit-backdrop-filter:none!important;
+}
+/* Override the legacy paper-icon-button-light:hover blur without changing episodes. */
+html body .cardOverlayButton {
+ backdrop-filter:blur(18px)!important; -webkit-backdrop-filter:blur(18px)!important;
+}
+html body :is(.cardOverlayButton,.listItemImageButton,.listItemButton):not(:disabled):not([aria-disabled="true"]):is(:hover,:focus-visible) {
+ --aa-surface:var(--aa-media-hover-surface);
+ background:var(--aa-media-hover-surface)!important;
+ border-color:var(--aa-text)!important;
+}
+/* Image actions - Share the episode glass without stacking the artwork veil beneath it. */
+html body :is(.cardOverlayFab-primary,.cardOverlayButton-centered,.listItemImageButton) {
+ /* Keep the glass stable from the first frame, including pointer entry. */
+ transition:border-color .2s var(--lumaaglaass-ease)!important;
+ transform:none!important;
+ width:var(--aa-media-image-action-size)!important;
+ height:var(--aa-media-image-action-size)!important;
+ box-sizing:border-box!important;
+ padding:0!important;
+ display:flex; align-items:center; justify-content:center;
+}
+html body :is(.cardOverlayFab-primary,.cardOverlayButton-centered) {
+ top:50%!important; left:50%!important;
+ margin:calc(var(--aa-media-image-action-size) / -2)!important;
+}
+@media(forced-colors:none) {
+html body .cardOverlayContainer:not([data-lg-media-hide-image] *):has(:is(.cardOverlayFab-primary,.cardOverlayButton-centered):not(.hide):not([hidden])) {
+ background:radial-gradient(circle at center,transparent var(--aa-media-image-action-radius),var(--aa-media-hover-surface) calc(var(--aa-media-image-action-radius) + .5px))!important;
+}
+}
+html body [data-lg-media-hide-image] .cardOverlayContainer {
+ background:var(--aa-media-hover-surface)!important;
+}
+html body :is(.cardOverlayFab-primary,.cardOverlayButton-centered,.listItemImageButton):not(:disabled):not([aria-disabled="true"]):hover {
+ transform:none!important;
+}
+html body :is(.cardOverlayButton,.listItemImageButton,.listItemButton):focus-visible {
+ outline:2px solid var(--aa-text)!important; outline-offset:2px;
+}
+html body .cardOverlayContainer:has(:focus-visible) {
+ outline:2px solid var(--aa-text)!important; outline-offset:-2px;
+}
+html body .listItem:is([data-id],[data-type]):is(:hover,:focus-within) {
+ background:var(--aa-ui-hover-surface)!important; box-shadow:none!important;
+ backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+}
+@media(prefers-reduced-motion:reduce) {
+ html body .cardOverlayContainer:has(:is(.cardOverlayFab-primary,.cardOverlayButton-centered)) {
+  --aa-media-image-action-radius:calc(var(--aa-media-image-action-size) / 2 - 2px)!important;
+ }
+ html body :is(.cardOverlayContainer,.cardOverlayButton,.listItemImageButton,.listItemButton) { transition:none!important; }
+ html body :is(.cardOverlayFab-primary,.cardOverlayButton-centered,.listItemImageButton):not(:disabled):not([aria-disabled="true"]):hover { transform:none!important; }
+}
+@media(forced-colors:active) {
+ html body .card .cardOverlayContainer { background:transparent!important; border-color:Highlight!important; }
+ html body :is(.cardOverlayButton,.listItemImageButton,.listItemButton) {
+  --aa-surface:Canvas!important; --aa-media-hover-surface:Canvas!important; --aa-text:CanvasText!important;
+  background:Canvas!important; color:CanvasText!important; border-color:ButtonText!important;
+  backdrop-filter:none!important; -webkit-backdrop-filter:none!important;
+ }
+ html body :is(.cardOverlayButton,.listItemImageButton,.listItemButton):focus-visible { outline-color:Highlight!important; }
+}
+/* Episode rows - Keep artwork and every action inside narrow season pages. */
+@media(max-width:640px) {
+ html body #itemDetailPage #childrenContent .listItem[data-type="Episode"],
+ html body #itemDetailPage #childrenContent .listItem[data-type="Episode"] > .listItem-content {
+  flex-wrap:wrap; min-width:0; max-width:100%;
+ }
+ html body #itemDetailPage #childrenContent .listItem[data-type="Episode"] .listItemImage {
+  width:100%!important; height:auto!important; aspect-ratio:16 / 9;
+  min-width:0; max-width:100%; margin:0!important; flex:0 0 100%;
+ }
+ html body #itemDetailPage #childrenContent .listItem[data-type="Episode"] .listItemBody {
+  flex:1 1 100%; width:100%; min-width:0; padding:12px 0;
+ }
+ html body #itemDetailPage #childrenContent .listItem[data-type="Episode"] .listViewUserDataButtons {
+  display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px;
+  flex:0 1 100%; width:100%; min-width:0; box-sizing:border-box; padding:4px;
+ }
+ html body #itemDetailPage #childrenContent .listItem[data-type="Episode"] .listViewUserDataButtons .listItemButton {
+  margin:0!important;
+ }
+}
+@media(prefers-reduced-transparency:reduce) {
+ html body :is(.cardOverlayButton,.listItemImageButton,.listItemButton),
+ html body .listItem:is([data-id],[data-type]):is(:hover,:focus-within) {
+  backdrop-filter:none!important; -webkit-backdrop-filter:none!important;
+ }
+}
+
+/* Native secondary controls: glass on interaction only, no new resting surface. */
+@layer lg-glass-controls {
+ html body :is(#videoOsdPage .paper-icon-button-light,
+.osdHeader .headerButton,.libraryPage .paper-icon-button-light,
+.readOnlyContent .paper-icon-button-light,.readOnlyContent .raised,
+#loginPage .btnForgotPassword,.btnQuick):not(:is(
+.cardOverlayButton,.listItemImageButton,.listItemButton,.btnPlay,.button-submit,
+[aria-pressed="true"],[aria-selected="true"],.buttonActive,:has(.playstatebutton-icon-played))):not(:disabled):not([aria-disabled="true"]):is(:hover,:focus-visible) {
+  background:var(--aa-media-hover-surface,rgba(30,30,32,.6))!important;
+  color:var(--aa-text,#f5f5f7)!important;
+  backdrop-filter:blur(18px)!important; -webkit-backdrop-filter:blur(18px)!important;
+  box-shadow:none!important; text-shadow:none!important;
+  transition:border-color .2s var(--lumaaglaass-ease,ease)!important;
+ }
+ html body :is(#videoOsdPage .paper-icon-button-light,
+.osdHeader .headerButton,.libraryPage .paper-icon-button-light,
+.readOnlyContent .paper-icon-button-light,.readOnlyContent .raised,
+#loginPage .btnForgotPassword,.btnQuick):not(:is(
+.cardOverlayButton,.listItemImageButton,.listItemButton,.btnPlay,.button-submit,
+[aria-pressed="true"],[aria-selected="true"],.buttonActive,:has(.playstatebutton-icon-played))):not(:disabled):not([aria-disabled="true"]):is(:hover,:focus-visible):focus-visible {
+  outline:2px solid var(--aa-text,#f5f5f7)!important; outline-offset:2px!important;
+ }
+ @media(prefers-reduced-motion:reduce) {
+  html body :is(#videoOsdPage .paper-icon-button-light,
+.osdHeader .headerButton,.libraryPage .paper-icon-button-light,
+.readOnlyContent .paper-icon-button-light,.readOnlyContent .raised,
+#loginPage .btnForgotPassword,.btnQuick):not(:is(
+.cardOverlayButton,.listItemImageButton,.listItemButton,.btnPlay,.button-submit,
+[aria-pressed="true"],[aria-selected="true"],.buttonActive,:has(.playstatebutton-icon-played))):not(:disabled):not([aria-disabled="true"]):is(:hover,:focus-visible) { transition:none!important; }
+ }
+ @media(prefers-reduced-transparency:reduce),(prefers-contrast:more) {
+  html body :is(#videoOsdPage .paper-icon-button-light,
+.osdHeader .headerButton,.libraryPage .paper-icon-button-light,
+.readOnlyContent .paper-icon-button-light,.readOnlyContent .raised,
+#loginPage .btnForgotPassword,.btnQuick):not(:is(
+.cardOverlayButton,.listItemImageButton,.listItemButton,.btnPlay,.button-submit,
+[aria-pressed="true"],[aria-selected="true"],.buttonActive,:has(.playstatebutton-icon-played))):not(:disabled):not([aria-disabled="true"]):is(:hover,:focus-visible) {
+   background:#30343b!important;
+   backdrop-filter:none!important; -webkit-backdrop-filter:none!important;
+  }
+ }
+ @media(forced-colors:active) {
+  html body :is(#videoOsdPage .paper-icon-button-light,
+.osdHeader .headerButton,.libraryPage .paper-icon-button-light,
+.readOnlyContent .paper-icon-button-light,.readOnlyContent .raised,
+#loginPage .btnForgotPassword,.btnQuick):not(:is(
+.cardOverlayButton,.listItemImageButton,.listItemButton,.btnPlay,.button-submit,
+[aria-pressed="true"],[aria-selected="true"],.buttonActive,:has(.playstatebutton-icon-played))):not(:disabled):not([aria-disabled="true"]):is(:hover,:focus-visible) {
+   background:Canvas!important; color:ButtonText!important; outline-color:Highlight!important;
+   backdrop-filter:none!important; -webkit-backdrop-filter:none!important;
+  }
+ }
+}
+/* Interactions - Layers keep important theme states above late extension styles.
+   Target existing controls without changing native visibility or geometry. */
+@layer lg-interactions {
+ /* MUI select popups use menu items, not native option elements. */
+ html body .MuiMenu-paper .MuiMenuItem-root.Mui-selected,
+ html body .MuiMenu-paper .MuiMenuItem-root[aria-selected="true"] {
+  background-color:var(--aa-ui-selected-surface)!important;
+  color:var(--aa-text,#f5f5f7)!important;
+ }
+ html body .MuiMenu-paper .MuiMenuItem-root:is(.Mui-selected,[aria-selected="true"]) :is(.MuiTypography-root,.MuiSvgIcon-root) {
+  color:var(--aa-text,#f5f5f7)!important;
+ }
+ /* These rows already have borders; changing color adds no layout shift. */
+ html body :is(.listItem[data-type="Episode"],.lg-source-option,
+ .lg-playback-source,.lg-player-version-option):not(:is(:disabled,
+ [aria-disabled="true"],[aria-pressed="true"],[aria-selected="true"],.selected)):is(:hover,:focus-within) {
+  border-color:var(--aa-ui-hover-edge)!important;
+ }
+ /* Selection is persistent, unlike hover. Restrict states to real selectors. */
+ html body :is(.lg-playback-close,.lg-player-version-close):disabled {
+  background-color:var(--aa-surface,rgba(30,30,32,.4))!important;
+ }
+ html body .aa-collection-filter-button:disabled:not([aria-pressed="true"]) {
+  background-color:transparent!important;
+ }
+ html body :is(.lg-source-option,.lg-playback-source,.lg-player-version-option,
+ .aa-collection-filter-button,.emby-tab-button,.navMenuOption,
+ .actionSheetMenuItem,.listItem,.MuiListItemButton-root):is(
+ [aria-pressed="true"],[aria-selected="true"],[aria-current="page"],
+ .selected,.navMenuOption-selected,.emby-tab-button-active,.Mui-selected) {
+  background-color:var(--aa-ui-selected-surface)!important;
+  color:var(--aa-text,#f5f5f7)!important;
+ }
+ html body :is(.lg-source-option,.lg-playback-source,.lg-player-version-option)[aria-pressed="true"] {
+  border-color:var(--aa-ui-selected-edge)!important;
+ }
+ html body .MuiListItemButton-root.Mui-selected :is(.MuiSvgIcon-root,.MuiTypography-root) {
+  color:var(--aa-text,#f5f5f7)!important;
+ }
+ html body .MuiDrawer-paper .MuiListItemButton-root.Mui-selected .MuiListItemIcon-root img[src*="icon-transparent"] {
+  filter:none!important;
+ }
+ /* Match keyboard and pointer feedback without turning focus into selection. */
+ html body :is(.navMenuOption,.actionSheetMenuItem,.listItem,.emby-tab-button,
+ .aa-collection-filter-button,.lg-source-option,.lg-playback-source,
+ .lg-player-version-option):not(:is(:disabled,[aria-disabled="true"],
+ [aria-pressed="true"],[aria-selected="true"],[aria-current="page"],.selected,
+ .navMenuOption-selected,.emby-tab-button-active,.Mui-selected)):focus-visible {
+  background-color:var(--aa-ui-hover-surface)!important;
+ }
+ html body :is(.navMenuOption,.actionSheetMenuItem,.emby-tab-button,
+ .aa-collection-filter-button,.lg-source-option,.lg-playback-source,
+ .lg-player-version-option,.lg-playback-close,.lg-player-version-close):focus-visible {
+  outline:2px solid var(--aa-text,#f5f5f7)!important;
+  outline-offset:-3px!important;
+ }
+ html body :is(.navMenuOption,.actionSheetMenuItem,.listItem,
+.raised,.fab,a[data-role="button"],.paper-icon-button-light,.button-flat,
+.emby-tab-button,.aa-hero-btn,
+.MuiToolbar-root .MuiButton-root,.MuiToolbar-root .MuiIconButton-root,
+.MuiListItemButton-root,.MuiMenu-paper .MuiButtonBase-root,
+.aa-collection-filter-button,.lg-source-option,
+.lg-playback-source,.lg-playback-close,
+.lg-player-version-option,.lg-player-version-close):not(:is(:disabled,[aria-disabled="true"],[aria-pressed="true"],[aria-selected="true"],
+[aria-current="page"],.selected,.navMenuOption-selected,.Mui-selected,
+.emby-tab-button-active,.btnPlay,.btnReplay,.btnPlayTrailer,.button-submit,
+.aa-hero-btn-play,.MuiButton-colorPrimary,.cardOverlayButton,.listItemImageButton,.listItemButton,
+:has(.playstatebutton-icon-played))):hover {
+  background-color:var(--aa-ui-hover-surface,rgba(30,30,32,.4))!important;
+  color:var(--aa-text,#f5f5f7)!important;
+ }
+ /* The old MUI hover used a bright accent with dark labels and icons. */
+ html body :is(.MuiListItemButton-root,.MuiMenu-paper .MuiButtonBase-root):not(.Mui-selected):not([aria-disabled="true"]):hover
+ :is(.MuiSvgIcon-root,.MuiTypography-root) { color:var(--aa-text,#f5f5f7)!important; }
+ html body .MuiDrawer-paper .MuiListItemButton-root:not(.Mui-selected):hover .MuiListItemIcon-root img[src*="icon-transparent"] {
+  filter:none!important;
+ }
+ @supports(appearance:base-select) {
+  html body :is(.detailTrackSelect,.lg-playback-field select) option:checked {
+   background-color:var(--aa-ui-selected-surface)!important;
+  }
+  html body :is(.detailTrackSelect,.lg-playback-field select) option:not(:checked):not(:disabled):hover {
+   background-color:var(--aa-ui-hover-surface,rgba(30,30,32,.4))!important;
+  }
+ }
+ @media(forced-colors:active) {
+  html body .MuiMenu-paper .MuiMenuItem-root:is(.Mui-selected,[aria-selected="true"]),
+  html body .MuiMenu-paper .MuiMenuItem-root:is(.Mui-selected,[aria-selected="true"]) :is(.MuiTypography-root,.MuiSvgIcon-root) {
+   background-color:Highlight!important; color:HighlightText!important;
+  }
+  :root {
+   --aa-ui-hover-surface:Canvas;
+   --aa-ui-selected-surface:Highlight;
+   --aa-ui-selected-edge:Highlight;
+  }
+  html body :is(.navMenuOption,.actionSheetMenuItem,.listItem,.emby-tab-button,
+  .aa-collection-filter-button,.lg-source-option,.lg-playback-source,
+  .lg-player-version-option):not(:is(:disabled,[aria-disabled="true"],
+  [aria-pressed="true"],[aria-selected="true"],[aria-current="page"],.selected,
+  .navMenuOption-selected,.emby-tab-button-active,.Mui-selected)):focus-visible {
+   background-color:Canvas!important; color:CanvasText!important;
+  }
+  html body :is(.lg-source-option,.lg-playback-source,.lg-player-version-option,
+  .aa-collection-filter-button,.emby-tab-button,.navMenuOption,
+  .actionSheetMenuItem,.listItem,.MuiListItemButton-root):is(
+  [aria-pressed="true"],[aria-selected="true"],[aria-current="page"],
+  .selected,.navMenuOption-selected,.emby-tab-button-active,.Mui-selected) {
+   background-color:Highlight!important; color:HighlightText!important;
+   border-color:Highlight!important;
+  }
+  html body .MuiListItemButton-root.Mui-selected :is(.MuiSvgIcon-root,.MuiTypography-root) {
+   color:HighlightText!important;
+  }
+  html body :is(.navMenuOption,.actionSheetMenuItem,.emby-tab-button,
+  .aa-collection-filter-button,.lg-source-option,.lg-playback-source,
+  .lg-player-version-option,.lg-playback-close,.lg-player-version-close):focus-visible {
+   outline-color:Highlight!important;
+  }
+  html body :is(.navMenuOption,.actionSheetMenuItem,.listItem,
+.raised,.fab,a[data-role="button"],.paper-icon-button-light,.button-flat,
+.emby-tab-button,.aa-hero-btn,
+.MuiToolbar-root .MuiButton-root,.MuiToolbar-root .MuiIconButton-root,
+.MuiListItemButton-root,.MuiMenu-paper .MuiButtonBase-root,
+.aa-collection-filter-button,.lg-source-option,
+.lg-playback-source,.lg-playback-close,
+.lg-player-version-option,.lg-player-version-close):not(:is(:disabled,[aria-disabled="true"],[aria-pressed="true"],[aria-selected="true"],
+[aria-current="page"],.selected,.navMenuOption-selected,.Mui-selected,
+.emby-tab-button-active,.btnPlay,.btnReplay,.btnPlayTrailer,.button-submit,
+.aa-hero-btn-play,.MuiButton-colorPrimary,.cardOverlayButton,.listItemImageButton,.listItemButton,
+:has(.playstatebutton-icon-played))):hover {
+   background-color:Canvas!important; color:CanvasText!important;
+  }
+  html body :is(.MuiListItemButton-root,.MuiMenu-paper .MuiButtonBase-root):not(.Mui-selected):not([aria-disabled="true"]):hover
+  :is(.MuiSvgIcon-root,.MuiTypography-root) { color:CanvasText!important; }
+ }
+}
+
+/* Existing standalone glass buttons only. Keep geometry, visibility, primary
+   actions and persistent states native. Artwork cutouts are not reused here. */
+@layer lg-glass-controls {
+ html body :is(.skinHeader:not(.osdHeader) .headerButton:not(.headerUserButtonRound),
+.aa-hero-btn-info,.mainDetailButtons .detailButton,
+.lg-playback-close,.lg-player-version-close):not(:is(.btnPlay,.btnReplay,.btnPlayTrailer,.button-submit,:has(.playstatebutton-icon-played),
+[aria-pressed="true"],[aria-selected="true"],[aria-current="page"],.buttonActive)) {
+  background:var(--aa-surface,rgba(30,30,32,.4))!important;
+  color:var(--aa-text,#f5f5f7)!important;
+  border-color:var(--aa-surface-edge,rgba(255,255,255,.12))!important;
+  backdrop-filter:blur(18px)!important; -webkit-backdrop-filter:blur(18px)!important;
+  box-shadow:none!important; text-shadow:none!important;
+  transition:border-color .2s var(--lumaaglaass-ease,ease)!important;
+ }
+ html body :is(.skinHeader:not(.osdHeader) .headerButton:not(.headerUserButtonRound),
+.aa-hero-btn-info,.mainDetailButtons .detailButton,
+.lg-playback-close,.lg-player-version-close):not(:is(.btnPlay,.btnReplay,.btnPlayTrailer,.button-submit,:has(.playstatebutton-icon-played),
+[aria-pressed="true"],[aria-selected="true"],[aria-current="page"],.buttonActive)):not(:disabled):not([aria-disabled="true"]):is(:hover,:focus-visible) {
+  background:var(--aa-media-hover-surface,rgba(30,30,32,.6))!important;
+  border-color:var(--aa-text,#f5f5f7)!important;
+ }
+ html body :is(.skinHeader:not(.osdHeader) .headerButton:not(.headerUserButtonRound),
+.aa-hero-btn-info,.mainDetailButtons .detailButton,
+.lg-playback-close,.lg-player-version-close):not(:is(.btnPlay,.btnReplay,.btnPlayTrailer,.button-submit,:has(.playstatebutton-icon-played),
+[aria-pressed="true"],[aria-selected="true"],[aria-current="page"],.buttonActive)):focus-visible {
+  outline:2px solid var(--aa-text,#f5f5f7)!important;
+  outline-offset:2px!important;
+ }
+ @media(prefers-reduced-motion:reduce) {
+  html body :is(.skinHeader:not(.osdHeader) .headerButton:not(.headerUserButtonRound),
+.aa-hero-btn-info,.mainDetailButtons .detailButton,
+.lg-playback-close,.lg-player-version-close):not(:is(.btnPlay,.btnReplay,.btnPlayTrailer,.button-submit,:has(.playstatebutton-icon-played),
+[aria-pressed="true"],[aria-selected="true"],[aria-current="page"],.buttonActive)) { transition:none!important; }
+ }
+ @media(prefers-reduced-transparency:reduce),(prefers-contrast:more) {
+  html body :is(.skinHeader:not(.osdHeader) .headerButton:not(.headerUserButtonRound),
+.aa-hero-btn-info,.mainDetailButtons .detailButton,
+.lg-playback-close,.lg-player-version-close):not(:is(.btnPlay,.btnReplay,.btnPlayTrailer,.button-submit,:has(.playstatebutton-icon-played),
+[aria-pressed="true"],[aria-selected="true"],[aria-current="page"],.buttonActive)),
+  html body :is(.skinHeader:not(.osdHeader) .headerButton:not(.headerUserButtonRound),
+.aa-hero-btn-info,.mainDetailButtons .detailButton,
+.lg-playback-close,.lg-player-version-close):not(:is(.btnPlay,.btnReplay,.btnPlayTrailer,.button-submit,:has(.playstatebutton-icon-played),
+[aria-pressed="true"],[aria-selected="true"],[aria-current="page"],.buttonActive)):not(:disabled):not([aria-disabled="true"]):is(:hover,:focus-visible) {
+   background:#30343b!important;
+   backdrop-filter:none!important; -webkit-backdrop-filter:none!important;
+  }
+ }
+ @media(forced-colors:active) {
+  html body :is(.skinHeader:not(.osdHeader) .headerButton:not(.headerUserButtonRound),
+.aa-hero-btn-info,.mainDetailButtons .detailButton,
+.lg-playback-close,.lg-player-version-close):not(:is(.btnPlay,.btnReplay,.btnPlayTrailer,.button-submit,:has(.playstatebutton-icon-played),
+[aria-pressed="true"],[aria-selected="true"],[aria-current="page"],.buttonActive)),html body :is(.skinHeader:not(.osdHeader) .headerButton:not(.headerUserButtonRound),
+.aa-hero-btn-info,.mainDetailButtons .detailButton,
+.lg-playback-close,.lg-player-version-close):not(:is(.btnPlay,.btnReplay,.btnPlayTrailer,.button-submit,:has(.playstatebutton-icon-played),
+[aria-pressed="true"],[aria-selected="true"],[aria-current="page"],.buttonActive)):is(:hover,:focus-visible) {
+   background:Canvas!important; color:ButtonText!important; border-color:ButtonText!important;
+   backdrop-filter:none!important; -webkit-backdrop-filter:none!important;
+   outline-color:Highlight!important;
+  }
+ }
 }
 /* States - Preserve native semantic colors, including on parent hover. */
 html body .ratingbutton-icon-withrating,
