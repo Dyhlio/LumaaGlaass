@@ -345,7 +345,10 @@
     const actions = element('div', 'aa-hero-actions');
     const playButton = element('button', 'aa-hero-btn aa-hero-btn-play', translate('Play'));
     playButton.type = 'button';
-    const infoButton = element('a', 'aa-hero-btn aa-hero-btn-info', 'i');
+    const infoButton = element('a', 'aa-hero-btn aa-hero-btn-info');
+    const infoIcon = element('span', 'material-icons info');
+    infoIcon.setAttribute('aria-hidden', 'true');
+    infoButton.append(infoIcon);
     infoButton.setAttribute('aria-label', translate('ItemDetails'));
     infoButton.title = translate('ItemDetails');
     actions.append(playButton, infoButton);

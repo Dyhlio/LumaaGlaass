@@ -2949,7 +2949,13 @@ html:is(.aa-home-art,.aa-search-art) .backgroundContainer::before { content:""; 
 .aa-hero .aa-hero-controls { position:absolute; bottom:12px; left:16px; right:16px; margin:0; justify-content:center; }
 .aa-hero .aa-hero-dots { justify-content:center; }
 .aa-hero .aa-hero-btn-info { width:46px; height:46px; min-width:46px; padding:0; border-radius:50%; font-size:0!important; overflow:hidden; flex-shrink:0; }
-.aa-hero .aa-hero-btn-info::before { content:"i"; font:700 24px/1 Georgia,serif; }
+.aa-hero .aa-hero-btn-info .material-icons { font-size:24px!important; line-height:1; }
+/* Compatibility - CSS and injected scripts may refresh independently through the CDN.
+   Older scripts render a text label instead of the native icon span. */
+.aa-hero .aa-hero-btn-info:not(:has(.material-icons))::before {
+ content:"\e88e"; font:normal 24px/1 "Material Icons";
+ -webkit-font-smoothing:antialiased;
+}
 /* Compatibility - Hide the obsolete Pause control if an older script remains cached. */
 .aa-hero .aa-hero-controls > .aa-hero-btn { display:none!important; }
 @media(max-width:640px) { .aa-hero { padding-bottom:88px; } }
@@ -3818,6 +3824,28 @@ html body :is(.cardPadder,.defaultCardBackground,.listItemImage) .cardImageIcon 
    background:Canvas!important; color:ButtonText!important; border-color:ButtonText!important;
    backdrop-filter:none!important; -webkit-backdrop-filter:none!important;
    outline-color:Highlight!important;
+  }
+ }
+}
+/* Playback actions - Share motion across primary controls, not artwork overlays.
+   Image buttons retain their stable geometry to avoid seams in the glass veil. */
+@layer lg-glass-controls {
+ html body :is(.aa-hero-btn-play,.mainDetailButtons .btnPlay,.mainDetailButtons .btnReplay,.mainDetailButtons .btnPlayTrailer,.lg-playback-launch) {
+  transform:none!important;
+  transition:background-color .2s var(--lumaaglaass-ease,ease),transform .2s var(--lumaaglaass-ease,ease)!important;
+ }
+ @media(hover:hover) {
+  html body :is(.aa-hero-btn-play,.mainDetailButtons .btnPlay,.mainDetailButtons .btnReplay,.mainDetailButtons .btnPlayTrailer,.lg-playback-launch):not(:disabled):not([aria-disabled="true"]):hover {
+   transform:scale(1.03)!important;
+  }
+ }
+ html body :is(.aa-hero-btn-play,.mainDetailButtons .btnPlay,.mainDetailButtons .btnReplay,.mainDetailButtons .btnPlayTrailer,.lg-playback-launch):not(:disabled):not([aria-disabled="true"]):active {
+  transform:scale(.98)!important;
+ }
+ @media(prefers-reduced-motion:reduce) {
+  html body :is(.aa-hero-btn-play,.mainDetailButtons .btnPlay,.mainDetailButtons .btnReplay,.mainDetailButtons .btnPlayTrailer,.lg-playback-launch),
+  html body :is(.aa-hero-btn-play,.mainDetailButtons .btnPlay,.mainDetailButtons .btnReplay,.mainDetailButtons .btnPlayTrailer,.lg-playback-launch):not(:disabled):not([aria-disabled="true"]):is(:hover,:active) {
+   transform:none!important; transition:none!important;
   }
  }
 }
