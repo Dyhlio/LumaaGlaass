@@ -55,8 +55,9 @@
       .lg-player-version-list::-webkit-scrollbar-thumb { background:rgba(255,255,255,.55); border-radius:8px; }
       .lg-player-version-list::-webkit-scrollbar-thumb:hover { background:rgba(255,255,255,.75); }
       .lg-player-version-option { font:inherit; font-size:14px; color:inherit; text-align:start; line-height:1.5; white-space:pre-wrap; overflow-wrap:anywhere; flex-shrink:0; padding:12px; min-height:44px; border:1px solid var(--aa-glass-edge,rgba(255,255,255,.12)); border-radius:10px; background:var(--aa-surface); cursor:pointer; }
-      .lg-player-version-option[aria-pressed=true] { border-color:rgba(255,255,255,.3); background:var(--aa-selected-surface,rgba(255,255,255,.12)); }
-      .lg-player-version-option:hover:not(:disabled),.lg-player-version-close:hover { background:var(--aa-hover-surface,rgba(255,255,255,.08)); }
+      .lg-player-version-option[aria-pressed=true] { border-color:var(--aa-ui-selected-edge,rgba(255,255,255,.45)); background:var(--aa-ui-selected-surface,rgba(255,255,255,.16)); }
+      .lg-player-version-option:hover:not(:disabled):not([aria-pressed=true]) { background:var(--aa-ui-hover-surface,rgba(30,30,32,.4)); }
+      .lg-player-version-close:hover:not(:disabled) { background:var(--aa-media-hover-surface,rgba(30,30,32,.6)); }
       .lg-player-versions :focus-visible { outline:2px solid white; outline-offset:2px; }
       .lg-player-versions button:disabled { cursor:default; opacity:.45; }
       .lg-player-version-status { margin:12px 0 0; text-align:center; font:inherit; }
