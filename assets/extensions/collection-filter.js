@@ -188,9 +188,9 @@
     cursor: pointer;
     overflow-wrap: anywhere;
 }
-.aa-collection-filter-button:hover { background: rgba(255,255,255,.08); }
+.aa-collection-filter-button:hover:not(:disabled):not([aria-pressed="true"]) { background: var(--aa-ui-hover-surface, rgba(30,30,32,.4)); }
 .aa-collection-filter-button[aria-pressed="true"] {
-    background: var(--aa-selected-surface, rgba(255,255,255,.16));
+    background: var(--aa-ui-selected-surface, rgba(255,255,255,.16));
     color: #fff;
 }
 .aa-collection-filter-button:focus-visible { outline: 2px solid currentColor; outline-offset: -3px; }
