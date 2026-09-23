@@ -55,6 +55,10 @@ LumaaGlaass script or loader, and preserve unrelated scripts:
 
 ```js
 (() => {
+  window.LumaaGlaassOptions = {
+    homeCarousel: true
+  };
+
   const id = 'lumaaglaass-script';
   if (document.getElementById(id)) return;
 
@@ -70,8 +74,15 @@ LumaaGlaass script or loader, and preserve unrelated scripts:
 })();
 ```
 
+The configuration above shows the default. Set `homeCarousel: false` in this
+loader to hide the home carousel while keeping a still media background, then
+save and fully reload. See [Home carousel](docs/customization.md#home-carousel)
+for background behavior. No additional loader is needed.
+
 Alternatively, open [branding.js](assets/branding.js), copy the full file, and paste
 it into **Custom JS** instead of the loader. Use only one method, not both.
+For a pasted copy, place `window.LumaaGlaassOptions = { homeCarousel: false };`
+before the script if you want to disable the carousel.
 The CSS import does not load JavaScript; both installation steps are required.
 
 **3. Save and reload**

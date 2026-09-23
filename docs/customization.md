@@ -32,8 +32,13 @@ switcher can be used with any mode or independently.
 
 ## Home carousel
 
-The home carousel is enabled by default. To hide it, add this configuration
-**before the main theme loader** in Custom JS, then fully reload the client:
+The main loader in the [installation guide](../README.md#installation) includes
+`window.LumaaGlaassOptions` with `homeCarousel: true`, the default.
+To hide the carousel, change that value to `false` directly in the loader,
+then save and fully reload. Do not add a second loader or configuration block.
+
+If you paste the complete main script instead of using the loader, place this
+configuration **before the pasted script**:
 
 ```javascript
 window.LumaaGlaassOptions = {
@@ -42,7 +47,7 @@ window.LumaaGlaassOptions = {
 };
 ```
 
-Set `homeCarousel: true` or remove this option to restore the carousel.
+Set `homeCarousel: true` or remove this property to restore the carousel.
 No additional extension is required. Library and collection headers are unchanged.
 
 Home keeps a successfully loaded backdrop from the same movie/series selection,
