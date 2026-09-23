@@ -56,7 +56,8 @@ LumaaGlaass script or loader, and preserve unrelated scripts:
 ```js
 (() => {
   window.LumaaGlaassOptions = {
-    homeCarousel: true
+    homeCarousel: true,
+    collectionFilter: true
   };
 
   const id = 'lumaaglaass-script';
@@ -74,10 +75,14 @@ LumaaGlaass script or loader, and preserve unrelated scripts:
 })();
 ```
 
-The configuration above shows the default. Set `homeCarousel: false` in this
+The configuration above shows the defaults. Set `homeCarousel: false` in this
 loader to hide the home carousel while keeping a still media background, then
 save and fully reload. See [Home carousel](docs/customization.md#home-carousel)
 for background behavior. No additional loader is needed.
+
+Mixed collections now show All / Movies / Shows by default, including after an
+update. Set `collectionFilter: false` in the same loader to disable the filter.
+Remove its old separate loader; see [Collection filtering](docs/customization.md#filter-mixed-collections).
 
 Alternatively, open [branding.js](assets/branding.js), copy the full file, and paste
 it into **Custom JS** instead of the loader. Use only one method, not both.
@@ -92,7 +97,8 @@ client. On desktop, use **Ctrl+F5** if the previous styling remains.
 
 Once the theme is installed, see the [customization guide](docs/customization.md)
 to enable optional features or adjust its appearance. It includes copy-and-paste
-instructions and explains which options can be combined. All customizations are optional.
+instructions and explains which options can be combined. The collection filter is enabled by default and can be disabled; other extensions
+remain optional.
 
 ### Updating or removing
 
@@ -120,6 +126,7 @@ LumaaGlaass/
 │       ├── collection-filter.js
 │       ├── hide-count-indicators.css
 │       ├── media-actions.js
+│       ├── player-controls.js
 │       ├── player-episode-switcher.js
 │       ├── player-version-switcher.js
 │       └── source-selection.js
@@ -128,6 +135,9 @@ LumaaGlaass/
 ├── LICENSE
 └── README.md
 ```
+
+The old player version/episode files and collection-filter file are compatibility
+entry points; use the documented main options and `player-controls.js` for new installs.
 
 The main theme files live in `assets/`; optional features live in
 `assets/extensions/`. All files are used directly; no compilation is needed. jsDelivr

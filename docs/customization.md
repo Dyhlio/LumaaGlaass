@@ -27,16 +27,15 @@ additional public settings.
 | --- | --- | --- |
 | [Home carousel](#home-carousel) | Hide the home banner while keeping a still media background | Custom JS, before the main loader |
 | [Source selection](#source-selection) | Choose native controls, an inline panel or a playback dialog | Custom JS |
-| [In-player version switcher](#in-player-version-switcher) | Change versions during playback and resume at the current timestamp | Custom JS |
-| [In-player episode switcher](#in-player-episode-switcher) | Browse seasons and play another episode directly in the player | Custom JS |
+| [In-player controls](#in-player-controls) | Enable version switching, episode browsing, or both | Custom JS |
 | [Media actions](#media-actions) | Configure native, information or hidden shortcuts by media type and context | Custom JS |
-| [Filter mixed collections](#filter-mixed-collections) | Show all items, movies only, or series only | Custom JS |
+| [Filter mixed collections](#filter-mixed-collections) | Show all items, movies only, or series only; enabled by default | Main Custom JS options |
 | [Hide count indicators](#hide-count-indicators) | Hide numeric badges on cards and lists | Custom CSS |
 | [Visual adjustments](#visual-adjustments) | Adjust shared panel and selection colors | Custom CSS |
 
 **Source selection provides one mode at a time: native, panel or dialog.**
-The collection filter, hidden count badges, media actions and in-player version
-switcher can be used with any mode or independently.
+The collection filter, hidden count badges, media actions and in-player controls
+can be used with any source-selection mode.
 
 ## Home carousel
 
@@ -68,7 +67,7 @@ session/account is retained when available, otherwise the neutral background sta
 One optional script controls thumbnail shortcuts and selected details-page buttons.
 It replaces details-first navigation and image button hiding. Remove their loaders
 or pasted scripts before installing this option. Keep the main theme and unrelated
-extensions. Source selection and the in-player version and episode switchers remain
+extensions. Source selection and the in-player controls remain
 independent.
 
 ### Install and configure
@@ -183,7 +182,49 @@ not automatically migrated: use the explicit configuration above. The new script
 stops already-running legacy instances when loaded, but removing their loaders is
 still necessary to avoid asynchronous reactivation.
 
+## In-player controls
+
+One optional extension provides both player controls. Enable either feature or both.
+Set options before loading; missing or invalid values default to `true`.
+Save and fully reload after changing options. Both disabled means no player polling.
+
+```javascript
+(() => {
+  window.LumaaGlaassPlayerControlsOptions = {
+    versions: true,
+    episodes: true
+  };
+  const id = 'lumaaglaass-player-controls-script';
+  if (document.getElementById(id)) return;
+  const script = document.createElement('script');
+  script.id = id;
+  script.src = 'https://cdn.jsdelivr.net/gh/Dyhlio/LumaaGlaass@main/assets/extensions/player-controls.js';
+  script.onerror = () => {
+    script.remove();
+    console.error('LumaaGlaass player controls could not be loaded.');
+  };
+  document.head.appendChild(script);
+})();
+```
+
+Keep the main theme installed. Alternatively, define the same configuration and
+paste [player-controls.js](../assets/extensions/player-controls.js) below it.
+Use one method only. Styles are included. Remove the loader or pasted code and
+reload to uninstall. When both controls are enabled, their order is Episodes,
+Versions, Settings.
+
+### Migration from separate player extensions
+
+Replace the old version/episode loaders or pasted scripts with the loader above.
+The old file URLs remain compatibility loaders: each enables its original feature,
+and both together enable both features without duplicate controls. Explicit new
+boolean options take precedence, including `false`. The new script stops old
+running implementations before starting. Remove obsolete pasted implementations
+to prevent them restarting later. Fully reload after migrating.
+
 ## In-player version switcher
+
+Configured with `versions` in [In-player controls](#in-player-controls).
 
 Adds a **Version** button beside the settings button in the integrated player.
 Choose another version to restart playback at the current timestamp. A loading
@@ -202,31 +243,11 @@ above; future client changes may require an update. If switching remains pending
 close the window and reload the client if needed. Closing does not cancel a
 playback request already sent to Jellyfin.
 
-Add this loader to **Custom JS**, keeping the main theme loader:
-
-```javascript
-(() => {
-  const id = 'lumaaglaass-player-version-switcher-script';
-  if (document.getElementById(id)) return;
-
-  const script = document.createElement('script');
-  script.id = id;
-  script.src = 'https://cdn.jsdelivr.net/gh/Dyhlio/LumaaGlaass@main/assets/extensions/player-version-switcher.js';
-  script.onerror = () => {
-    script.remove();
-    console.error('LumaaGlaass player version switcher could not be loaded.');
-  };
-  document.head.appendChild(script);
-})();
-```
-
-Alternatively, paste [player-version-switcher.js](../assets/extensions/player-version-switcher.js)
-after the main script. Use only one method and remove the local prototype first.
-Styles are included. To remove the option, remove its loader or pasted script and reload.
-
 ## In-player episode switcher
 
-This independent extension adds an **Episodes** button for series
+Configured with `episodes` in [In-player controls](#in-player-controls).
+
+The episodes option adds an **Episodes** button for series
 episodes. Each entry displays its episode thumbnail when available, with a neutral
 placeholder if absent or unavailable. Images load lazily. Seasons use the shared
 themed native dropdown, with a bounded, scrollable picker on supported browsers
@@ -242,33 +263,9 @@ Source and track indices are not copied from the previous episode. A loading
 delay is expected; this is not a seamless switch. Closing the dialog does not
 cancel a playback request already submitted.
 
-Install this extension independently of the version switcher, or use both.
-When both are installed, the order is Episodes, Versions, Settings.
 It supports seekable episodes in the local integrated player, not casting or
-external players. It uses the same internal Jellyfin modules as the version
-switcher; future client changes may require an update.
-
-Add this loader to **Custom JS**, keeping the main theme loader:
-
-```javascript
-(() => {
-  const id = 'lumaaglaass-player-episode-switcher-script';
-  if (document.getElementById(id)) return;
-
-  const script = document.createElement('script');
-  script.id = id;
-  script.src = 'https://cdn.jsdelivr.net/gh/Dyhlio/LumaaGlaass@main/assets/extensions/player-episode-switcher.js';
-  script.onerror = () => {
-    script.remove();
-    console.error('LumaaGlaass player episode switcher could not be loaded.');
-  };
-  document.head.appendChild(script);
-})();
-```
-
-Alternatively, paste [player-episode-switcher.js](../assets/extensions/player-episode-switcher.js)
-after the main script. Use only one method and remove the local prototype first.
-Styles are included. To remove the option, remove its loader or pasted script and reload.
+external players. Like version switching, it relies on internal Jellyfin modules;
+future client changes may require an update.
 
 ## Copying the code
 
@@ -354,8 +351,8 @@ Use only this loader, not the retired panel/dialog loaders. The extension stops
 already-running legacy instances when loaded, but their loaders must be removed
 to prevent later asynchronous reactivation.
 
-Media actions and the in-player version and episode switchers remain separate options.
-The latter changes versions during playback and works with all three modes.
+Media actions and the in-player controls remain separate options.
+Player controls act during playback and work with all three modes.
 No mode manufactures audio/subtitle tracks missing from Remux.
 Native dropdown rendering can vary by browser. Tested on Remux using Jellyfin Web
 10.11.11; other clients and versions have not been validated.
@@ -366,31 +363,25 @@ may not contain this file.
 
 ## Filter mixed collections
 
-The optional collection filter adds **All / Movies / Shows** above collections
-containing both movies and series. It uses Jellyfin's internal media types,
-not translated titles, and follows the language selected in Jellyfin.
+The main theme includes **All / Movies / Shows** above collections containing
+both movies and series. It is enabled by default, including after updating an
+existing installation. No extra extension is required.
 
-Add this separate loader to **Custom JS**, keeping the main theme loader:
+The main loader defines `window.LumaaGlaassOptions`. Set `collectionFilter: false`
+there to disable the filter, or `true` to enable it; save and fully reload.
+Missing or invalid values default to `true`. For a pasted main script, put the
+configuration before the script:
 
-```js
-(() => {
-  const id = 'lumaaglaass-collection-filter-script';
-  if (document.getElementById(id)) return;
-
-  const script = document.createElement('script');
-  script.id = id;
-  script.src = 'https://cdn.jsdelivr.net/gh/Dyhlio/LumaaGlaass@main/assets/extensions/collection-filter.js';
-  script.onerror = () => {
-    script.remove();
-    console.error('LumaaGlaass collection filter could not be loaded.');
-  };
-  document.head.appendChild(script);
-})();
+```javascript
+window.LumaaGlaassOptions = {
+  ...window.LumaaGlaassOptions,
+  collectionFilter: false
+};
 ```
 
-Alternatively, paste [collection-filter.js](../assets/extensions/collection-filter.js) after
-the main theme script. Use only one method. The extension includes its own styles;
-the main CSS and JavaScript do not need to be replaced.
+The filter shares the main theme scheduler and installs no separate observer.
+When disabled, it creates no filter UI. Reloading with the option disabled restores
+previously filtered elements. Filtering never changes the library contents.
 
 - Filters the native cards and section headings without changing their order.
 - Does not alter collection membership, watch history, or the main Play/Shuffle actions.
@@ -400,8 +391,10 @@ the main CSS and JavaScript do not need to be replaced.
 - Uses the client translator when exposed, otherwise bundled native Jellyfin strings.
   Missing translations fall back to English. No translation service or extra library query is used.
 
-Save and fully reload. To disable it, remove its loader or pasted script and
-reload again. This extension is available on `main`, not in the v1.0.0 release.
+Remove the old `collection-filter.js` loader or pasted copy when migrating.
+The old URL remains a harmless compatibility file and never overrides an explicit
+`collectionFilter: false`. Update the main script too: older main versions do
+not contain the integrated filter.
 
 ## Hide count indicators
 
