@@ -217,11 +217,10 @@ Versions, Settings.
 ### Migration from separate player extensions
 
 Replace the old version/episode loaders or pasted scripts with the loader above.
-The old file URLs remain compatibility loaders: each enables its original feature,
-and both together enable both features without duplicate controls. Explicit new
-boolean options take precedence, including `false`. The new script stops old
-running implementations before starting. Remove obsolete pasted implementations
-to prevent them restarting later. Fully reload after migrating.
+The old files have been removed from `main`; do not rely on cached copies. Set
+`versions` and `episodes` explicitly to keep the features you want. Remove
+obsolete pasted implementations to prevent them restarting later, then fully
+reload. The new script stops already-running older implementations during migration.
 
 ## In-player version switcher
 
@@ -392,9 +391,8 @@ previously filtered elements. Filtering never changes the library contents.
   Missing translations fall back to English. No translation service or extra library query is used.
 
 Remove the old `collection-filter.js` loader or pasted copy when migrating.
-The old URL remains a harmless compatibility file and never overrides an explicit
-`collectionFilter: false`. Update the main script too: older main versions do
-not contain the integrated filter.
+The old file has been removed from `main`. Update the main script too: older main versions
+do not contain the integrated filter.
 
 ## Hide count indicators
 

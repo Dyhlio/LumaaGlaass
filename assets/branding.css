@@ -2,29 +2,56 @@
 /* Configuration - Place personal variable overrides after the main theme import.
    Save and fully reload after changes. JavaScript options belong in Custom JS.
    Supported examples: docs/customization.md#visual-adjustments. */
-/* Variables - Palette, corner radii and glass rendering. */
+/* Variables - Theme-wide defaults; component/state overrides stay with their rules. */
 
 :root {
-    /* Palette - Comma-separated R, G, B channels for opacity variants. */
-    --lumaaglaass-accent: 245, 245, 247;
-    /* Palette - Space-separated channels for MUI components. */
+    /* Palette - RGB channels also support opacity variants and MUI components. */
+    --lumaaglaass-accent: 245,245,247;
     --lumaaglaass-accent-channel: 245 245 247;
-
-    /* Variables - Corner radius. */
-    --lumaaglaass-radius: 12px;
-
-    
-
-    /* Variables - Drawer and dialog tint. */
-    --lumaaglaass-glass-tint: 42, 42, 42;
-
-    /* Variables - Transition easing curves. */
+    --lumaaglaass-indicator: 55,55,58;
+    --lumaaglaass-radius: 14px;
+    --lumaaglaass-glass-tint: 58,60,66;
     --lumaaglaass-ease: cubic-bezier(0.16, 1, 0.3, 1);
     --lumaaglaass-ease-snappy: cubic-bezier(0.4, 0.0, 0.2, 1);
+    --lumaaglaass-backdrop-blur: 12px;
+    --lumaaglaass-glass-blur: 16px;
 
-    /* Variables - Blur strength. */
-    --lumaaglaass-backdrop-blur: 23px;
-    --lumaaglaass-glass-blur: 15px;
+    /* Shared backgrounds, spacing and focus. */
+    --aa-accent: #f5f5f7;
+    --aa-bg: #25272c;
+    --aa-panel: #353840;
+    --aa-muted: #b8b8bf;
+    --aa-focus: #64a8ff;
+    --aa-gutter: clamp(16px, 3.4vw, 64px);
+    --aa-surface: rgba(30,30,32,.4);
+    --aa-surface-edge: rgba(255,255,255,.12);
+    --aa-state-surface: var(--aa-hover-surface);
+    --aa-state-edge: rgba(255,255,255,.36);
+    --aa-text: #f5f5f7;
+    --aa-hover-surface: rgba(255,255,255,.08);
+    --aa-selected-surface: rgba(255,255,255,.16);
+    --aa-panel-blur: 32px;
+    --aa-option-gap: 2px;
+
+    /* Glass and media interactions. */
+    --aa-glass-refraction: 0;
+    --aa-glass-tint: var(--aa-surface);
+    --aa-glass-edge: rgba(255,255,255,.12);
+    --aa-glass-reflection: linear-gradient(160deg,rgba(255,255,255,.025),transparent 65%);
+    --aa-glass-shadow: inset 0 1px 0 rgba(255,255,255,.045),0 4px 14px rgba(0,0,0,.12);
+    --aa-media-hover-surface: rgba(30,30,32,.6);
+    --aa-ui-hover-surface: rgba(30,30,32,.4);
+    --aa-ui-selected-surface: rgba(255,255,255,.16);
+    --aa-ui-selected-edge: rgba(255,255,255,.45);
+    --aa-ui-hover-edge: rgba(255,255,255,.24);
+    --aa-media-image-action-size: 64px;
+
+    /* Responsive shared dimensions. */
+    --aa-touch: 44px;
+    --aa-space-sm: 8px;
+    --aa-space-md: 16px;
+    --aa-space-lg: 24px;
+    --aa-cast-width: clamp(112px,10vw,180px);
 }
 
 /* Palette - MUI colors without generated Emotion class dependencies. */
@@ -2835,20 +2862,6 @@ html[data-theme="dark"] .MuiDrawer-root *,
     }
 }
 /* Theme - Remux adaptations for Jellyfin 10.11, without external fonts or scripts. */
-:root {
- --aa-accent: #f5f5f7;
- --aa-bg: #25272c;
- --aa-panel: #353840;
- --aa-muted: #b8b8bf;
- --aa-focus: #64a8ff;
- --aa-gutter: clamp(16px, 3.4vw, 64px);
- --lumaaglaass-accent: 245,245,247;
- --lumaaglaass-indicator: 55,55,58;
- --lumaaglaass-radius: 14px;
- --lumaaglaass-glass-tint: 58,60,66;
- --lumaaglaass-backdrop-blur: 12px;
- --lumaaglaass-glass-blur: 16px;
-}
 html, body { background: var(--aa-bg); color: var(--aa-accent); }
 body, .emby-input, .emby-textarea, .emby-select, .emby-button {
  font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
@@ -3042,13 +3055,6 @@ body:has(.skinHeader:not(.osdHeader)) .absolutePageTabContent { top:calc(88px + 
 }
 
 /* Surfaces - Shared smoked glass for navigation and controls. */
-:root {
- --aa-glass-refraction:0;
- --aa-glass-tint:var(--aa-surface);
- --aa-glass-edge:rgba(255,255,255,.12);
- --aa-glass-reflection:linear-gradient(160deg,rgba(255,255,255,.025),transparent 65%);
- --aa-glass-shadow:inset 0 1px 0 rgba(255,255,255,.045),0 4px 14px rgba(0,0,0,.12);
-}
 .skinHeader:not(.osdHeader) .headerButton:not(.headerUserButtonRound),
 .skinHeader:not(.osdHeader) .emby-tabs-slider,
 .aa-hero .aa-hero-btn-info {
@@ -3274,17 +3280,6 @@ body .actionSheetMenuItem, body .paperList .listItem {
 }
 body .paperList .listItem { background:transparent!important; }
 body :is(.listItem,.actionSheetMenuItem,.navMenuOption) { transition-property:box-shadow,border-color!important; }
-:root {
- --aa-surface:rgba(30,30,32,.4);
- --aa-surface-edge:rgba(255,255,255,.12);
- --aa-state-surface:var(--aa-hover-surface);
- --aa-state-edge:rgba(255,255,255,.36);
- --aa-text:#f5f5f7;
- --aa-hover-surface:rgba(255,255,255,.08);
- --aa-selected-surface:rgba(255,255,255,.16);
- --aa-panel-blur:32px;
- --aa-option-gap:2px;
-}
 /* Settings - Apply glass to native sections without painting every nested container. */
 body :is(.readOnlyContent > .verticalSection, #userProfilePage .readOnlyContent,
  #languagePreferencesPage .settingsContainer > .verticalSection,
@@ -3440,15 +3435,6 @@ body #itemDetailPage > .itemBackdrop::after {
 @layer lg-glass-controls, lg-interactions;
 
 /* Media - Shared dark glass hover for artwork, rows and their actions. */
-:root {
- /* Artwork needs a stronger veil than an already tinted menu or panel. */
- --aa-media-hover-surface:rgba(30,30,32,.6);
- --aa-ui-hover-surface:rgba(30,30,32,.4);
- --aa-ui-selected-surface:rgba(255,255,255,.16);
- --aa-ui-selected-edge:rgba(255,255,255,.45);
- --aa-ui-hover-edge:rgba(255,255,255,.24);
- --aa-media-image-action-size:64px;
-}
 html body button:has(.playstatebutton-icon-played) {
  --aa-media-hover-surface:#f5f5f7;
 }
@@ -4336,13 +4322,6 @@ body #itemDetailPage.itemDetailPage:not(.aa-collection-page):not(:has(.collectio
 }
 /* Responsive - Viewport-driven dimensions independent of the Jellyfin display mode.
    Preserve existing surfaces and semantic colors. */
-:root {
- --aa-touch:44px;
- --aa-space-sm:8px;
- --aa-space-md:16px;
- --aa-space-lg:24px;
- --aa-cast-width:clamp(112px,10vw,180px);
-}
 body :is(#castContent,#guestCastContent) .card.overflowPortraitCard {
  width:var(--aa-cast-width)!important; min-width:var(--aa-cast-width);
  flex:0 0 var(--aa-cast-width); font-size:14px!important;

@@ -7,10 +7,9 @@
     // Invalid values use defaults. Save and fully reload after changes.
     // Installation: docs/customization.md#in-player-controls.
     const configured = window.LumaaGlaassPlayerControlsOptions || {};
-    const legacy = window.__lumaaGlaassPlayerControlRequests;
-    const settings = Object.fromEntries(['versions', 'episodes'].map(name => [
-        name, typeof configured[name] === 'boolean' ? configured[name] : legacy instanceof Set ? legacy.has(name) : true
-    ]));
+    const settings = Object.freeze(Object.fromEntries(['versions', 'episodes'].map(name => [
+        name, typeof configured[name] === 'boolean' ? configured[name] : true
+    ])));
 
     // Localization - Share access to Jellyfin's translator across independent scripts.
     const nativeI18n = window.__lumaaGlaassI18n ||= (() => {
@@ -481,11 +480,6 @@
         sync();
     }
     window[key] = {
-        enableLegacy(name) {
-            if (!['versions', 'episodes'].includes(name) || typeof configured[name] === 'boolean') return;
-            settings[name] = true;
-            start();
-        },
         stop() {
             stopped = true; clearInterval(timer); close(); button?.remove(); episodeButton?.remove();
             style.remove(); delete window[key];

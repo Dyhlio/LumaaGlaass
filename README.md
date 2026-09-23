@@ -123,12 +123,9 @@ LumaaGlaass/
 │   ├── branding.css
 │   ├── branding.js
 │   └── extensions/
-│       ├── collection-filter.js
 │       ├── hide-count-indicators.css
 │       ├── media-actions.js
 │       ├── player-controls.js
-│       ├── player-episode-switcher.js
-│       ├── player-version-switcher.js
 │       └── source-selection.js
 ├── docs/
 │   └── customization.md
@@ -136,8 +133,9 @@ LumaaGlaass/
 └── README.md
 ```
 
-The old player version/episode files and collection-filter file are compatibility
-entry points; use the documented main options and `player-controls.js` for new installs.
+The collection filter is part of `branding.js`. Versions and episodes are both
+provided by `player-controls.js`. Replace old extension URLs in Custom JS before
+reloading; the former separate files are no longer maintained on `main`.
 
 The main theme files live in `assets/`; optional features live in
 `assets/extensions/`. All files are used directly; no compilation is needed. jsDelivr
