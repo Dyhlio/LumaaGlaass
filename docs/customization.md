@@ -18,6 +18,7 @@ Keep the **Dark** base theme selected.
 
 | Option | What it does | Where to add it |
 | --- | --- | --- |
+| [Home carousel](#home-carousel) | Hide the home banner while keeping a still media background | Custom JS, before the main loader |
 | [Source selection](#source-selection) | Choose native controls, an inline panel or a playback dialog | Custom JS |
 | [In-player version switcher](#in-player-version-switcher) | Change versions during playback and resume at the current timestamp | Custom JS |
 | [Media actions](#media-actions) | Configure native, information or hidden shortcuts by media type and context | Custom JS |
@@ -28,6 +29,26 @@ Keep the **Dark** base theme selected.
 **Source selection provides one mode at a time: native, panel or dialog.**
 The collection filter, hidden count badges, media actions and in-player version
 switcher can be used with any mode or independently.
+
+## Home carousel
+
+The home carousel is enabled by default. To hide it, add this configuration
+**before the main theme loader** in Custom JS, then fully reload the client:
+
+```javascript
+window.LumaaGlaassOptions = {
+  ...window.LumaaGlaassOptions,
+  homeCarousel: false
+};
+```
+
+Set `homeCarousel: true` or remove this option to restore the carousel.
+No additional extension is required. Library and collection headers are unchanged.
+
+Home keeps a successfully loaded backdrop from the same movie/series selection,
+without rotation. A full reload requests a new random selection. Up to four
+images are tried; if none loads, the last valid background from the same
+session/account is retained when available, otherwise the neutral background stays.
 
 ## Media actions
 

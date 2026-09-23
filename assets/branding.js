@@ -153,6 +153,9 @@
   window[KEY]?.stop();
   // Configuration - Carousel item limit and interval between slides.
   const MAX = 8, INTERVAL = 9000;
+  // Configuration - Define before loading; omitted options preserve the default carousel.
+  const homeCarousel = window.LumaaGlaassOptions?.homeCarousel !== false;
+  let homeScene = null;
   let elapsed = 0, lastTick = 0, frame = 0, wasRunning = false;
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
   let hero = null, items = [], client = null, identity = '', index = 0;
@@ -200,6 +203,7 @@
     catch { return ''; }
   };
   function removeHero() {
+    homeScene?.cancel?.(); homeScene = null;
     hero?.remove(); hero = null;
     document.documentElement.classList.remove('aa-home-art');
     document.documentElement.style.removeProperty('--aa-art');
@@ -545,6 +549,7 @@
     const page = [...document.querySelectorAll('.homePage')].find(visible);
     const sections = page && [...page.querySelectorAll('.homeSectionsContainer')].find(n => !n.closest('.hide,[hidden]') && getComputedStyle(n).display !== 'none');
     if (!sections) return;
+    if (!homeCarousel && homeScene?.page === page && homeScene.key === key) return;
     if (hero?.isConnected && hero.parentNode === sections.parentNode) return;
     removeHero();
     if (!items.length) {
@@ -563,8 +568,52 @@
       } catch { lastError = 'Library loading failed; retrying in 30 seconds.'; }
       finally { if (run === generation) { loading = false; retryAt = Date.now() + 30000; } }
     }
-    if (stopped || !home() || !enabled() || key !== sessionKey(currentClient()) || !sections.isConnected || !visible(page) || !items.length) return;
+    if (stopped || !home() || !enabled() || key !== sessionKey(currentClient()) || !sections.isConnected || !visible(page)) return;
+    if (!homeCarousel) { void mountHomeBackground(page, key); return; }
+    if (!items.length) return;
     sections.before(build()); render(0);
+  }
+  // Home without a carousel - Validate a bounded set of the same media candidates.
+  // A scene is stable until navigation/reload; failed images are not polled again.
+  async function mountHomeBackground(page, key) {
+    const scene = {page, key, cancel:null};
+    homeScene = scene;
+    const current = () => homeScene === scene && !stopped && enabled() && home() &&
+      visible(page) && key === sessionKey(currentClient());
+    const apply = art => {
+      const root = document.documentElement;
+      root.style.setProperty('--aa-art', art);
+      root.classList.add('aa-home-art');
+    };
+    if (!current()) return;
+    if (lastBackgroundArt && lastBackgroundKey === key) apply(lastBackgroundArt);
+    for (const item of items.slice(0, 4)) {
+      if (!current()) return;
+      const url = backdrop(item);
+      if (!url) continue;
+      const loaded = await new Promise(resolve => {
+        const image = new Image(); let done = false;
+        const finish = ok => {
+          if (done) return;
+          done = true; clearTimeout(timer); image.onload = image.onerror = null;
+          scene.cancel = null;
+          if (!ok) image.removeAttribute('src');
+          resolve(ok);
+        };
+        const timer = setTimeout(() => finish(false), 5000);
+        scene.cancel = () => finish(false);
+        image.onload = () => finish(image.naturalWidth > 0);
+        image.onerror = () => finish(false);
+        image.src = url;
+      });
+      if (!current()) return;
+      if (loaded) {
+        const art = 'url(' + JSON.stringify(url) + ')';
+        apply(art);
+        rememberBackground(art, key, page);
+        return;
+      }
+    }
   }
   const detailMetadata = new Map();
   const detailFallbacks = new Map();

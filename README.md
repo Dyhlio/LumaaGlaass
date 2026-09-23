@@ -13,8 +13,8 @@ refined styling, and dynamic backgrounds.
 
 - **Glass interface** - Smoked-glass panels, rounded controls, and subtle hover effects.
 - **Responsive layouts** - Readable titles, balanced spacing, and neatly arranged mobile actions.
-- **Home banner** - Rotating artwork, touch gestures, and playback shortcuts.
-- **Dynamic backgrounds** - Collection artwork and a search background that retains the last home image.
+- **Home banner** - Rotating artwork, touch gestures, and playback shortcuts; optionally hide the banner while keeping a still media background.
+- **Dynamic backgrounds** - Media artwork for home and libraries; search and settings reuse the last successfully loaded background.
 - **Focused search** - A simplified search page without visible suggestions.
 - **Refined controls** - Version, audio, and subtitle selectors with clear favorite and watched states.
 - **Accessibility preferences** - Reduced-motion and reduced-transparency styles.
