@@ -1,6 +1,7 @@
 # Customization
 
-Choose only the options you need. The base theme works without any of them.
+The base theme includes the mixed collection filter by default. Enable other
+options only when you need them.
 
 [Back to installation](../README.md#installation)
 
@@ -247,15 +248,14 @@ playback request already sent to Jellyfin.
 
 Configured with `episodes` in [In-player controls](#in-player-controls).
 
-The episodes option adds an **Episodes** button for series
-episodes. Each entry displays its episode thumbnail when available, with a neutral
+The episodes option adds an **Episodes** button for series episodes. Each entry
+displays its episode thumbnail when available, with a neutral
 placeholder if absent or unavailable. Images load lazily. Seasons use the shared
 themed native dropdown, with a bounded, scrollable picker on supported browsers
 and a native fallback elsewhere. A single season is displayed as plain text.
 Selecting a season only updates the list, not playback. Episode lists are paginated
 when fetched and scroll independently.
-The button is only shown for
-episodes with a series identity. It opens the current season, allows selecting
+The button is only shown for episodes with a series identity. It opens the current season, allows selecting
 another season, and marks the current episode. Films do not show this button.
 Choosing an episode plays the selected season queue from that episode, using its
 saved progress when unfinished. Already watched episodes start from the beginning.
