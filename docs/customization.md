@@ -16,6 +16,13 @@ Keep the **Dark** base theme selected.
 
 ## Choose an option
 
+Public JavaScript settings are documented at the top of each configurable script,
+before implementation code. Set them in its loader before loading the script,
+or before a pasted copy; save and fully reload after changes. Scripts without
+public settings say so in their header: add/remove their loader to enable/disable
+them. CSS overrides go after the main theme import. Internal constants are not
+additional public settings.
+
 | Option | What it does | Where to add it |
 | --- | --- | --- |
 | [Home carousel](#home-carousel) | Hide the home banner while keeping a still media background | Custom JS, before the main loader |

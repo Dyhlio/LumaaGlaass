@@ -2,7 +2,10 @@
 (() => {
     'use strict';
 
-    // Configuration - Set before loading; save and reload after changing the mode.
+    // Configuration - Set window.LumaaGlaassSourceSelectionOptions before loading.
+    // Example: window.LumaaGlaassSourceSelectionOptions = { mode: 'native' };
+    // Missing/invalid modes use native. Save and fully reload after changes.
+    // Installation and examples: docs/customization.md#source-selection.
     // native: Jellyfin controls, panel: inline source list, dialog: selection before Play.
     const requested = window.LumaaGlaassSourceSelectionOptions?.mode;
     const mode = ['native', 'panel', 'dialog'].includes(requested) ? requested : 'native';

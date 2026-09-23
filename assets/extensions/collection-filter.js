@@ -2,6 +2,10 @@
 ;(() => {
   'use strict';
 
+  // Configuration - No public settings; installing this loader enables the feature.
+  // Remove the loader (or pasted script) and fully reload to disable it.
+  // Installation: docs/customization.md#filter-mixed-collections.
+
     // Localization - Share access to Jellyfin's translator across independent scripts.
     const nativeI18n = window.__lumaaGlaassI18n ||= (() => {
         let translator = null, runtime = null, retryAt = 0;

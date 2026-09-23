@@ -3,6 +3,8 @@
     'use strict';
 
     // Configuration - Set window.LumaaGlaassMediaActionsOptions before loading.
+    // Edit the loader configuration, then save and fully reload; do not modify runtime code.
+    // Installation, defaults and examples: docs/customization.md#media-actions.
     // Modes: native keeps controls, details opens information, hide removes controls.
     // Missing values use these defaults; invalid values safely use native.
     const defaults = {

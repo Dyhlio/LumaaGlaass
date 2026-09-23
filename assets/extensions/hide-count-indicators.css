@@ -1,4 +1,7 @@
 /* LumaaGlaass - Optional numeric count visibility. */
+/* Configuration - No settings; add this import after the main theme to enable.
+   Remove the import (or pasted rules) and fully reload to restore count badges.
+   Installation: docs/customization.md#hide-count-indicators. */
 /* Scope - Unplayed and contained-item count badges, including 99+ variants. */
 /* Badges - Preserve watched states, favorites and playback progress. */
 .countIndicator {

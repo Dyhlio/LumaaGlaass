@@ -1,7 +1,18 @@
 /* LumaaGlaass v1.1.0 - Jellyfin theme. */
-/* LUMAAGLAASS:START v1 */
 ;(() => {
   'use strict';
+
+  // Configuration - Set window.LumaaGlaassOptions before loading this script.
+  // Example: window.LumaaGlaassOptions = { homeCarousel: false };
+  // true: rotating home banner; false: still media background without the banner.
+  // Missing/invalid values use defaults. Save and fully reload after changes.
+  // See docs/customization.md#home-carousel; library/collection headers are unaffected.
+  const defaults = { homeCarousel: true };
+  const configured = window.LumaaGlaassOptions || {};
+  const homeCarousel = typeof configured.homeCarousel === 'boolean' ? configured.homeCarousel : defaults.homeCarousel;
+
+  // Internal carousel limits, not additional public configuration options.
+  const MAX = 8, INTERVAL = 9000;
 
     // Localization - Share access to Jellyfin's translator across independent scripts.
     const nativeI18n = window.__lumaaGlaassI18n ||= (() => {
@@ -151,10 +162,6 @@
   };
   window.__kinemaRemux1011?.stop();
   window[KEY]?.stop();
-  // Configuration - Carousel item limit and interval between slides.
-  const MAX = 8, INTERVAL = 9000;
-  // Configuration - Define before loading; omitted options preserve the default carousel.
-  const homeCarousel = window.LumaaGlaassOptions?.homeCarousel !== false;
   let homeScene = null;
   let elapsed = 0, lastTick = 0, frame = 0, wasRunning = false;
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -813,4 +820,3 @@
   } };
   schedule();
 })();
-/* LUMAAGLAASS:END */

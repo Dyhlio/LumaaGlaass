@@ -1,4 +1,7 @@
 /* LumaaGlaass v1.1.0 - Jellyfin theme. */
+/* Configuration - Place personal variable overrides after the main theme import.
+   Save and fully reload after changes. JavaScript options belong in Custom JS.
+   Supported examples: docs/customization.md#visual-adjustments. */
 /* Variables - Palette, corner radii and glass rendering. */
 
 :root {
