@@ -1287,30 +1287,51 @@ body .dialog.formDialog .dialogContentInner {
     background: rgb(var(--lumaaglaass-accent));
 }
 
-/* States - Loading spinner. */
-
-.mdl-spinner__layer-1 {
-    border-color: rgb(var(--lumaaglaass-accent));
+/* Loading - Shared glass surface, white arc and quiet track.
+   Do not change placement, dimensions, visibility or progress values. */
+html body :is(.mdl-spinner,.MuiCircularProgress-root,.progressring) {
+ color:var(--aa-text,#f5f5f7)!important;
+ background:var(--aa-surface,rgba(30,30,32,.4))!important;
+ border-radius:50%;
+ box-shadow:inset 0 0 0 1px var(--aa-surface-edge,rgba(255,255,255,.12));
+ backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
 }
-
-.mdl-spinner__layer-2 {
-    border-color: rgba(128, 128, 128, 1);
+/* MDL has four alternating arcs. Replace their drawing, not its active flag. */
+html body .mdl-spinner { animation:none!important; }
+html body .mdl-spinner .mdl-spinner__layer { display:none!important; }
+html body .mdl-spinner.mdlSpinnerActive::after {
+ content:""; position:absolute; inset:18%; box-sizing:border-box;
+ border:2px solid rgba(255,255,255,.18); border-top-color:var(--aa-text,#f5f5f7);
+ border-right-color:var(--aa-text,#f5f5f7); border-radius:50%;
+ animation:lg-loading-orbit .9s linear infinite; pointer-events:none;
 }
-
-.mdl-spinner__layer-3 {
-    border-color: rgba(40, 40, 40, 1);
+@keyframes lg-loading-orbit { to { transform:rotate(360deg); } }
+/* Preserve React's indeterminate animation and determinate arc values. */
+html body .MuiCircularProgress-svg { scale:.72; }
+html body .MuiCircularProgress-circle { stroke-width:3; stroke-linecap:round; }
+/* These rings convey actual progress: never replace them with a fake spinner. */
+html body .progressring-spiner { border-color:var(--aa-text,#f5f5f7)!important; border-width:.16em; }
+html body .progressring-text { color:var(--aa-text,#f5f5f7)!important; }
+@media(prefers-reduced-motion:reduce) {
+ html body .mdl-spinner.mdlSpinnerActive::after,
+ html body .MuiCircularProgress-root,
+ html body .MuiCircularProgress-circle { animation:none!important; }
 }
-
-.mdl-spinner__layer-4 {
-    border-color: rgba(0, 0, 0, 1);
+@media(prefers-reduced-transparency:reduce),(prefers-contrast:more) {
+ html body :is(.mdl-spinner,.MuiCircularProgress-root,.progressring) {
+  background:#30343b!important; backdrop-filter:none; -webkit-backdrop-filter:none;
+ }
+}
+@media(forced-colors:active) {
+ html body :is(.mdl-spinner,.MuiCircularProgress-root,.progressring) {
+  color:CanvasText!important; background:Canvas!important;
+  backdrop-filter:none; -webkit-backdrop-filter:none;
+ }
+ html body .mdl-spinner.mdlSpinnerActive::after { border-color:GrayText; border-top-color:CanvasText; border-right-color:CanvasText; }
+ html body .progressring-spiner { border-color:CanvasText!important; }
 }
 
 /* States - Circular progress. */
-
-.progressring-spiner {
-    border-color: rgb(var(--lumaaglaass-accent)) !important;
-    border-width: .35em;
-}
 
 .progressring {
     margin: .4em;
