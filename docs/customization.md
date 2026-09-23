@@ -28,6 +28,7 @@ additional public settings.
 | [Home carousel](#home-carousel) | Hide the home banner while keeping a still media background | Custom JS, before the main loader |
 | [Source selection](#source-selection) | Choose native controls, an inline panel or a playback dialog | Custom JS |
 | [In-player version switcher](#in-player-version-switcher) | Change versions during playback and resume at the current timestamp | Custom JS |
+| [In-player episode switcher](#in-player-episode-switcher) | Browse seasons and play another episode directly in the player | Custom JS |
 | [Media actions](#media-actions) | Configure native, information or hidden shortcuts by media type and context | Custom JS |
 | [Filter mixed collections](#filter-mixed-collections) | Show all items, movies only, or series only | Custom JS |
 | [Hide count indicators](#hide-count-indicators) | Hide numeric badges on cards and lists | Custom CSS |
@@ -67,7 +68,7 @@ session/account is retained when available, otherwise the neutral background sta
 One optional script controls thumbnail shortcuts and selected details-page buttons.
 It replaces details-first navigation and image button hiding. Remove their loaders
 or pasted scripts before installing this option. Keep the main theme and unrelated
-extensions. Source selection and the in-player version switcher remain
+extensions. Source selection and the in-player version and episode switchers remain
 independent.
 
 ### Install and configure
@@ -223,6 +224,52 @@ Alternatively, paste [player-version-switcher.js](../assets/extensions/player-ve
 after the main script. Use only one method and remove the local prototype first.
 Styles are included. To remove the option, remove its loader or pasted script and reload.
 
+## In-player episode switcher
+
+This independent extension adds an **Episodes** button for series
+episodes. Each entry displays its episode thumbnail when available, with a neutral
+placeholder if absent or unavailable. Images load lazily. Seasons use the shared
+themed native dropdown, with a bounded, scrollable picker on supported browsers
+and a native fallback elsewhere. A single season is displayed as plain text.
+Selecting a season only updates the list, not playback. Episode lists are paginated
+when fetched and scroll independently.
+The button is only shown for
+episodes with a series identity. It opens the current season, allows selecting
+another season, and marks the current episode. Films do not show this button.
+Choosing an episode plays the selected season queue from that episode, using its
+saved progress when unfinished. Already watched episodes start from the beginning.
+Source and track indices are not copied from the previous episode. A loading
+delay is expected; this is not a seamless switch. Closing the dialog does not
+cancel a playback request already submitted.
+
+Install this extension independently of the version switcher, or use both.
+When both are installed, the order is Episodes, Versions, Settings.
+It supports seekable episodes in the local integrated player, not casting or
+external players. It uses the same internal Jellyfin modules as the version
+switcher; future client changes may require an update.
+
+Add this loader to **Custom JS**, keeping the main theme loader:
+
+```javascript
+(() => {
+  const id = 'lumaaglaass-player-episode-switcher-script';
+  if (document.getElementById(id)) return;
+
+  const script = document.createElement('script');
+  script.id = id;
+  script.src = 'https://cdn.jsdelivr.net/gh/Dyhlio/LumaaGlaass@main/assets/extensions/player-episode-switcher.js';
+  script.onerror = () => {
+    script.remove();
+    console.error('LumaaGlaass player episode switcher could not be loaded.');
+  };
+  document.head.appendChild(script);
+})();
+```
+
+Alternatively, paste [player-episode-switcher.js](../assets/extensions/player-episode-switcher.js)
+after the main script. Use only one method and remove the local prototype first.
+Styles are included. To remove the option, remove its loader or pasted script and reload.
+
 ## Copying the code
 
 - CSS belongs in **Custom CSS**. All `@import` lines must come before ordinary CSS rules.
@@ -307,7 +354,7 @@ Use only this loader, not the retired panel/dialog loaders. The extension stops
 already-running legacy instances when loaded, but their loaders must be removed
 to prevent later asynchronous reactivation.
 
-Media actions and the in-player version switcher remain separate options.
+Media actions and the in-player version and episode switchers remain separate options.
 The latter changes versions during playback and works with all three modes.
 No mode manufactures audio/subtitle tracks missing from Remux.
 Native dropdown rendering can vary by browser. Tested on Remux using Jellyfin Web

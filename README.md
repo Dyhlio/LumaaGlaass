@@ -120,6 +120,7 @@ LumaaGlaass/
 │       ├── collection-filter.js
 │       ├── hide-count-indicators.css
 │       ├── media-actions.js
+│       ├── player-episode-switcher.js
 │       ├── player-version-switcher.js
 │       └── source-selection.js
 ├── docs/

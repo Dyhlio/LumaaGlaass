@@ -3568,6 +3568,14 @@ html body .listItem:is([data-id],[data-type]):is(:hover,:focus-within) {
 
 /* Reuse the search backdrop only where the companion theme script enables it. */
 html.aa-search-art .page:not(.hide):not([hidden]) { background-color:transparent!important; }
+/* Pointer affordance for actionable controls, never text fields or inert rows.
+   Preserve native wait cursors on disabled/loading controls. */
+html body :is(button,a[href],summary,[role="button"],select,input[type="button"],input[type="submit"],input[type="reset"],input[type="checkbox"],input[type="radio"]):not(:disabled):not([aria-disabled="true"]):not([aria-busy="true"]):not([inert] *),
+html body select:not(:disabled):not([aria-disabled="true"]):not([aria-busy="true"]) option:not(:disabled) {
+ cursor:pointer;
+}
+html body :is(select,option):disabled,
+html body :is(select,button,[role="button"],a[href])[aria-disabled="true"] { cursor:default!important; }
 @supports(appearance:base-select) {
  html body select.emby-select:not([multiple]):not([size]:not([size="0"]):not([size="1"])):not(.detailTrackSelect),
  html body select.emby-select:not([multiple]):not([size]:not([size="0"]):not([size="1"])):not(.detailTrackSelect)::picker(select) {
