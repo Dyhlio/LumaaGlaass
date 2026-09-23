@@ -3107,8 +3107,62 @@ body:has(.skinHeader:not(.osdHeader)) .absolutePageTabContent { top:calc(88px + 
 }
 
 /* Collections - Full-width composition with native content and controls. */
-/* Libraries - Reuse collection artwork without changing native list layouts. */
+/* Libraries - Collection-style header; native controls and list layouts stay intact. */
 .aa-library-page { background:transparent!important; }
+body .aa-library-page .aa-library-toolbar {
+ position:relative; box-sizing:border-box; justify-content:flex-start!important;
+ gap:8px; margin-block:24px 32px; padding:clamp(24px,4vw,64px)!important;
+ border:1px solid rgba(255,255,255,.12); border-radius:24px;
+ background:var(--aa-surface); box-shadow:0 16px 42px rgba(0,0,0,.12);
+}
+body .aa-library-toolbar .aa-library-heading {
+ flex:0 0 100%; min-width:0; margin:0 0 12px;
+ font-size:clamp(30px,3.5vw,56px); font-weight:700; line-height:1.12; overflow-wrap:anywhere;
+}
+body .aa-library-page .aa-library-with-image {
+ min-height:300px; padding-inline-end:50%!important; align-content:center;
+}
+body .aa-library-toolbar .aa-library-image {
+ position:absolute; inset-inline-end:clamp(24px,4vw,64px); top:50%; transform:translateY(-50%);
+ width:calc(43% - 48px); max-width:440px; aspect-ratio:16 / 9; object-fit:contain;
+ border-radius:18px;
+}
+body .aa-library-toolbar > .paging {
+ flex:0 0 100%; min-width:0; margin:0 0 12px!important; text-align:start!important;
+}
+body .aa-library-toolbar > .paging > * { justify-content:flex-start!important; text-align:start!important; }
+/* Preserve native hidden/text/icon variants while matching collection controls. */
+body :is(.aa-library-toolbar button,.aa-library-page .paging button) {
+ box-sizing:border-box; min-height:44px; min-width:44px; margin:0!important;
+ border:1px solid var(--aa-surface-edge,rgba(255,255,255,.12)); border-radius:999px;
+ font-family:inherit; font-size:14px; font-weight:600; line-height:1.4;
+}
+body .aa-library-toolbar > .button-flat { padding:10px 18px!important; }
+body .aa-library-toolbar > .paper-icon-button-light { width:44px; height:44px; padding:10px!important; }
+/* Pagination - Share geometry and spacing at both ends of the native list. */
+body .aa-library-page .paging .listPaging {
+ display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:12px;
+}
+body .aa-library-page .paging .listPaging > div {
+ display:inline-flex!important; align-items:center; flex-wrap:wrap; gap:8px;
+}
+body .aa-library-page .paging button {
+ width:44px; height:44px; padding:10px!important; flex:0 0 44px;
+}
+body .aa-library-toolbar .btnPlay { background:#f5f5f7!important; color:#151517!important; border-color:transparent!important; }
+@media(max-width:640px) {
+ body .aa-library-page .aa-library-toolbar { border-radius:18px; padding:24px!important; min-height:0; }
+ body .aa-library-toolbar .aa-library-image {
+  position:static; transform:none; order:-1; width:100%; max-width:210px;
+  margin:0 auto 16px; flex:0 0 100%;
+ }
+}
+@media(prefers-reduced-transparency:reduce), (prefers-contrast:more) {
+ body .aa-library-page .aa-library-toolbar { background:#30343b; }
+}
+@media(forced-colors:active) {
+ body .aa-library-page .aa-library-toolbar { background:Canvas; color:CanvasText; border-color:CanvasText; box-shadow:none; }
+}
 html.aa-collection-art .backgroundContainer { background:#30333a!important; position:fixed!important; inset:0!important; height:100vh!important; pointer-events:none; }
 html.aa-collection-art .backgroundContainer::before {
  content:""; position:fixed; inset:-60px; pointer-events:none;
@@ -3791,7 +3845,7 @@ html body :is(.cardPadder,.defaultCardBackground,.listItemImage) .cardImageIcon 
    actions and persistent states native. Artwork cutouts are not reused here. */
 @layer lg-glass-controls {
  html body :is(.skinHeader:not(.osdHeader) .headerButton:not(.headerUserButtonRound),
-.aa-hero-btn-info,.mainDetailButtons .detailButton,
+.aa-hero-btn-info,.mainDetailButtons .detailButton,.aa-library-toolbar button,.aa-library-page .paging button,
 .lg-playback-close,.lg-player-version-close):not(:is(.btnPlay,.btnReplay,.btnPlayTrailer,.button-submit,:has(.playstatebutton-icon-played),
 [aria-pressed="true"],[aria-selected="true"],[aria-current="page"],.buttonActive)) {
   background:var(--aa-surface,rgba(30,30,32,.4))!important;
@@ -3802,14 +3856,14 @@ html body :is(.cardPadder,.defaultCardBackground,.listItemImage) .cardImageIcon 
   transition:border-color .2s var(--lumaaglaass-ease,ease)!important;
  }
  html body :is(.skinHeader:not(.osdHeader) .headerButton:not(.headerUserButtonRound),
-.aa-hero-btn-info,.mainDetailButtons .detailButton,
+.aa-hero-btn-info,.mainDetailButtons .detailButton,.aa-library-toolbar button,.aa-library-page .paging button,
 .lg-playback-close,.lg-player-version-close):not(:is(.btnPlay,.btnReplay,.btnPlayTrailer,.button-submit,:has(.playstatebutton-icon-played),
 [aria-pressed="true"],[aria-selected="true"],[aria-current="page"],.buttonActive)):not(:disabled):not([aria-disabled="true"]):is(:hover,:focus-visible) {
   background:var(--aa-media-hover-surface,rgba(30,30,32,.6))!important;
   border-color:var(--aa-text,#f5f5f7)!important;
  }
  html body :is(.skinHeader:not(.osdHeader) .headerButton:not(.headerUserButtonRound),
-.aa-hero-btn-info,.mainDetailButtons .detailButton,
+.aa-hero-btn-info,.mainDetailButtons .detailButton,.aa-library-toolbar button,.aa-library-page .paging button,
 .lg-playback-close,.lg-player-version-close):not(:is(.btnPlay,.btnReplay,.btnPlayTrailer,.button-submit,:has(.playstatebutton-icon-played),
 [aria-pressed="true"],[aria-selected="true"],[aria-current="page"],.buttonActive)):focus-visible {
   outline:2px solid var(--aa-text,#f5f5f7)!important;
@@ -3817,17 +3871,17 @@ html body :is(.cardPadder,.defaultCardBackground,.listItemImage) .cardImageIcon 
  }
  @media(prefers-reduced-motion:reduce) {
   html body :is(.skinHeader:not(.osdHeader) .headerButton:not(.headerUserButtonRound),
-.aa-hero-btn-info,.mainDetailButtons .detailButton,
+.aa-hero-btn-info,.mainDetailButtons .detailButton,.aa-library-toolbar button,.aa-library-page .paging button,
 .lg-playback-close,.lg-player-version-close):not(:is(.btnPlay,.btnReplay,.btnPlayTrailer,.button-submit,:has(.playstatebutton-icon-played),
 [aria-pressed="true"],[aria-selected="true"],[aria-current="page"],.buttonActive)) { transition:none!important; }
  }
  @media(prefers-reduced-transparency:reduce),(prefers-contrast:more) {
   html body :is(.skinHeader:not(.osdHeader) .headerButton:not(.headerUserButtonRound),
-.aa-hero-btn-info,.mainDetailButtons .detailButton,
+.aa-hero-btn-info,.mainDetailButtons .detailButton,.aa-library-toolbar button,.aa-library-page .paging button,
 .lg-playback-close,.lg-player-version-close):not(:is(.btnPlay,.btnReplay,.btnPlayTrailer,.button-submit,:has(.playstatebutton-icon-played),
 [aria-pressed="true"],[aria-selected="true"],[aria-current="page"],.buttonActive)),
   html body :is(.skinHeader:not(.osdHeader) .headerButton:not(.headerUserButtonRound),
-.aa-hero-btn-info,.mainDetailButtons .detailButton,
+.aa-hero-btn-info,.mainDetailButtons .detailButton,.aa-library-toolbar button,.aa-library-page .paging button,
 .lg-playback-close,.lg-player-version-close):not(:is(.btnPlay,.btnReplay,.btnPlayTrailer,.button-submit,:has(.playstatebutton-icon-played),
 [aria-pressed="true"],[aria-selected="true"],[aria-current="page"],.buttonActive)):not(:disabled):not([aria-disabled="true"]):is(:hover,:focus-visible) {
    background:#30343b!important;
@@ -3836,10 +3890,10 @@ html body :is(.cardPadder,.defaultCardBackground,.listItemImage) .cardImageIcon 
  }
  @media(forced-colors:active) {
   html body :is(.skinHeader:not(.osdHeader) .headerButton:not(.headerUserButtonRound),
-.aa-hero-btn-info,.mainDetailButtons .detailButton,
+.aa-hero-btn-info,.mainDetailButtons .detailButton,.aa-library-toolbar button,.aa-library-page .paging button,
 .lg-playback-close,.lg-player-version-close):not(:is(.btnPlay,.btnReplay,.btnPlayTrailer,.button-submit,:has(.playstatebutton-icon-played),
 [aria-pressed="true"],[aria-selected="true"],[aria-current="page"],.buttonActive)),html body :is(.skinHeader:not(.osdHeader) .headerButton:not(.headerUserButtonRound),
-.aa-hero-btn-info,.mainDetailButtons .detailButton,
+.aa-hero-btn-info,.mainDetailButtons .detailButton,.aa-library-toolbar button,.aa-library-page .paging button,
 .lg-playback-close,.lg-player-version-close):not(:is(.btnPlay,.btnReplay,.btnPlayTrailer,.button-submit,:has(.playstatebutton-icon-played),
 [aria-pressed="true"],[aria-selected="true"],[aria-current="page"],.buttonActive)):is(:hover,:focus-visible) {
    background:Canvas!important; color:ButtonText!important; border-color:ButtonText!important;
@@ -3892,21 +3946,21 @@ html body .skip-button-container .skip-button {
 /* Playback actions - Share motion across primary controls, not artwork overlays.
    Image buttons retain their stable geometry to avoid seams in the glass veil. */
 @layer lg-glass-controls {
- html body :is(.aa-hero-btn-play,.mainDetailButtons .btnPlay,.mainDetailButtons .btnReplay,.mainDetailButtons .btnPlayTrailer,.lg-playback-launch) {
+ html body :is(.aa-hero-btn-play,.mainDetailButtons .btnPlay,.mainDetailButtons .btnReplay,.mainDetailButtons .btnPlayTrailer,.lg-playback-launch,.aa-library-toolbar .btnPlay) {
   transform:none!important;
   transition:background-color .2s var(--lumaaglaass-ease,ease),transform .2s var(--lumaaglaass-ease,ease)!important;
  }
  @media(hover:hover) {
-  html body :is(.aa-hero-btn-play,.mainDetailButtons .btnPlay,.mainDetailButtons .btnReplay,.mainDetailButtons .btnPlayTrailer,.lg-playback-launch):not(:disabled):not([aria-disabled="true"]):hover {
+  html body :is(.aa-hero-btn-play,.mainDetailButtons .btnPlay,.mainDetailButtons .btnReplay,.mainDetailButtons .btnPlayTrailer,.lg-playback-launch,.aa-library-toolbar .btnPlay):not(:disabled):not([aria-disabled="true"]):hover {
    transform:scale(1.03)!important;
   }
  }
- html body :is(.aa-hero-btn-play,.mainDetailButtons .btnPlay,.mainDetailButtons .btnReplay,.mainDetailButtons .btnPlayTrailer,.lg-playback-launch):not(:disabled):not([aria-disabled="true"]):active {
+ html body :is(.aa-hero-btn-play,.mainDetailButtons .btnPlay,.mainDetailButtons .btnReplay,.mainDetailButtons .btnPlayTrailer,.lg-playback-launch,.aa-library-toolbar .btnPlay):not(:disabled):not([aria-disabled="true"]):active {
   transform:scale(.98)!important;
  }
  @media(prefers-reduced-motion:reduce) {
-  html body :is(.aa-hero-btn-play,.mainDetailButtons .btnPlay,.mainDetailButtons .btnReplay,.mainDetailButtons .btnPlayTrailer,.lg-playback-launch),
-  html body :is(.aa-hero-btn-play,.mainDetailButtons .btnPlay,.mainDetailButtons .btnReplay,.mainDetailButtons .btnPlayTrailer,.lg-playback-launch):not(:disabled):not([aria-disabled="true"]):is(:hover,:active) {
+  html body :is(.aa-hero-btn-play,.mainDetailButtons .btnPlay,.mainDetailButtons .btnReplay,.mainDetailButtons .btnPlayTrailer,.lg-playback-launch,.aa-library-toolbar .btnPlay),
+  html body :is(.aa-hero-btn-play,.mainDetailButtons .btnPlay,.mainDetailButtons .btnReplay,.mainDetailButtons .btnPlayTrailer,.lg-playback-launch,.aa-library-toolbar .btnPlay):not(:disabled):not([aria-disabled="true"]):is(:hover,:active) {
    transform:none!important; transition:none!important;
   }
  }

@@ -406,6 +406,46 @@
   }
   // Collections - Keep the background during the visit and ignore stale responses.
   let collectionScene = null;
+  // Libraries - Enrich the native toolbar without moving or cloning its controls.
+  function clearLibraryHeader() {
+    document.querySelectorAll('.aa-library-heading,.aa-library-image').forEach(node => node.remove());
+    document.querySelectorAll('.aa-library-toolbar').forEach(node => node.classList.remove('aa-library-toolbar', 'aa-library-with-image'));
+  }
+  async function loadLibraryHeader(scene, api) {
+    scene.headerLoading = true;
+    const current = () => !stopped && enabled() && collectionScene === scene &&
+      sessionKey(currentClient()) === scene.key && collectionArtContext()?.page === scene.page &&
+      collectionArtContext()?.id === scene.id;
+    try {
+      const item = await api.getItem(api.getCurrentUserId(), scene.id);
+      if (!current() || !item?.Name) return;
+      const toolbar = scene.page.querySelector('.itemsViewSettingsContainer');
+      if (!toolbar) return;
+      const heading = document.createElement('h1');
+      heading.className = 'aa-library-heading';
+      heading.textContent = item.Name;
+      toolbar.prepend(heading);
+      toolbar.classList.add('aa-library-toolbar');
+      scene.headerLoaded = true;
+      // Only the library's configured image belongs here, never a random child's poster.
+      if (item.ImageTags?.Primary) {
+        const image = document.createElement('img');
+        image.className = 'aa-library-image';
+        image.alt = '';
+        image.onload = () => {
+          image.onload = image.onerror = null;
+          if (!current() || !toolbar.isConnected || !image.naturalWidth) return;
+          toolbar.append(image);
+          toolbar.classList.add('aa-library-with-image');
+        };
+        image.onerror = () => { image.onload = image.onerror = null; };
+        image.src = api.getUrl('Items/' + encodeURIComponent(scene.id) + '/Images/Primary', {
+          tag:item.ImageTags.Primary, maxWidth:880, quality:90
+        });
+      }
+    } catch { /* Preserve the native toolbar when metadata is unavailable. */ }
+    finally { scene.headerLoading = false; scene.headerRetry = Date.now() + 30000; }
+  }
   // Backdrops - Library lists use parentId; collection details use id.
   function collectionArtContext() {
     if (route() === '#/list') {
@@ -421,6 +461,7 @@
     return page ? { page, id, kind: 'collection', className: 'aa-collection-page' } : null;
   }
   function clearCollection() {
+    clearLibraryHeader();
     collectionScene?.cancelImage?.(); collectionScene = null;
     document.querySelectorAll('.aa-collection-page,.aa-library-page').forEach(n => { n.classList.remove('aa-collection-page', 'aa-library-page'); n.style.removeProperty('--aa-collection-art'); });
     if(document.documentElement.classList.contains('aa-collection-art')) document.documentElement.classList.remove('aa-collection-art');
@@ -437,10 +478,13 @@
     const api = currentClient(), key = sessionKey(api);
     if (!id || !key) { clearCollection(); return; }
     if (!collectionScene || collectionScene.id !== id || collectionScene.key !== key || collectionScene.kind !== kind || collectionScene.page !== page) {
+      clearLibraryHeader();
       collectionScene?.cancelImage?.();
       collectionScene = {id,key,kind,page,art:'none',loading:false,retry:0};
     }
     const scene = collectionScene, art = scene.art;
+    if (kind === 'library' && !scene.headerLoaded && !scene.headerLoading &&
+        Date.now() >= (scene.headerRetry || 0) && typeof api.getItem === 'function') void loadLibraryHeader(scene, api);
     rememberBackground(art, key, page);
     for(const node of [page, document.documentElement]) if(node.style.getPropertyValue('--aa-collection-art') !== art) node.style.setProperty('--aa-collection-art',art);
     if(!document.documentElement.classList.contains('aa-collection-art')) document.documentElement.classList.add('aa-collection-art');
