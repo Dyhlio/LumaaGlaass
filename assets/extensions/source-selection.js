@@ -1,19 +1,30 @@
-/* LumaaGlaass - Optional source selection interface. */
+/* LumaaGlaass - Source selection extension. */
+;
 (() => {
     'use strict';
 
-    // Configuration - Set window.LumaaGlaassSourceSelectionOptions before loading.
-    // Example: window.LumaaGlaassSourceSelectionOptions = { mode: 'native' };
-    // Missing/invalid modes use native. Save and fully reload after changes.
-    // Installation and examples: docs/customization.md#source-selection.
-    // native: Jellyfin controls, panel: inline source list, dialog: selection before Play.
-    const requested = window.LumaaGlaassSourceSelectionOptions?.mode;
-    const mode = ['native', 'panel', 'dialog'].includes(requested) ? requested : 'native';
-    const key = '__lumaaGlaassSourceSelection';
-    window[key]?.stop();
-    window.__lumaaGlaassSourcePanel?.stop();
-    window.__lumaaGlaassPlaybackDialog?.stop();
+    // =====================================================================
+    // Configuration
+    // =====================================================================
+    // Options - window.LumaaGlaassSourceSelectionOptions = { mode: 'native' | 'panel' | 'dialog' }.
+    // Docs: customization.md#source-selection.
+    const defaults = { mode: 'native' };
+    const configured = window.LumaaGlaassSourceSelectionOptions || {};
+    const choice = (value, fallback, allowed) => value === undefined ? fallback : allowed.includes(value) ? value : 'native';
+    const settings = Object.freeze({
+        mode: choice(configured.mode, defaults.mode, ['native', 'panel', 'dialog'])
+    });
 
+    // =====================================================================
+    // Instance
+    // =====================================================================
+    const KEY = '__lumaaGlaassSourceSelection';
+    window[KEY]?.stop();
+    let stopped = false;
+
+    // =====================================================================
+    // Localization
+    // =====================================================================
     // Localization - Share access to Jellyfin's translator across independent scripts.
     const nativeI18n = window.__lumaaGlaassI18n ||= (() => {
         let translator = null, runtime = null, retryAt = 0;
@@ -47,309 +58,455 @@
             }
         };
     })();
+    // Localization - English text of the Jellyfin keys used here, for when Jellyfin has no string.
+    const ENGLISH = {
+        ButtonClose: 'Close',
+        Play: 'Play'
+    };
+    const translate = key => nativeI18n.translate(key) || ENGLISH[key] || key;
 
-    // Native model - Both views read and update the same Jellyfin form.
-    const visible = node => node && !node.closest('.hide,[hidden]');
-    const labelFor = select => select.closest('.selectContainer')?.querySelector('.selectLabel')?.textContent.trim() || select.getAttribute('label') || select.getAttribute('aria-label') || '';
-    const optionSignature = select => JSON.stringify(Array.from(select.options, option => [option.value, option.textContent, option.disabled, Boolean(option.parentElement.disabled)]));
+    // =====================================================================
+    // Shared helpers
+    // =====================================================================
+    // Listeners - Added through listen() so stop() removes them all.
+    const listeners = [];
+    const listen = (target, event, fn, options) => {
+        target.addEventListener(event, fn, options);
+        listeners.push(() => target.removeEventListener(event, fn, options));
+    };
+    const element = (tag, cls, text) => {
+        const node = document.createElement(tag);
+        if (cls) node.className = cls;
+        if (text) node.textContent = text;
+        return node;
+    };
+    const route = () => location.hash.split('?')[0].replace(/\.html$/, '');
+    const visible = node => node && !node.closest('.hide,[hidden]') && node.getClientRects().length > 0;
+    // Writes - Only real changes: the main theme's page observer and tooltip claim react to each write.
+    const setText = (node, value) => {
+        if (node && node.textContent !== value) node.textContent = value;
+    };
+    const setAttribute = (node, name, value) => {
+        if (node && node.getAttribute(name) !== value) node.setAttribute(name, value);
+    };
+    const setDisabled = (node, value) => {
+        if (node.disabled !== value) node.disabled = value;
+    };
+    // Titles - The main theme moves title to data-lg-tooltip for its styled hint: a title is read from
+    // either, and written (removed for null) only when it changes.
+    const titleOf = node => node.hasAttribute('title') ? node.getAttribute('title') : node.getAttribute('data-lg-tooltip');
+
+    // =====================================================================
+    // Styles
+    // =====================================================================
+    const PANEL_STYLE = `
+        body #itemDetailPage#itemDetailPage .trackSelections > .selectSourceContainer[data-lg-source-row-hidden],
+        body #itemDetailPage#itemDetailPage .trackSelections[data-lg-source-form-empty] {
+            display: none !important;
+        }
+
+        .lg-source-panel {
+            position: relative;
+            background: var(--lg-surface,rgba(30,30,32,.4));
+            -webkit-backdrop-filter: blur(var(--lg-blur-panel,32px));
+            backdrop-filter: blur(var(--lg-blur-panel,32px));
+            border: 1px solid var(--lg-edge,rgba(255,255,255,.12));
+            min-width: 0;
+            padding: 18px 18px 28px;
+            box-sizing: border-box;
+            border-radius: var(--lg-radius,14px);
+        }
+
+        .lg-source-panel h2 {
+            margin: 0 0 16px;
+            font-weight: 600;
+            font-size: 18px;
+            line-height: 1.4;
+        }
+
+        .lg-source-panel::after {
+            bottom: 11px;
+        }
+
+        /* Rows - lumaaglaass.css draws the option rows and their states; the panel's rows are taller. */
+        .lg-source-panel .lg-source-panel-option {
+            display: block;
+            width: 100%;
+            min-height: 64px;
+            padding: 12px 14px;
+            line-height: 1.45;
+        }
+
+        .lg-source-panel-option:has(.lg-source-panel-provider) {
+            display: grid;
+            grid-template-columns: minmax(0,1fr) minmax(0,2fr);
+            gap: 14px;
+            align-items: center;
+        }
+
+        .lg-source-panel-provider {
+            font-weight: 600;
+        }
+
+        .lg-source-panel-option:disabled {
+            opacity: .45;
+        }
+
+        /* Layout - The details grid gains the panel's column; the poster shape comes from the main
+           script's data-lg-detail-poster mark, not a page-wide :has(). */
+        body #itemDetailPage#itemDetailPage.lg-has-source-panel {
+            @media (width >= 1200px) {
+                & .detailPagePrimaryContainer {
+                    grid-template-columns: clamp(150px,12vw,220px) minmax(0,1fr) clamp(360px,38vw,760px) !important;
+                    column-gap: clamp(24px,2vw,40px) !important;
+                }
+
+                &[data-lg-detail-poster="portrait"] .detailPagePrimaryContainer {
+                    grid-template-columns: clamp(200px,17vw,340px) minmax(0,1fr) clamp(360px,36vw,760px) !important;
+                }
+
+                & .lg-source-panel {
+                    grid-column: 3;
+                    grid-row: 1 / span 6;
+                    align-self: start;
+                    margin: 0;
+                }
+
+                & .lg-source-panel-list {
+                    max-height: var(--lg-source-panel-height,560px);
+                }
+            }
+
+            /* Narrow layouts - One column of rows: panel, tracks, overview, then metadata. */
+            @media (width < 1200px) {
+                & .lg-source-panel {
+                    grid-column: 2;
+                    grid-row: 2;
+                    margin-top: 20px;
+                }
+
+                & .trackSelections:not(.hide) {
+                    grid-column: 2;
+                    grid-row: 3;
+                    margin-top: 16px !important;
+                }
+
+                & .detailSectionContent {
+                    grid-column: 2;
+                    grid-row: 4;
+                }
+
+                & .itemDetailsGroup {
+                    grid-column: 2;
+                    grid-row: 5;
+                }
+
+                & .lg-source-panel-list {
+                    max-height: max(var(--lg-source-panel-two-rows,0px),min(var(--lg-source-panel-height,560px),40vh));
+                }
+            }
+
+            @media (max-width: 640px) {
+                & .lg-source-panel-option {
+                    padding: 14px;
+                }
+
+                & .lg-source-panel {
+                    grid-column: 1;
+                    grid-row: 3;
+                }
+
+                & .trackSelections:not(.hide) {
+                    grid-column: 1;
+                    grid-row: 4;
+                }
+
+                & .detailSectionContent {
+                    grid-column: 1;
+                    grid-row: 5;
+                }
+
+                & .itemDetailsGroup {
+                    grid-column: 1;
+                    grid-row: 6;
+                }
+            }
+        }
+    `;
+    const DIALOG_STYLE = `
+        body #itemDetailPage#itemDetailPage .trackSelections[data-lg-source-form-hidden] {
+            display: none !important;
+        }
+
+        .lg-source-dialog-label,
+        .lg-source-dialog-field span {
+            display: block;
+            margin: 0 0 8px;
+            font-size: 13px;
+            line-height: 1.4;
+            font-weight: 600;
+        }
+
+        .lg-source-dialog-list {
+            max-height: 38vh;
+        }
+
+        .lg-source-dialog-tracks {
+            display: grid;
+            grid-template-columns: repeat(2,minmax(0,1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .lg-source-dialog-field {
+            min-width: 0;
+        }
+
+        .lg-source-dialog-field select {
+            width: 100%;
+            min-width: 0;
+        }
+
+        .lg-source-dialog-footer {
+            border-top: 1px solid var(--lg-edge,rgba(255,255,255,.12));
+            justify-content: center;
+        }
+
+        .lg-source-dialog-play::before {
+            content: '';
+            display: inline-block;
+            border-block: 6px solid transparent;
+            border-inline-start: 9px solid currentColor;
+            margin-inline-end: 12px;
+            vertical-align: -1px;
+        }
+
+        @media (max-width: 640px) {
+            .lg-source-dialog-tracks {
+                grid-template-columns: minmax(0,1fr);
+            }
+        }
+    `;
+    // Style - The chosen view's rules; lumaaglaass.css draws the shared dialog shell and lists.
+    const style = element('style', '', settings.mode === 'panel' ? PANEL_STYLE : DIALOG_STYLE);
+
+    // =====================================================================
+    // Native model
+    // =====================================================================
+    // Form - Both views read and update the same Jellyfin form.
+    // Hidden - By a class or attribute only, rendered or not: this script may hide the native form.
+    const unhidden = node => node && !node.closest('.hide,[hidden]');
+    const selectable = (select, option) => Boolean(option) && !select.disabled && !option.disabled && !option.parentElement.disabled;
+    const labelFor = select => select.closest('.selectContainer')?.querySelector('.selectLabel')?.textContent.trim() ||
+        select.getAttribute('label') || select.getAttribute('aria-label') || '';
+    const optionSignature = select => JSON.stringify(Array.from(select.options,
+        option => [option.value, option.textContent, option.disabled, Boolean(option.parentElement.disabled)]));
     function context() {
-        const page = Array.from(document.querySelectorAll('#itemDetailPage')).find(node => visible(node) && node.getClientRects().length);
+        const page = Array.from(document.querySelectorAll('#itemDetailPage')).find(visible);
         const select = page?.querySelector('.selectSource');
         const form = select?.closest('.trackSelections');
         const label = select && labelFor(select);
-        if (!/^#\/details(?:\.html)?(?:\?|$)/.test(location.hash) || !form || !visible(form) ||
-            !select.options.length || !label || page.classList.contains('aa-collection-page')) return null;
-        return {page, select, form, label};
+        if (route() !== '#/details' || !form || !unhidden(form) || !select.options.length || !label ||
+            page.classList.contains('lg-collection-page')) {
+            return null;
+        }
+        return { page, select, form, label };
     }
     function choose(select, index) {
-        const option = select?.options[index];
-        if (!select?.isConnected || select.disabled || !option || option.disabled || option.parentElement.disabled) return false;
+        if (!select?.isConnected || !selectable(select, select.options[index])) return false;
         select.selectedIndex = index;
-        select.dispatchEvent(new Event('change', {bubbles:true}));
+        select.dispatchEvent(new Event('change', { bubbles: true }));
         return true;
     }
 
-    // Views - Only the selected presentation installs its styles and controls.
+    // =====================================================================
+    // Source list
+    // =====================================================================
+    function syncScrollHint(list) {
+        list.parentElement.toggleAttribute('data-lg-source-scroll-hint', list.scrollHeight - list.clientHeight - list.scrollTop > 2);
+    }
+    // Rows - One button per native option; disabled and pressed follow the native select.
+    function syncRows(list, select) {
+        Array.from(list.children).forEach((button, index) => {
+            setDisabled(button, !selectable(select, select.options[index]));
+            setAttribute(button, 'aria-pressed', String(index === select.selectedIndex));
+        });
+    }
+
+    // =====================================================================
+    // Panel view
+    // =====================================================================
+    // Panel - Every source as a row beside the details, replacing the native source row, on details
+    // pages with the theme's poster layout.
     function createPanel() {
-        const style = document.createElement('style');
-        style.textContent = `
-            body #itemDetailPage#itemDetailPage .trackSelections > .selectSourceContainer[data-lg-source-hidden] { display:none!important; }
-            body #itemDetailPage#itemDetailPage .trackSelections[data-lg-source-empty] { display:none!important; }
-            .lg-source-panel { position:relative; grid-column:1 / -1; grid-row:20; min-width:0; margin-top:24px; padding:18px 18px 28px; box-sizing:border-box; background:var(--aa-surface,rgba(30,30,32,.4)); border:1px solid rgba(255,255,255,.12); border-radius:14px; color:inherit; }
-            .lg-source-panel h2 { margin:0 0 16px; font-family:inherit; font-weight:600; font-size:18px; line-height:1.4; }
-            .lg-source-list { display:flex; flex-direction:column; gap:8px; max-height:min(var(--lg-source-list-height,560px),65vh); overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; scrollbar-color:rgba(255,255,255,.55) rgba(255,255,255,.08); scrollbar-gutter:stable; padding:3px; padding-inline-end:14px; }
-            .lg-source-list::-webkit-scrollbar { width:8px; }
-            .lg-source-list::-webkit-scrollbar-track { background:rgba(255,255,255,.08); border-radius:8px; }
-            .lg-source-list::-webkit-scrollbar-thumb { background:rgba(255,255,255,.55); border-radius:8px; }
-            .lg-source-list::-webkit-scrollbar-thumb:hover { background:rgba(255,255,255,.75); }
-            .lg-source-panel[data-can-scroll-down]::after { content:''; position:absolute; bottom:11px; left:calc(50% - 4px); width:7px; height:7px; border-right:2px solid rgba(255,255,255,.8); border-bottom:2px solid rgba(255,255,255,.8); transform:rotate(45deg); pointer-events:none; }
-            .lg-source-option { display:block; flex-shrink:0; width:100%; box-sizing:border-box; min-height:64px; padding:12px 14px; border:1px solid transparent; border-radius:14px; background:rgba(255,255,255,.035); color:inherit; font:inherit; font-size:14px; line-height:1.45; text-align:start; white-space:pre-wrap; overflow-wrap:anywhere; cursor:pointer; }
-            .lg-source-option:hover:not(:disabled):not([aria-pressed="true"]) { background:var(--aa-ui-hover-surface,rgba(30,30,32,.4)); }
-            .lg-source-option[aria-pressed="true"] { border-color:var(--aa-ui-selected-edge,rgba(255,255,255,.45)); background:var(--aa-ui-selected-surface,rgba(255,255,255,.16)); }
-            .lg-source-option:focus-visible { outline:2px solid currentColor; outline-offset:1px; }
-            .lg-source-option:disabled { opacity:.45; cursor:default; }
-            .lg-source-option:has(.lg-source-provider) { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,2fr); gap:14px; align-items:center; }
-            .lg-source-provider { font-weight:600; }
-            @media(min-width:1200px) {
-                body #itemDetailPage#itemDetailPage.lg-source-layout .detailPagePrimaryContainer { grid-template-columns:clamp(150px,12vw,220px) minmax(0,1fr) clamp(360px,38vw,760px)!important; column-gap:clamp(24px,2vw,40px)!important; }
-                body #itemDetailPage#itemDetailPage.lg-source-layout:has(.detailImageContainer .portraitCard) .detailPagePrimaryContainer { grid-template-columns:clamp(200px,17vw,340px) minmax(0,1fr) clamp(360px,36vw,760px)!important; }
-                .lg-source-panel { grid-column:3; grid-row:1 / span 6; align-self:start; margin:0; }
-                .lg-source-list { max-height:var(--lg-source-list-height,560px); }
-            }
-            @media(max-width:1199px) {
-                body #itemDetailPage#itemDetailPage.lg-source-layout .lg-source-panel { grid-column:2; grid-row:2; margin-top:20px; }
-                body #itemDetailPage#itemDetailPage.lg-source-layout .trackSelections:not(.hide) { grid-column:2; grid-row:3; margin-top:16px!important; }
-                body #itemDetailPage#itemDetailPage.lg-source-layout .detailSectionContent { grid-column:2; grid-row:4; }
-                body #itemDetailPage#itemDetailPage.lg-source-layout .itemDetailsGroup { grid-column:2; grid-row:5; }
-                .lg-source-list { max-height:max(var(--lg-source-two-rows,0px),min(var(--lg-source-list-height,560px),40vh)); }
-            }
-            @media(max-width:640px) {
-                .lg-source-option { padding:14px; }
-                body #itemDetailPage#itemDetailPage.lg-source-layout .lg-source-panel { grid-column:1; grid-row:3; }
-                body #itemDetailPage#itemDetailPage.lg-source-layout .trackSelections:not(.hide) { grid-column:1; grid-row:4; }
-                body #itemDetailPage#itemDetailPage.lg-source-layout .detailSectionContent { grid-column:1; grid-row:5; }
-                body #itemDetailPage#itemDetailPage.lg-source-layout .itemDetailsGroup { grid-column:1; grid-row:6; }
-            }
-        `;
-        document.head.append(style);
+        const wideLayout = window.matchMedia('(width >= 1200px)');
         let current = null;
-
-        function syncScrollHint() {
-            if (!current) return;
-            const { list, panel } = current;
-            panel.toggleAttribute('data-can-scroll-down', list.scrollHeight - list.clientHeight - list.scrollTop > 2);
-        }
-
         function clear() {
             if (!current) return;
-            current.form.removeAttribute('data-lg-source-empty');
-            current.row.removeAttribute('data-lg-source-hidden');
-            current.page.classList.remove('lg-source-layout');
+            current.form.removeAttribute('data-lg-source-form-empty');
+            current.row.removeAttribute('data-lg-source-row-hidden');
+            current.page.classList.remove('lg-has-source-panel');
             current.panel.remove();
             current = null;
         }
-
         function sync() {
             const ctx = context();
-            const {page, select, form, label} = ctx || {};
+            const { page, select, form, label } = ctx || {};
             const row = select?.closest('.selectSourceContainer');
-            const parent = page?.querySelector('.detailPagePrimaryContainer');
-            if (!ctx || !row || !parent || select.options.length < 2 ||
-                row.closest('.hide,[hidden]') || !parent.querySelector('.portraitCard,.backdropCard,.squareCard')) {
+            if (!ctx || !row || select.options.length < 2 || !unhidden(row) || !page.hasAttribute('data-lg-detail-poster')) {
                 clear();
                 return;
             }
-            if (current && (current.select !== select || current.route !== location.hash || !current.panel.isConnected)) clear();
+            if (current && (current.select !== select || current.hash !== location.hash || !current.panel.isConnected)) clear();
             if (!current) {
-                const panel = document.createElement('section');
-                panel.className = 'lg-source-panel';
-                const heading = document.createElement('h2');
-                const list = document.createElement('div');
-                list.className = 'lg-source-list';
+                const panel = element('section', 'lg-source-panel');
+                const heading = element('h2');
+                const list = element('div', 'lg-source-panel-list');
                 list.setAttribute('role', 'group');
-                list.addEventListener('scroll', syncScrollHint, { passive:true });
+                list.addEventListener('scroll', () => syncScrollHint(list), { passive: true });
                 panel.append(heading, list);
                 // Match keyboard reading order without changing the native track form.
                 form.before(panel);
-                current = { page, select, form, row, panel, heading, list, route:location.hash, signature:'' };
-                page.classList.add('lg-source-layout');
-                row.setAttribute('data-lg-source-hidden', '');
+                current = { page, select, form, row, panel, heading, list, hash: location.hash, signature: '' };
+                page.classList.add('lg-has-source-panel');
+                row.setAttribute('data-lg-source-row-hidden', '');
                 list.addEventListener('click', event => {
-                    const button = event.target.closest('.lg-source-option');
+                    const button = event.target.closest('.lg-source-panel-option');
                     if (!button || button.disabled || current?.list !== list || !select.isConnected) return;
-                    const index = Number(button.dataset.index);
-                    const option = select.options[index];
-                    if (optionSignature(select) !== current.signature || !choose(select, index)) { sync(); return; }
+                    if (optionSignature(select) === current.signature) choose(select, Number(button.dataset.lgSourceIndex));
                     sync();
                 });
             }
             const { heading, list } = current;
-            // Inspect children independently of our own form visibility so late tracks
-            // can restore the block. Preserve read-only video summaries as content.
+            // Check rows by their own visibility, not the form's (which we may hide), so late
+            // tracks bring it back; read-only video summaries count as content.
             const rowVisible = node => {
-                for (let element = node; element && element !== form; element = element.parentElement) {
-                    const css = getComputedStyle(element);
-                    if (element.hidden || element.classList.contains('hide') || css.display === 'none' || css.visibility === 'hidden') return false;
+                for (let ancestor = node; ancestor && ancestor !== form; ancestor = ancestor.parentElement) {
+                    const css = getComputedStyle(ancestor);
+                    if (ancestor.hidden || ancestor.classList.contains('hide') || css.display === 'none' || css.visibility === 'hidden') {
+                        return false;
+                    }
                 }
                 return true;
             };
             const hasContent = Array.from(form.children).some(child => {
                 if (child === row || !rowVisible(child)) return false;
-                if (child.getAttribute('data-aa-video-summary')?.trim()) return true;
+                if (child.getAttribute('data-lg-video-summary')?.trim()) return true;
                 return Array.from(child.querySelectorAll('select')).some(control =>
                     rowVisible(control) && Array.from(control.options).some(option => option.textContent.trim()));
             });
-            form.toggleAttribute('data-lg-source-empty', !hasContent);
-            if (heading.textContent !== label) heading.textContent = label;
-            list.setAttribute('aria-label', label);
-            const options = Array.from(select.options);
+            form.toggleAttribute('data-lg-source-form-empty', !hasContent);
+            setText(heading, label);
+            setAttribute(list, 'aria-label', label);
             const signature = optionSignature(select);
             if (current.signature !== signature) {
                 const fragment = document.createDocumentFragment();
-                options.forEach((option, index) => {
-                    const button = document.createElement('button');
+                Array.from(select.options).forEach((option, index) => {
+                    const button = element('button', 'lg-source-panel-option');
                     button.type = 'button';
-                    button.className = 'lg-source-option';
-                    button.dataset.index = String(index);
+                    button.dataset.lgSourceIndex = String(index);
                     const text = option.textContent.trim();
                     const split = text.search(/[🎥🎞📺]/u);
                     if (split > 0) {
-                        const provider = document.createElement('span');
-                        provider.className = 'lg-source-provider';
-                        provider.textContent = text.slice(0, split).trim();
-                        const details = document.createElement('span');
-                        details.textContent = text.slice(split).replace(/\s*([📦🌍🌐📁])/gu, '\n$1');
+                        const provider = element('span', 'lg-source-panel-provider', text.slice(0, split).trim());
+                        const details = element('span', '', text.slice(split).replace(/\s*([📦🌍🌐📁])/gu, '\n$1'));
                         button.append(provider, details);
-                    } else button.textContent = text;
+                    } else {
+                        button.textContent = text;
+                    }
                     fragment.append(button);
                 });
                 list.replaceChildren(fragment);
                 current.signature = signature;
             }
-            Array.from(list.children).forEach((button, index) => {
-                button.disabled = select.disabled || options[index].disabled || Boolean(options[index].parentElement.disabled);
-                button.setAttribute('aria-pressed', String(index === select.selectedIndex));
-            });
+            syncRows(list, select);
             // Keep the desktop panel above the last metadata row, with at most six sources.
+            const rowGap = Number.parseFloat(getComputedStyle(list).rowGap) || 0;
+            const rowsHeight = rows => rows.reduce((total, button) => total + button.getBoundingClientRect().height, 0) +
+                Math.max(0, rows.length - 1) * rowGap;
             const rows = Array.from(list.children).slice(0, 6);
-            let height = Math.floor(rows.reduce((total, button) => total + button.getBoundingClientRect().height, 0) + Math.max(0, rows.length - 1) * 8);
-            if (window.matchMedia('(min-width:1200px)').matches) {
-                const visible = node => node.getClientRects().length && !node.closest('.hide,[hidden]');
+            let height = Math.floor(rowsHeight(rows));
+            if (wideLayout.matches) {
                 const studio = Array.from(page.querySelectorAll('.studiosGroup')).find(visible);
                 const fallback = Array.from(page.querySelectorAll('.detailsGroupItem,.detailSectionContent')).filter(visible);
-                const bottom = studio?.getBoundingClientRect().bottom ?? Math.max(...fallback.map(node => node.getBoundingClientRect().bottom));
+                const bottom = studio?.getBoundingClientRect().bottom ??
+                    Math.max(...fallback.map(node => node.getBoundingClientRect().bottom));
                 if (Number.isFinite(bottom)) {
                     const panelStyle = getComputedStyle(current.panel);
                     const listStyle = getComputedStyle(list);
-                    const inset = parseFloat(panelStyle.paddingBottom) + parseFloat(panelStyle.borderBottomWidth) + parseFloat(listStyle.paddingTop) + parseFloat(listStyle.paddingBottom);
+                    const inset = parseFloat(panelStyle.paddingBottom) + parseFloat(panelStyle.borderBottomWidth) +
+                        parseFloat(listStyle.paddingTop) + parseFloat(listStyle.paddingBottom);
                     height = Math.min(height, Math.max(0, Math.floor(bottom - list.getBoundingClientRect().top - inset)));
                 }
             }
-            const listHeight = `${height}px`;
-            if (list.style.getPropertyValue('--lg-source-list-height') !== listHeight) list.style.setProperty('--lg-source-list-height', listHeight);
             // Show two complete sources on narrow screens, even with long filenames.
-            const firstTwo = rows.slice(0, 2);
-            const twoRowsHeight = `${Math.ceil(firstTwo.reduce((total, button) => total + button.getBoundingClientRect().height, 0) + Math.max(0, firstTwo.length - 1) * 8)}px`;
-            if (list.style.getPropertyValue('--lg-source-two-rows') !== twoRowsHeight) list.style.setProperty('--lg-source-two-rows', twoRowsHeight);
-            syncScrollHint();
+            for (const [name, value] of [['--lg-source-panel-height', height + 'px'],
+                ['--lg-source-panel-two-rows', Math.ceil(rowsHeight(rows.slice(0, 2))) + 'px']]) {
+                if (list.style.getPropertyValue(name) !== value) list.style.setProperty(name, value);
+            }
+            syncScrollHint(list);
         }
-
-        return { sync, stop() {
-            clear();
-            style.remove();
-        } };
-
+        return { sync, stop: clear };
     }
+
+    // =====================================================================
+    // Dialog view
+    // =====================================================================
+    // Dialog - Choose the source and tracks in a dialog before Play; the native form stays
+    // hidden and still starts playback.
     function createDialog() {
         if (typeof HTMLDialogElement === 'undefined' || !HTMLDialogElement.prototype.showModal) return null;
-        const style = document.createElement('style');
-        style.textContent = `
-          body #itemDetailPage#itemDetailPage .trackSelections[data-lg-playback-hidden] { display:none!important; }
-          .lg-playback-dialog { color:var(--aa-text,#f5f5f7); background:var(--aa-surface,rgba(30,30,32,.4)); backdrop-filter:blur(var(--aa-panel-blur,23px)); border:1px solid var(--aa-glass-edge,rgba(255,255,255,.12)); border-radius:24px; width:min(760px,calc(100vw - 32px)); max-height:calc(100dvh - 40px); padding:0; box-sizing:border-box; font:inherit; overflow:auto; color-scheme:dark; box-shadow:0 12px 36px rgba(0,0,0,.3); }
-          .lg-playback-dialog::backdrop { background:rgba(0,0,0,.55); }
-          .lg-playback-dialog[open] { display:flex; flex-direction:column; overflow:hidden; }
-          .lg-playback-header,.lg-playback-footer { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:20px; background:transparent; flex-shrink:0; }
-          .lg-playback-header { border-bottom:1px solid #ffffff20; }
-          .lg-playback-header h2 { font-size:20px; margin:0; overflow-wrap:anywhere; }
-          .lg-playback-close { font:inherit; font-size:26px; color:inherit; background:var(--aa-surface); border:1px solid var(--aa-glass-edge,rgba(255,255,255,.12)); border-radius:50%; width:46px; height:46px; flex-shrink:0; cursor:pointer; }
-          .lg-playback-body { padding:20px; min-height:0; overflow:auto; overscroll-behavior:contain; }
-          .lg-playback-label { display:block; margin:0 0 8px; font-size:13px; line-height:1.4; font-weight:600; color:#e0e0e5; }
-          .lg-playback-source-area { position:relative; padding-bottom:22px; }
-          .lg-playback-source-area[data-can-scroll-down]::after { content:''; position:absolute; bottom:7px; left:calc(50% - 4px); width:7px; height:7px; border-right:2px solid rgba(255,255,255,.8); border-bottom:2px solid rgba(255,255,255,.8); transform:rotate(45deg); pointer-events:none; }
-          .lg-playback-sources { display:flex; flex-direction:column; gap:8px; max-height:38vh; overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; scrollbar-gutter:stable; scrollbar-color:rgba(255,255,255,.55) rgba(255,255,255,.08); padding:3px; padding-inline-end:14px; }
-          .lg-playback-sources::-webkit-scrollbar { width:8px; }
-          .lg-playback-sources::-webkit-scrollbar-track { background:rgba(255,255,255,.08); border-radius:8px; }
-          .lg-playback-sources::-webkit-scrollbar-thumb { background:rgba(255,255,255,.55); border-radius:8px; }
-          .lg-playback-sources::-webkit-scrollbar-thumb:hover { background:rgba(255,255,255,.75); }
-          .lg-playback-source { font:inherit; font-size:14px; color:inherit; text-align:start; line-height:1.5; white-space:pre-wrap; overflow-wrap:anywhere; flex-shrink:0; padding:12px; min-height:44px; border:1px solid var(--aa-glass-edge,rgba(255,255,255,.12)); border-radius:10px; background:var(--aa-surface); cursor:pointer; }
-          .lg-playback-source[aria-pressed=true] { border-color:var(--aa-ui-selected-edge,rgba(255,255,255,.45)); background:var(--aa-ui-selected-surface,rgba(255,255,255,.16)); }
-          .lg-playback-source:hover:not(:disabled):not([aria-pressed=true]) { background:var(--aa-ui-hover-surface,rgba(30,30,32,.4)); }
-          .lg-playback-close:hover:not(:disabled) { background:var(--aa-media-hover-surface,rgba(30,30,32,.6)); }
-          .lg-playback-tracks { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin-top:20px; }
-          .lg-playback-field { min-width:0; }
-          .lg-playback-field select { width:100%; min-width:0; min-height:48px; box-sizing:border-box; padding:12px 56px 12px 14px; border:1px solid var(--aa-glass-edge,rgba(255,255,255,.12)); border-radius:10px; background:var(--aa-surface); color:inherit; font:inherit; font-size:15px; line-height:1.5; box-shadow:var(--aa-glass-shadow); appearance:none; background-image:var(--lg-playback-arrow); background-repeat:no-repeat; background-position:right 10px center; cursor:pointer; }
-          .lg-playback-field select:dir(rtl) { padding-inline:14px 56px; background-position:left 10px center; }
-          .lg-playback-field span { display:block; margin-bottom:8px; font-size:13px; line-height:1.4; font-weight:600; color:#e0e0e5; }
-          .lg-playback-field select option { background:#23262c; color:#f5f5f7; font:inherit; }
-          @supports (appearance:base-select) {
-            .lg-playback-field select,.lg-playback-field select::picker(select) { appearance:base-select; }
-            .lg-playback-field select { background-image:none; padding:7px 10px 7px 14px; display:flex; align-items:center; gap:12px; }
-            .lg-playback-field select::picker-icon { content:''; display:block; flex:0 0 32px; width:32px; height:32px; margin-inline-start:auto; background:var(--lg-playback-arrow) center/32px 32px no-repeat; }
-            .lg-playback-field select::picker(select) { background:var(--aa-surface); color:#f5f5f7; backdrop-filter:blur(var(--aa-panel-blur,23px)); border:1px solid var(--aa-glass-edge,rgba(255,255,255,.12)); border-radius:16px; padding:6px; margin-block:8px; box-shadow:0 12px 36px rgba(0,0,0,.3); box-sizing:border-box; width:anchor-size(width); max-width:calc(100vw - 24px); max-height:min(360px,55dvh); overflow:auto; overscroll-behavior:contain; font:inherit; }
-            .lg-playback-field select option { padding:12px; min-height:44px; box-sizing:border-box; border-radius:10px; background:transparent; line-height:1.5; white-space:normal; overflow-wrap:anywhere; cursor:pointer; gap:12px; }
-            .lg-playback-field select option + option { margin-block-start:var(--aa-option-gap); }
-            .lg-playback-field select option:checked { background:var(--aa-ui-selected-surface,rgba(255,255,255,.16)); font-weight:600; }
-            .lg-playback-field select option:not(:checked):is(:hover,:focus-visible) { background:var(--aa-ui-hover-surface,rgba(30,30,32,.4)); outline:1px solid rgba(255,255,255,.3); outline-offset:-1px; }
-          }
-          .lg-playback-footer { border-top:1px solid #ffffff20; justify-content:center; }
-          .lg-playback-launch { padding:12px 30px; min-height:46px; border:0; border-radius:30px; background:#f5f5f7; color:#151518; font:inherit; font-weight:600; cursor:pointer; }
-          .lg-playback-launch:not(:disabled):hover { transform:scale(1.03); box-shadow:none; }
-          @media(prefers-reduced-motion:reduce) { .lg-playback-launch { transition:none!important; } .lg-playback-launch:not(:disabled):hover { transform:none; } }
-          .lg-playback-launch::before { content:''; display:inline-block; border-block:6px solid transparent; border-inline-start:9px solid currentColor; margin-inline-end:12px; vertical-align:-1px; }
-          .lg-playback-dialog button:disabled { opacity:.45; cursor:default; }
-          .lg-playback-dialog :focus-visible { outline:2px solid white; outline-offset:2px; }
-          @media(max-width:640px) {
-            .lg-playback-dialog { inset:0; margin:auto; width:calc(100% - 24px); max-width:calc(100% - 24px); max-height:calc(100dvh - 32px); border-radius:24px; }
-            .lg-playback-header,.lg-playback-footer,.lg-playback-body { padding:16px; }
-            .lg-playback-tracks { grid-template-columns:minmax(0,1fr); }
-            .lg-playback-field select { font-size:16px; }
-          }
-          @media(prefers-reduced-transparency:reduce),(forced-colors:active) { .lg-playback-dialog,.lg-playback-field select::picker(select) { background:Canvas; color:CanvasText; backdrop-filter:none; } }
-        `;
-        document.head.append(style);
         let hiddenForm = null;
         let active = null;
         let bypass = null;
-
-
-        function syncScrollHint() {
-            if (!active) return;
-            const { list } = active;
-            list.parentElement.toggleAttribute('data-can-scroll-down', list.scrollHeight - list.clientHeight - list.scrollTop > 2);
+        // Play stays locked for 500 ms after a source or track list change, while Jellyfin rebuilds
+        // the tracks of the chosen source.
+        const READY_DELAY = 500;
+        function hideForm(form) {
+            if (hiddenForm === form) return;
+            hiddenForm?.removeAttribute('data-lg-source-form-hidden');
+            hiddenForm = form;
+            hiddenForm?.setAttribute('data-lg-source-form-hidden', '');
         }
-
-
         function close() {
             if (!active) return;
             const { dialog, trigger } = active;
             active = null;
             dialog.close();
             dialog.remove();
-            if (trigger.isConnected) trigger.focus({ preventScroll:true });
+            if (trigger.isConnected) trigger.focus({ preventScroll: true });
         }
-
         function syncDialog(ctx) {
             if (!active) return;
-            if (!ctx || ctx.select !== active.select || location.hash !== active.route) { close(); return; }
+            if (!ctx || ctx.select !== active.select || location.hash !== active.hash) {
+                close();
+                return;
+            }
             const { list, fields, launch } = active;
             const signature = optionSignature(ctx.select);
             if (signature !== active.signature) {
                 list.replaceChildren(...Array.from(ctx.select.options, (option, index) => {
-                    const button = document.createElement('button');
+                    const button = element('button', 'lg-source-dialog-option', option.textContent);
                     button.type = 'button';
-                    button.className = 'lg-playback-source';
-                    button.textContent = option.textContent;
                     button.addEventListener('click', () => {
-                        const nativeOption = ctx.select.options[index];
-                        if (!active || optionSignature(ctx.select) !== active.signature || !nativeOption || nativeOption.disabled || nativeOption.parentElement.disabled || ctx.select.disabled) { sync(); return; }
-                        active.readyAt = Date.now() + 500;
-                        choose(ctx.select, index);
+                        if (active && optionSignature(ctx.select) === active.signature &&
+                            selectable(ctx.select, ctx.select.options[index])) {
+                            active.readyAt = Date.now() + READY_DELAY;
+                            choose(ctx.select, index);
+                        }
                         sync();
                     });
                     return button;
                 }));
                 active.signature = signature;
             }
-            Array.from(list.children).forEach((button, index) => {
-                const option = ctx.select.options[index];
-                button.disabled = ctx.select.disabled || option.disabled || Boolean(option.parentElement.disabled);
-                button.setAttribute('aria-pressed', String(ctx.select.selectedIndex === index));
-            });
+            syncRows(list, ctx.select);
             for (const field of fields) {
                 const native = ctx.form.querySelector(field.selector);
-                field.wrapper.hidden = !native || !visible(native) || !native.options.length;
-                if (field.wrapper.hidden) continue;
-                field.label.textContent = labelFor(native);
+                const hidden = !native || !unhidden(native) || !native.options.length;
+                if (field.wrapper.hidden !== hidden) field.wrapper.hidden = hidden;
+                if (hidden) continue;
+                setText(field.label, labelFor(native));
                 const next = optionSignature(native);
                 if (field.signature !== next) {
                     field.select.replaceChildren(...Array.from(native.options, option => {
@@ -358,113 +515,100 @@
                         return copy;
                     }));
                     field.signature = next;
-                    active.readyAt = Date.now() + 500;
+                    active.readyAt = Date.now() + READY_DELAY;
                 }
                 field.select.selectedIndex = native.selectedIndex;
-                field.select.disabled = native.disabled;
+                setDisabled(field.select, native.disabled);
             }
-            const selected = ctx.select.selectedOptions[0];
-            launch.disabled = ctx.select.disabled || !selected || selected.disabled || Boolean(selected.parentElement.disabled) || !active.trigger.isConnected || active.trigger.disabled || Date.now() < active.readyAt;
-            syncScrollHint();
+            setAttribute(active.dismiss, 'aria-label', translate('ButtonClose'));
+            setDisabled(launch, !selectable(ctx.select, ctx.select.selectedOptions[0]) || !active.trigger.isConnected ||
+                active.trigger.disabled || Date.now() < active.readyAt);
+            syncScrollHint(active.list);
         }
-
         function sync() {
             const ctx = context();
-            if (hiddenForm !== ctx?.form) {
-                hiddenForm?.removeAttribute('data-lg-playback-hidden');
-                hiddenForm = ctx?.form || null;
-                hiddenForm?.setAttribute('data-lg-playback-hidden', '');
-            }
+            hideForm(ctx?.form || null);
             syncDialog(ctx);
         }
-
         function open(ctx, trigger) {
-            const dialog = document.createElement('dialog');
-            dialog.className = 'lg-playback-dialog';
+            const dialog = element('dialog', 'dialog lg-source-dialog');
             // Reuse the current native typography, including user font overrides.
             dialog.style.fontFamily = getComputedStyle(ctx.select).fontFamily;
-            dialog.style.setProperty('--lg-playback-arrow', `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='white' fill-opacity='.12' stroke='white' stroke-opacity='.3'/%3E%3Cpath d='m12 14 4 4 4-4' fill='none' stroke='%23f5f5f7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`);
-            const header = document.createElement('header');
-            header.className = 'lg-playback-header';
-            const title = document.createElement('h2');
-            title.id = 'lg-playback-title';
-            title.textContent = ctx.page.querySelector('.itemName')?.textContent || labelFor(ctx.select);
+            const header = element('header', 'lg-source-dialog-header');
+            const title = element('h2', '', ctx.page.querySelector('.itemName')?.textContent || labelFor(ctx.select));
+            title.id = 'lg-source-dialog-title';
             dialog.setAttribute('aria-labelledby', title.id);
-            const dismiss = document.createElement('button');
+            const dismiss = element('button', 'lg-source-dialog-close');
             dismiss.type = 'button';
-            dismiss.className = 'lg-playback-close';
-            dismiss.textContent = '×';
-            const translator = nativeI18n;
-            let closeLabel = 'Close';
-            try { closeLabel = translator?.translate?.('ButtonClose') || closeLabel; } catch {}
-            dismiss.setAttribute('aria-label', closeLabel);
-            dismiss.onclick = close;
+            const dismissIcon = element('span', 'material-icons', 'close');
+            dismissIcon.setAttribute('aria-hidden', 'true');
+            dismiss.append(dismissIcon);
+            dismiss.setAttribute('aria-label', translate('ButtonClose'));
+            dismiss.addEventListener('click', close);
             header.append(title, dismiss);
-            const body = document.createElement('div');
-            body.className = 'lg-playback-body';
-            const sourceLabel = document.createElement('div');
-            sourceLabel.className = 'lg-playback-label';
-            sourceLabel.textContent = labelFor(ctx.select);
-            const list = document.createElement('div');
-            list.className = 'lg-playback-sources';
+            const body = element('div', 'lg-source-dialog-body');
+            const sourceLabel = element('div', 'lg-source-dialog-label', labelFor(ctx.select));
+            const list = element('div', 'lg-source-dialog-list');
             list.setAttribute('role', 'group');
             list.setAttribute('aria-label', sourceLabel.textContent);
-            list.addEventListener('scroll', syncScrollHint, { passive:true });
-            const sourceArea = document.createElement('div');
-            sourceArea.className = 'lg-playback-source-area';
+            list.addEventListener('scroll', () => syncScrollHint(list), { passive: true });
+            const sourceArea = element('div', 'lg-source-dialog-area');
             sourceArea.append(list);
-            const tracks = document.createElement('div');
-            tracks.className = 'lg-playback-tracks';
+            const tracks = element('div', 'lg-source-dialog-tracks');
             const fields = ['.selectAudio', '.selectSubtitles'].map(selector => {
-                const wrapper = document.createElement('label');
-                wrapper.className = 'lg-playback-field';
-                const label = document.createElement('span');
-                const select = document.createElement('select');
+                const wrapper = element('label', 'lg-source-dialog-field');
+                const label = element('span');
+                const select = element('select', 'emby-select');
                 wrapper.append(label, select);
                 tracks.append(wrapper);
                 select.addEventListener('change', () => {
                     const native = ctx.form.querySelector(selector);
-                    if (!native || native.disabled || optionSignature(native) !== field.signature) { sync(); return; }
+                    if (!native || native.disabled || optionSignature(native) !== field.signature) {
+                        sync();
+                        return;
+                    }
                     choose(native, select.selectedIndex);
                     sync();
                 });
-                const field = { selector, wrapper, label, select, signature:null };
+                const field = { selector, wrapper, label, select, signature: null };
                 return field;
             });
             body.append(sourceLabel, sourceArea, tracks);
-            const footer = document.createElement('footer');
-            footer.className = 'lg-playback-footer';
-            const launch = document.createElement('button');
+            const footer = element('footer', 'lg-source-dialog-footer');
+            const launch = element('button', 'lg-source-dialog-play');
             launch.type = 'button';
-            launch.className = 'lg-playback-launch';
-            // Match the native playback button's transition without duplicating its timing.
-            launch.style.transition = getComputedStyle(trigger).transition;
             const buttonCopy = trigger.cloneNode(true);
             buttonCopy.querySelectorAll('.material-icons').forEach(icon => icon.remove());
-            const nativeTitle = trigger.getAttribute('title') || '';
-            let playLabel = 'Play';
-            try { playLabel = translator?.translate?.('Play') || playLabel; } catch {}
-            launch.textContent = trigger.getAttribute('data-aa-play-label') || buttonCopy.textContent.trim() || (!nativeTitle.includes('${') && nativeTitle) || playLabel;
-            launch.onclick = () => {
+            // The native button's text, else its title (Play or Resume); a legacy template may leave an
+            // untranslated ${…} placeholder there, which is not a label.
+            const nativeTitle = titleOf(trigger) || '';
+            launch.textContent = buttonCopy.textContent.trim() || (!nativeTitle.includes('${') && nativeTitle) || translate('Play');
+            launch.addEventListener('click', () => {
                 sync();
                 if (!active || launch.disabled) return;
                 close();
                 bypass = trigger;
                 try { trigger.click(); } finally { bypass = null; }
-            };
+            });
             footer.append(launch);
             dialog.append(header, body, footer);
-            dialog.addEventListener('cancel', event => { event.preventDefault(); close(); });
+            dialog.addEventListener('cancel', event => {
+                event.preventDefault();
+                close();
+            });
             document.body.append(dialog);
-            active = { ...ctx, dialog, trigger, route:location.hash, list, fields, launch, signature:null, readyAt:Date.now() + 500 };
+            active = {
+                ...ctx, dialog, trigger, hash: location.hash, list, fields, launch, dismiss, signature: null,
+                readyAt: Date.now() + READY_DELAY
+            };
             syncDialog(ctx);
             dialog.showModal();
             list.querySelector('[aria-pressed="true"]')?.focus();
-            syncScrollHint();
+            syncScrollHint(list);
         }
-
+        // media-actions' Info button carries btnPlay too, but never plays.
         function intercept(event) {
-            const trigger = event.target.closest?.('#itemDetailPage .mainDetailButtons .btnPlay, #itemDetailPage .mainDetailButtons .btnReplay');
+            const trigger = event.target.closest?.('#itemDetailPage .mainDetailButtons :is(.btnPlay,.btnReplay):not(.lg-media-details)');
             if (!trigger || trigger === bypass || trigger.disabled) return;
             const ctx = context();
             if (!ctx || !ctx.page.contains(trigger)) return;
@@ -472,36 +616,45 @@
             event.preventDefault();
             event.stopImmediatePropagation();
         }
-
-        window.addEventListener('click', intercept, true);
-        return { sync, stop() {
-            window.removeEventListener('click', intercept, true);
-            close();
-            hiddenForm?.removeAttribute('data-lg-playback-hidden');
-            style.remove();
-        } };
-
+        return {
+            sync,
+            intercept,
+            stop() {
+                close();
+                hideForm(null);
+            }
+        };
     }
 
-    // Lifecycle - One scheduler owns the selected view and restores native controls.
-    let stopped = false;
-    const view = mode === 'panel' ? createPanel() : mode === 'dialog' ? createDialog() : null;
+    // =====================================================================
+    // Scheduler
+    // =====================================================================
+    let view = null, timer = 0;
     const sync = () => { if (!stopped) view?.sync(); };
-    let timer = null;
-    if (view) {
+    function start() {
+        view = settings.mode === 'panel' ? createPanel() : settings.mode === 'dialog' ? createDialog() : null;
+        if (!view) return;
+        document.head.append(style);
+        if (view.intercept) listen(window, 'click', view.intercept, true);
         timer = setInterval(sync, 250);
-        document.addEventListener('change', sync);
-        window.addEventListener('hashchange', sync);
-        window.addEventListener('resize', sync);
+        listen(document, 'change', sync);
+        listen(window, 'hashchange', sync);
+        listen(window, 'resize', sync);
+        sync();
     }
-    window[key] = {mode: view ? mode : 'native', stop() {
-        stopped = true;
-        clearInterval(timer);
-        document.removeEventListener('change', sync);
-        window.removeEventListener('hashchange', sync);
-        window.removeEventListener('resize', sync);
-        view?.stop();
-        delete window[key];
-    }};
-    sync();
+
+    // =====================================================================
+    // Lifecycle
+    // =====================================================================
+    window[KEY] = {
+        stop() {
+            stopped = true;
+            clearInterval(timer);
+            listeners.forEach(fn => fn());
+            view?.stop();
+            style.remove();
+            delete window[KEY];
+        }
+    };
+    start();
 })();

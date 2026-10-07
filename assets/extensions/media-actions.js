@@ -1,43 +1,62 @@
-/* LumaaGlaass - Optional configurable media actions. */
+/* LumaaGlaass - Media actions extension. */
+;
 (() => {
     'use strict';
 
-    // Configuration - Set window.LumaaGlaassMediaActionsOptions before loading.
-    // Edit the loader configuration, then save and fully reload; do not modify runtime code.
-    // Installation, defaults and examples: docs/customization.md#media-actions.
-    // Modes: native keeps controls, details opens information, hide removes controls.
-    // Missing values use these defaults; invalid values safely use native.
+    // =====================================================================
+    // Configuration
+    // =====================================================================
+    // Options - window.LumaaGlaassMediaActionsOptions: native, details or hide (resumeButtons, cornerButtons: native or hide).
+    // Docs: customization.md#media-actions.
     const defaults = {
-        catalog: {
+        thumbnails: {
             movies: 'hide', episodes: 'hide', series: 'hide', seasons: 'hide',
             collections: 'hide', libraries: 'hide', folders: 'hide'
         },
-        seasonEpisodeImages: 'details',
-        resumeImages: {
+        seasonEpisodeThumbnails: 'details',
+        resumeThumbnails: {
             home: { movies: 'native', episodes: 'native' },
             elsewhere: { movies: 'hide', episodes: 'hide' }
         },
-        resumeDetailButtons: { movies: 'native', episodes: 'native' },
-        detailPages: { collections: 'hide', series: 'details', seasons: 'details' }
+        // Corner buttons - Played, favorite and more in a thumbnail's corner: one switch for all three.
+        cornerButtons: 'native',
+        resumeButtons: { movies: 'native', episodes: 'native' },
+        mainButtons: { collections: 'hide', series: 'details', seasons: 'details' }
     };
     const configured = window.LumaaGlaassMediaActionsOptions || {};
-    const mode = (value, fallback) => value === undefined ? fallback :
-        ['native', 'details', 'hide'].includes(value) ? value : 'native';
-    const group = (values, fallback) => Object.freeze(Object.fromEntries(
-        Object.entries(fallback).map(([name, value]) => [name, mode(values?.[name], value)])));
+    const MODES = ['native', 'details', 'hide'];
+    const BUTTON_MODES = ['native', 'hide'];
+    const choice = (value, fallback, allowed) => value === undefined ? fallback : allowed.includes(value) ? value : 'native';
+    const group = (values, fallbacks, allowed) => Object.freeze(Object.fromEntries(
+        Object.entries(fallbacks).map(([name, fallback]) => [name, choice(values?.[name], fallback, allowed)])));
     const settings = Object.freeze({
-        catalog: group(configured.catalog, defaults.catalog),
-        seasonEpisodeImages: mode(configured.seasonEpisodeImages, defaults.seasonEpisodeImages),
-        resumeImages: Object.freeze({
-            home: group(configured.resumeImages?.home, defaults.resumeImages.home),
-            elsewhere: group(configured.resumeImages?.elsewhere, defaults.resumeImages.elsewhere)
+        thumbnails: group(configured.thumbnails, defaults.thumbnails, MODES),
+        seasonEpisodeThumbnails: choice(configured.seasonEpisodeThumbnails, defaults.seasonEpisodeThumbnails, MODES),
+        resumeThumbnails: Object.freeze({
+            home: group(configured.resumeThumbnails?.home, defaults.resumeThumbnails.home, MODES),
+            elsewhere: group(configured.resumeThumbnails?.elsewhere, defaults.resumeThumbnails.elsewhere, MODES)
         }),
-        resumeDetailButtons: Object.freeze(Object.fromEntries(Object.entries(defaults.resumeDetailButtons).map(([name, fallback]) =>
-            [name, configured.resumeDetailButtons?.[name] === undefined ? fallback :
-                configured.resumeDetailButtons[name] === 'hide' ? 'hide' : 'native']))),
-        detailPages: group(configured.detailPages, defaults.detailPages)
+        cornerButtons: choice(configured.cornerButtons, defaults.cornerButtons, BUTTON_MODES),
+        resumeButtons: group(configured.resumeButtons, defaults.resumeButtons, BUTTON_MODES),
+        mainButtons: group(configured.mainButtons, defaults.mainButtons, MODES)
     });
+    // Features - Card and details actions run only when one of their options is not native;
+    // cornerButtons alone is pure CSS.
+    const changed = groups => groups.flatMap(Object.values).some(mode => mode !== 'native');
+    const CARDS_ACTIVE = settings.seasonEpisodeThumbnails !== 'native' ||
+        changed([settings.thumbnails, settings.resumeThumbnails.home, settings.resumeThumbnails.elsewhere]);
+    const DETAILS_ACTIVE = changed([settings.mainButtons, settings.resumeButtons]);
 
+    // =====================================================================
+    // Instance
+    // =====================================================================
+    const KEY = '__lumaaGlaassMediaActions';
+    window[KEY]?.stop();
+    let stopped = false;
+
+    // =====================================================================
+    // Localization
+    // =====================================================================
     // Localization - Share access to Jellyfin's translator across independent scripts.
     const nativeI18n = window.__lumaaGlaassI18n ||= (() => {
         let translator = null, runtime = null, retryAt = 0;
@@ -71,86 +90,214 @@
             }
         };
     })();
-    // Lifecycle - Replace the earlier local prototype if it is still running.
-    window.__lumaaGlaassEpisodeDetails?.stop();
-    window.__lumaaGlaassDetailsFirst?.stop();
-    window.__lumaaGlaassHideImageButtons?.stop();
-    const key = '__lumaaGlaassMediaActions';
-    window[key]?.stop();
-    let current = null, stopped = false;
-    const typeNames = {
+    // Localization - English text of the Jellyfin keys used here, for when Jellyfin has no string.
+    const ENGLISH = {
+        Season: 'Season',
+        Episode: 'Episode',
+        ItemDetails: 'Item Details',
+        MessagePleaseWait: 'Please wait. This may take a minute.',
+        MessageNoItemsAvailable: 'No Items are currently available.',
+        ErrorDefault: 'There was an error processing the request. Please try again later.'
+    };
+    const translate = key => nativeI18n.translate(key) || ENGLISH[key] || key;
+    // Info - Only Jellyfin's own label: without its translator, cards and details stay native.
+    const infoLabel = () => nativeI18n.translate('ButtonInfo');
+
+    // =====================================================================
+    // Shared helpers
+    // =====================================================================
+    // Listeners - Added through listen() so stop() removes them all.
+    const listeners = [];
+    const listen = (target, event, fn, options) => {
+        target.addEventListener(event, fn, options);
+        listeners.push(() => target.removeEventListener(event, fn, options));
+    };
+    const element = (tag, cls, text) => {
+        const node = document.createElement(tag);
+        if (cls) node.className = cls;
+        if (text) node.textContent = text;
+        return node;
+    };
+    const route = () => location.hash.split('?')[0].replace(/\.html$/, '');
+    const home = () => route() === '#/home';
+    const currentClient = () => {
+        try {
+            return window.ApiClient || window.ConnectionManager?.currentApiClient?.();
+        } catch { return null; }
+    };
+    const params = () => new URLSearchParams(location.hash.split('?')[1] || '');
+    const sameId = (a, b) => !!a && !!b && String(a).replace(/-/g, '').toLowerCase() === String(b).replace(/-/g, '').toLowerCase();
+    const visible = node => node && !node.closest('.hide,[hidden]') && node.getClientRects().length > 0;
+    // Writes - Only real changes: the main theme's page observer and tooltip claim react to each write.
+    const setText = (node, value) => {
+        if (node && node.textContent !== value) node.textContent = value;
+    };
+    const setAttribute = (node, name, value) => {
+        if (node && node.getAttribute(name) !== value) node.setAttribute(name, value);
+    };
+    const setDisabled = (node, value) => {
+        if (node.disabled !== value) node.disabled = value;
+    };
+    // Titles - The main theme moves title to data-lg-tooltip for its styled hint: a title is read from
+    // either, and written (removed for null) only when it changes.
+    const titleOf = node => node.hasAttribute('title') ? node.getAttribute('title') : node.getAttribute('data-lg-tooltip');
+    const setTitle = (node, value) => {
+        if (titleOf(node) === value) return;
+        if (value === null) {
+            node.removeAttribute('title');
+            node.removeAttribute('data-lg-tooltip');
+        } else {
+            node.setAttribute('title', value);
+        }
+    };
+
+    // =====================================================================
+    // Styles
+    // =====================================================================
+    const style = element('style', '', `
+        [data-lg-media-hide-thumbnail] :is(.cardOverlayButton,.listItemImageButton),
+        html body #itemDetailPage#itemDetailPage[data-lg-media-hide-resume] .mainDetailButtons .btnPlay,
+        html body #itemDetailPage#itemDetailPage[data-lg-media-hide-main] .mainDetailButtons :is(.btnPlay,.btnReplay),
+        html body #itemDetailPage [data-lg-media-replaced] {
+            display: none !important;
+        }
+
+        html body #itemDetailPage#itemDetailPage .mainDetailButtons .lg-media-details {
+            max-width: 100%;
+            white-space: nowrap;
+            display: inline-flex !important;
+            flex-direction: row !important;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .lg-media-details > .material-icons {
+            flex-shrink: 0;
+        }
+
+        .lg-media-details-status {
+            font: inherit;
+            font-size: .875rem;
+            line-height: 1.5;
+            margin: 12px 0 0;
+            overflow-wrap: anywhere;
+        }
+
+        .lg-media-details-status:empty {
+            display: none;
+        }
+    `);
+    if (settings.cornerButtons === 'hide') {
+        style.textContent += `
+            .cardOverlayButton-br:not(.cardIndicators) {
+                display: none !important;
+            }
+        `;
+    }
+
+    // =====================================================================
+    // Card actions
+    // =====================================================================
+    // Item types - The option group of each Jellyfin item type.
+    const TYPE_GROUPS = {
         Movie: 'movies', Episode: 'episodes', BoxSet: 'collections', Series: 'series',
         Season: 'seasons', CollectionFolder: 'libraries', UserView: 'libraries', Folder: 'folders'
     };
-    const hideAttribute = 'data-lg-media-hide-play';
-    const viewIds = new WeakMap();
-    const translate = name => nativeI18n.translate(name);
-    const sameId = (a, b) => !!a && !!b && String(a).replace(/-/g, '').toLowerCase() === String(b).replace(/-/g, '').toLowerCase();
-    const visible = node => node && !node.closest('.hide,[hidden]') && node.getClientRects().length > 0;
+    const ITEM_CARDS = '.card[data-id][data-type],.listItem[data-id][data-type]';
+    const IMAGE_BUTTONS =
+        '.card[data-id][data-type] button.cardOverlayButton.itemAction,.listItem[data-id][data-type] button.listItemImageButton.itemAction';
+    // Icons - Legacy buttons draw a Material Icons glyph, switched by class; React buttons (library
+    // pages) draw MUI's PlayArrow svg, whose path takes the outline of MUI's Info icon.
+    const PLAY_ICONS = '.material-icons:is(.play_arrow,.info),svg[data-testid="PlayArrowIcon"] > path';
+    const INFO_PATH = 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2m1 15h-2v-6h2zm0-8h-2V7h2z';
+    // State - Rewritten thumbnail buttons with their card identity and icon, and cards whose thumbnail
+    // actions are hidden, for stop().
     const cards = new Map();
-    const hiddenImages = new Set();
-    const itemSelector = '.card[data-id][data-type],.listItem[data-id][data-type]';
-    const cardSelector = '.card[data-id][data-type] button.cardOverlayButton.itemAction,.listItem[data-id][data-type] button.listItemImageButton.itemAction';
-    const setAttribute = (node, name, value) => {
-        if (node.getAttribute(name) !== value) {
-            if (value === null) node.removeAttribute(name);
-            else node.setAttribute(name, value);
+    const hiddenThumbnails = new Set();
+    // Owned attributes - As in the main script: an attribute written on a native button is restored on
+    // release unless the page wrote its own since; titles go through the main theme's tooltip.
+    const ownedAttributes = new Map();
+    const ownedValue = (node, name) => name === 'title' ? titleOf(node) : node.getAttribute(name);
+    function writeOwned(node, name, value) {
+        if (name === 'title') {
+            setTitle(node, value);
+        } else if (value === null) {
+            node.removeAttribute(name);
+        } else {
+            node.setAttribute(name, value);
         }
-    };
-    const style = document.createElement('style');
-    style.textContent = `
-      [data-lg-media-hide-image] :is(.cardOverlayButton,.listItemImageButton) { display:none!important; }
-      html body #itemDetailPage#itemDetailPage[data-lg-media-hide-resume] .mainDetailButtons .btnPlay { display:none!important; }
-      html body #itemDetailPage#itemDetailPage[${hideAttribute}] .mainDetailButtons :is(.btnPlay,.btnReplay,.lg-media-details) { display:none!important; }
-      html body #itemDetailPage [data-lg-media-original] { display:none!important; }
-      html body #itemDetailPage#itemDetailPage .mainDetailButtons .lg-media-details {
-        min-height:46px; max-width:100%; white-space:nowrap;
-        display:inline-flex!important; flex-direction:row!important; align-items:center; justify-content:center; gap:8px;
-      }
-      .lg-media-details > .material-icons { flex-shrink:0; }
-      .lg-media-details-label { font:inherit; font-weight:700; }
-      .lg-media-details-status { font:inherit; font-size:.875rem; line-height:1.5; margin:12px 0 0; overflow-wrap:anywhere; }
-      .lg-media-details-status:empty { display:none; }
-      .lg-media-details:focus-visible { outline:2px solid currentColor; outline-offset:3px; }
-    `;
-    document.head.append(style);
-
-    // Cards - Reuse Jellyfin's native link action instead of replacing its router.
-    // Chapters, playlists, live TV, music and player controls are outside this scope.
-    function imageMode(card) {
-        if (!card || !typeNames[card.dataset.type] || !card.dataset.serverid ||
+    }
+    function setOwnedAttribute(node, name, value) {
+        const owned = ownedAttributes.get(node) || new Map();
+        if (!owned.has(name)) {
+            if (ownedValue(node, name) === value) return;
+            owned.set(name, { original: ownedValue(node, name), value });
+            ownedAttributes.set(node, owned);
+        }
+        owned.get(name).value = value;
+        if (ownedValue(node, name) !== value) writeOwned(node, name, value);
+    }
+    function releaseOwnedAttribute(node, name) {
+        const owned = ownedAttributes.get(node), entry = owned?.get(name);
+        if (!entry) return;
+        if (ownedValue(node, name) === entry.value) writeOwned(node, name, entry.original);
+        owned.delete(name);
+        if (!owned.size) ownedAttributes.delete(node);
+    }
+    // Cards - "details" reuses Jellyfin's native link action rather than its router. Chapters,
+    // playlists, live TV, music and player controls stay native.
+    function thumbnailMode(card) {
+        if (!card || !TYPE_GROUPS[card.dataset.type] || !card.dataset.serverid ||
             card.closest('#videoOsdPage,.chapterCard,.playlistItems') ||
-            card.hasAttribute('data-playlistitemid') || card.hasAttribute('data-playlistid')) return 'native';
+            card.hasAttribute('data-playlistitemid') || card.hasAttribute('data-playlistid')) {
+            return 'native';
+        }
         const position = Number(card.getAttribute('data-positionticks') || 0);
         if (!Number.isFinite(position) || position < 0) return 'native';
-        // Resume rules take precedence in every image section, without changing progress.
+        // Resume rules win in every section; progress is left untouched.
         if (position > 0) {
-            const home = !!card.closest('#indexPage,.homePage') && /^#\/(?:home|home\.html|index\.html)(?:[?\/]|$)/.test(location.hash);
-            return settings.resumeImages[home ? 'home' : 'elsewhere'][typeNames[card.dataset.type]] || 'native';
+            const onHome = home() && !!card.closest('#indexPage,.homePage');
+            return settings.resumeThumbnails[onHome ? 'home' : 'elsewhere'][TYPE_GROUPS[card.dataset.type]] || 'native';
         }
         const seasonEpisode = card.dataset.type === 'Episode' &&
             card.closest('#itemDetailPage :is(#childrenCollapsible, #listChildrenCollapsible)');
-        return seasonEpisode ? settings.seasonEpisodeImages : settings.catalog[typeNames[card.dataset.type]];
+        return seasonEpisode ? settings.seasonEpisodeThumbnails : settings.thumbnails[TYPE_GROUPS[card.dataset.type]];
     }
-
     function cardContext(button) {
-        const card = button.closest(itemSelector);
-        if (imageMode(card) !== 'details') return null;
+        const card = button.closest(ITEM_CARDS);
+        if (thumbnailMode(card) !== 'details') return null;
         const action = button.getAttribute('data-action');
         if (!['play', 'resume'].includes(action) && !(cards.has(button) && action === 'link')) return null;
-        const icon = button.querySelector('.material-icons.play_arrow,.material-icons.info');
+        const icon = button.querySelector(PLAY_ICONS);
         if (!icon) return null;
-        return { card, icon, identity:[card.dataset.id, card.dataset.serverid, card.dataset.type].join(':') };
+        return { icon, identity: [card.dataset.id, card.dataset.serverid, card.dataset.type].join(':') };
     }
-
-    function restoreCard(button, saved) {
-        for (const [name, value] of Object.entries(saved.original)) {
-            if (button.getAttribute(name) === saved.written[name]) setAttribute(button, name, value);
+    function setInfoIcon(icon, info) {
+        if (icon instanceof SVGElement) {
+            if (info) {
+                setOwnedAttribute(icon, 'd', INFO_PATH);
+            } else {
+                releaseOwnedAttribute(icon, 'd');
+            }
+            return;
         }
-        if (saved.icon.classList.contains('info')) saved.icon.classList.replace('info', 'play_arrow');
+        const [from, to] = info ? ['play_arrow', 'info'] : ['info', 'play_arrow'];
+        if (icon.classList.contains(from)) icon.classList.replace(from, to);
+    }
+    function restoreCard(button, saved) {
+        for (const name of ['data-action', 'title', 'aria-label']) releaseOwnedAttribute(button, name);
+        setInfoIcon(saved.icon, false);
         cards.delete(button);
     }
-
+    function releaseThumbnail(card) {
+        card.removeAttribute('data-lg-media-hide-thumbnail');
+        hiddenThumbnails.delete(card);
+    }
+    function clearCards() {
+        cards.forEach((saved, button) => restoreCard(button, saved));
+        hiddenThumbnails.forEach(releaseThumbnail);
+    }
     function syncCard(button) {
         const saved = cards.get(button);
         const ctx = button.isConnected ? cardContext(button) : null;
@@ -158,64 +305,62 @@
             restoreCard(button, saved);
             return syncCard(button);
         }
-        const label = translate('ButtonOpen');
+        const label = infoLabel();
         if (!ctx || !label) return;
-        let entry = saved;
-        if (!entry) {
-            entry = { ...ctx, original:{}, written:{} };
-            for (const name of ['data-action', 'title', 'aria-label']) entry.original[name] = button.getAttribute(name);
-            cards.set(button, entry);
-        }
-        entry.written = { 'data-action':'link', title:label, 'aria-label':label };
-        for (const [name, value] of Object.entries(entry.written)) setAttribute(button, name, value);
-        if (entry.icon.classList.contains('play_arrow')) entry.icon.classList.replace('play_arrow', 'info');
+        if (!saved) cards.set(button, ctx);
+        setOwnedAttribute(button, 'data-action', 'link');
+        setOwnedAttribute(button, 'title', label);
+        setOwnedAttribute(button, 'aria-label', label);
+        setInfoIcon(ctx.icon, true);
     }
-
     function syncCards() {
-        for (const card of hiddenImages) {
-            if (!card.isConnected || imageMode(card) !== 'hide') {
-                card.removeAttribute('data-lg-media-hide-image');
-                hiddenImages.delete(card);
-            }
+        for (const card of hiddenThumbnails) {
+            if (!card.isConnected || thumbnailMode(card) !== 'hide') releaseThumbnail(card);
         }
-        document.querySelectorAll(itemSelector).forEach(card => {
-            if (imageMode(card) === 'hide' && !hiddenImages.has(card)) {
-                card.setAttribute('data-lg-media-hide-image', '');
-                hiddenImages.add(card);
+        document.querySelectorAll(ITEM_CARDS).forEach(card => {
+            if (thumbnailMode(card) === 'hide' && !hiddenThumbnails.has(card)) {
+                card.setAttribute('data-lg-media-hide-thumbnail', '');
+                hiddenThumbnails.add(card);
             }
         });
         for (const button of cards.keys()) syncCard(button);
-        document.querySelectorAll(cardSelector).forEach(syncCard);
+        document.querySelectorAll(IMAGE_BUTTONS).forEach(syncCard);
+    }
+    // Clicks - Refresh a button just before Jellyfin's delegated handler reads its action, so a card
+    // that just became resumable stays resumable.
+    function onCardClick(event) {
+        const button = event.target.closest?.(IMAGE_BUTTONS);
+        if (button) syncCard(button);
     }
 
+    // =====================================================================
+    // Details page
+    // =====================================================================
+    // State - The handled details page; viewIds holds each page's last item id (viewshow).
+    let current = null;
+    const viewIds = new WeakMap();
     function context() {
-        if (Object.values(settings.detailPages).every(value => value === 'native') &&
-            Object.values(settings.resumeDetailButtons).every(value => value === 'native')) return null;
         try {
-            const [route, query] = location.hash.split('?');
-            if (!/^#\/details(?:\.html)?$/.test(route)) return null;
-            const params = new URLSearchParams(query || '');
-            const id = params.get('id');
-            const api = window.ApiClient || window.ConnectionManager?.currentApiClient?.();
+            if (route() !== '#/details') return null;
+            const query = params();
+            const id = query.get('id');
+            const api = currentClient();
             const user = api?.getCurrentUserId?.();
             const server = api?.serverId?.();
-            if (!id || !user || !server || (params.get('serverId') && !sameId(params.get('serverId'), server))) return null;
+            if (!id || !user || !server || (query.get('serverId') && !sameId(query.get('serverId'), server))) return null;
             const page = Array.from(document.querySelectorAll('#itemDetailPage')).find(visible);
             if (!page || (viewIds.has(page) && !sameId(viewIds.get(page), id))) return null;
-            return { api, user, server, id, page, route:location.hash };
+            return { api, user, server, id, page, hash: location.hash };
         } catch { return null; }
     }
-
     function matches(a, b) {
         return a && b && a.page === b.page && a.api === b.api && a.user === b.user &&
-            a.server === b.server && a.route === b.route;
+            a.server === b.server && a.hash === b.hash;
     }
-
     function valid(state) {
         return !stopped && current === state && matches(state, context());
     }
-
-    // Requests - Bound waiting time; ignore late responses after navigation or sign-out.
+    // Requests - 12 s timeout; responses after navigation or sign-out are dropped.
     async function request(state, path, query) {
         let timeout;
         try {
@@ -227,15 +372,33 @@
             return result;
         } finally { clearTimeout(timeout); }
     }
-
-    // Selection - Mirror Jellyfin Web 10.11's ordered container playback.
+    // Episodes - A series' playable episodes, 100 per request until a short page or the total. A
+    // repeated episode (the server ignored StartIndex) or more than 5000 episodes is an error.
+    async function* episodePages(read, series, query) {
+        const seen = new Set();
+        for (let offset = 0; offset < 5000;) {
+            const result = await read('Shows/' + encodeURIComponent(series) + '/Episodes', { ...query, StartIndex: offset, Limit: 100 });
+            const items = result?.Items;
+            if (!Array.isArray(items)) throw new Error('Invalid episode response.');
+            for (const episode of items) {
+                if (episode.Id && seen.has(episode.Id)) throw new Error('Repeated episode page.');
+                if (episode.Id) seen.add(episode.Id);
+            }
+            yield items.filter(episode => episode.Type === 'Episode' && episode.Id && !episode.IsMissing &&
+                episode.LocationType !== 'Virtual' && (!episode.SeriesId || sameId(episode.SeriesId, series)));
+            offset += items.length;
+            if (items.length < 100 || (Number.isFinite(result.TotalRecordCount) && offset >= result.TotalRecordCount)) return;
+        }
+        throw new Error('Episode list too large.');
+    }
+    // Selection - Mirror Jellyfin Web's ordered container playback.
     // Collections retain server ordering; series use Next Up; seasons stay scoped.
     async function resolveTarget(state) {
         if (state.item.Type === 'BoxSet') {
             const result = await request(state, 'Users/' + encodeURIComponent(state.user) + '/Items', {
-                ParentId:state.item.Id, Filters:'IsNotFolder', Recursive:true,
-                MediaTypes:'Audio,Video', ExcludeLocationTypes:'Virtual',
-                CollapseBoxSetItems:false, EnableTotalRecordCount:false, Limit:1
+                ParentId: state.item.Id, Filters: 'IsNotFolder', Recursive: true,
+                MediaTypes: 'Audio,Video', ExcludeLocationTypes: 'Virtual',
+                CollapseBoxSetItems: false, EnableTotalRecordCount: false, Limit: 1
             });
             if (!Array.isArray(result.Items)) throw new Error('Invalid collection response');
             const item = result.Items[0];
@@ -248,57 +411,45 @@
         const series = state.item.Type === 'Series' ? state.item.Id : state.item.SeriesId;
         if (!series) throw new Error('Season has no series');
         const season = state.item.Type === 'Season' ? state.item.Id : null;
-        let startItemId;
-        if (!season) {
-            const next = await request(state, 'Shows/NextUp', { SeriesId:series, UserId:state.user });
-            startItemId = next.Items?.[0]?.Id;
+        const query = { UserId: state.user, IsMissing: false };
+        if (season) {
+            query.SeasonId = season;
+        } else {
+            const next = await request(state, 'Shows/NextUp', { SeriesId: series, UserId: state.user });
+            if (next.Items?.[0]?.Id) query.StartItemId = next.Items[0].Id;
         }
-        let first = null, offset = 0;
-        const seen = new Set();
-        do {
-            const query = { UserId:state.user, IsVirtualUnaired:false, IsMissing:false, Limit:100 };
-            if (season) { query.SeasonId = season; query.StartIndex = offset; }
-            else if (startItemId) query.StartItemId = startItemId;
-            const result = await request(state, 'Shows/' + encodeURIComponent(series) + '/Episodes', query);
-            if (!Array.isArray(result.Items)) throw new Error('Invalid episode response');
-            const items = result.Items;
-            for (const episode of items) {
-                if (episode.Id && seen.has(episode.Id)) throw new Error('Repeated episode page');
-                if (episode.Id) seen.add(episode.Id);
-                if (episode.Type !== 'Episode' || !episode.Id || episode.IsMissing || episode.LocationType === 'Virtual' ||
-                    (episode.SeriesId && !sameId(episode.SeriesId, series)) ||
-                    (season && !sameId(episode.SeasonId, season))) continue;
+        let first = null;
+        for await (const episodes of episodePages((path, options) => request(state, path, options), series, query)) {
+            for (const episode of episodes) {
+                // Specials listed within a season belong to another one; Jellyfin starts after them too.
+                if (season && !sameId(episode.SeasonId, season)) continue;
                 first ||= episode;
                 if (!episode.UserData?.Played) return episode;
             }
-            offset += items.length;
-            if (!season || items.length < 100 || (Number.isFinite(result.TotalRecordCount) && offset >= result.TotalRecordCount)) break;
-        } while (valid(state));
+            // A series reads one page from Next Up, as Jellyfin's own series playback does.
+            if (!season) break;
+        }
         return first;
     }
-
     function episodeName(episode) {
         if (!episode) return '';
-        const season = episode.SeasonName || (episode.ParentIndexNumber != null && translate('Season')
-            ? translate('Season') + ' ' + episode.ParentIndexNumber : '');
+        const season = episode.SeasonName ||
+            (episode.ParentIndexNumber != null ? translate('Season') + ' ' + episode.ParentIndexNumber : '');
         const number = episode.IndexNumber != null ? episode.IndexNumber + '. ' : '';
-        return [season, number + (episode.Name || translate('Episode') || '')].filter(Boolean).join(' · ');
+        return [season, number + (episode.Name || translate('Episode'))].filter(Boolean).join(' · ');
     }
-
     function render(state) {
         if (!state.button) return;
-        const label = translate('ButtonOpen');
+        const label = infoLabel();
         if (!label) return;
         const name = episodeName(state.episode);
-        if (state.label.textContent !== label) state.label.textContent = label;
-        state.button.title = [translate('ItemDetails') || label, name].filter(Boolean).join(': ');
-        state.button.setAttribute('aria-label', [label, name].filter(Boolean).join(': '));
-        state.button.disabled = state.busy;
-        state.button.setAttribute('aria-busy', String(state.busy));
-        const message = state.message ? translate(state.message) || '' : '';
-        if (state.status.textContent !== message) state.status.textContent = message;
+        setText(state.label, label);
+        setTitle(state.button, [translate('ItemDetails'), name].filter(Boolean).join(': '));
+        setAttribute(state.button, 'aria-label', [label, name].filter(Boolean).join(': '));
+        setDisabled(state.button, state.busy);
+        setAttribute(state.button, 'aria-busy', String(state.busy));
+        setText(state.status, state.message ? translate(state.message) : '');
     }
-
     async function loadEpisode(state, navigate) {
         if (state.busy || !valid(state)) return;
         state.busy = true;
@@ -310,7 +461,7 @@
             state.episode = episode;
             state.message = episode ? null : 'MessageNoItemsAvailable';
             if (navigate && episode) {
-                const query = new URLSearchParams({ id:episode.Id, serverId:state.server });
+                const query = new URLSearchParams({ id: episode.Id, serverId: state.server });
                 location.hash = '#/details?' + query;
             }
         } catch {
@@ -320,96 +471,101 @@
             if (valid(state)) render(state);
         }
     }
-
     function mount(state) {
-        if (!translate('ButtonOpen')) return;
+        if (!infoLabel()) return;
         const actions = state.page.querySelector('.mainDetailButtons');
-        const originals = actions && Array.from(actions.querySelectorAll('.btnPlay,.btnReplay')).filter(node => !node.classList.contains('lg-media-details'));
+        const originals = actions && Array.from(actions.querySelectorAll('.btnPlay,.btnReplay'))
+            .filter(node => !node.classList.contains('lg-media-details'));
         if (!originals?.some(visible)) return;
-        const button = document.createElement('button');
+        const button = element('button', 'button-flat btnPlay detailButton emby-button lg-media-details');
         button.type = 'button';
-        button.className = 'button-flat btnPlay detailButton emby-button lg-media-details';
-        const icon = document.createElement('span');
-        icon.className = 'material-icons info';
+        const icon = element('span', 'material-icons info');
         icon.setAttribute('aria-hidden', 'true');
-        const label = document.createElement('span');
-        label.className = 'lg-media-details-label';
+        const label = element('span', 'lg-media-details-label');
         button.append(icon, label);
-        const status = document.createElement('p');
-        status.className = 'lg-media-details-status';
+        const status = element('p', 'lg-media-details-status');
         status.setAttribute('role', 'status');
-        state.originals = originals.map(node => ({ node, hidden:node.getAttribute('hidden') }));
-        for (const {node} of state.originals) { node.setAttribute('data-lg-media-original', ''); node.hidden = true; }
+        state.originals = originals.map(node => ({ node, hidden: node.getAttribute('hidden') }));
+        for (const { node } of state.originals) {
+            node.setAttribute('data-lg-media-replaced', '');
+            node.hidden = true;
+        }
         originals[0].before(button);
         actions.after(status);
-        Object.assign(state, {button, label, status});
+        Object.assign(state, { button, label, status });
         render(state);
         void loadEpisode(state, false);
     }
-
-    function clear() {
+    function clearDetails() {
         if (!current) return;
-        current.page.removeAttribute(hideAttribute);
+        current.page.removeAttribute('data-lg-media-hide-main');
         current.page.removeAttribute('data-lg-media-hide-resume');
         current.button?.remove();
         current.status?.remove();
-        for (const {node, hidden} of current.originals || []) {
-            node.removeAttribute('data-lg-media-original');
-            if (hidden === null) node.removeAttribute('hidden');
-            else node.setAttribute('hidden', hidden);
+        for (const { node, hidden } of current.originals || []) {
+            node.removeAttribute('data-lg-media-replaced');
+            if (hidden === null) {
+                node.removeAttribute('hidden');
+            } else {
+                node.setAttribute('hidden', hidden);
+            }
         }
         current = null;
     }
-
     async function inspect(state) {
         try {
             const item = await request(state, 'Users/' + encodeURIComponent(state.user) + '/Items/' + encodeURIComponent(state.id));
             if (!sameId(item?.Id, state.id)) throw new Error('Unexpected item response');
             state.item = item;
-        } catch { state.retryAt = Date.now() + 15000; }
-        finally { state.loading = false; }
-        if (valid(state)) sync();
+        } catch {
+            state.retryAt = Date.now() + 15000;
+        } finally {
+            state.loading = false;
+        }
+        if (valid(state)) syncDetails();
     }
-
-    function sync() {
-        if (stopped) return;
-        syncCards();
+    function syncDetails() {
         const ctx = context();
         if (!matches(current, ctx)) {
-            clear();
+            clearDetails();
             if (!ctx) return;
-            current = {...ctx, loading:false};
+            current = { ...ctx, loading: false };
         }
         const state = current;
-        if (!state) return;
         if (!state.item) {
-            if (!state.loading && Date.now() >= (state.retryAt || 0)) { state.loading = true; void inspect(state); }
+            if (!state.loading && Date.now() >= (state.retryAt || 0)) {
+                state.loading = true;
+                void inspect(state);
+            }
             return;
         }
         const position = Number(state.item.UserData?.PlaybackPositionTicks ?? 0);
         if (['Movie', 'Episode'].includes(state.item.Type)) {
             state.page.toggleAttribute('data-lg-media-hide-resume', Number.isFinite(position) && position > 0 &&
-                settings.resumeDetailButtons[typeNames[state.item.Type]] === 'hide');
+                settings.resumeButtons[TYPE_GROUPS[state.item.Type]] === 'hide');
             return;
         }
         if (!['Series', 'Season', 'BoxSet'].includes(state.item.Type)) return;
         if (!Number.isFinite(position) || position !== 0) return;
-        // Visibility takes precedence over Open; do not resolve an unused target.
-        if (settings.detailPages[typeNames[state.item.Type]] === 'hide') {
-            state.page.setAttribute(hideAttribute, '');
+        const mode = settings.mainButtons[TYPE_GROUPS[state.item.Type]];
+        // hide wins over details: no target is resolved for a hidden button.
+        if (mode === 'hide') {
+            state.page.toggleAttribute('data-lg-media-hide-main', true);
             return;
         }
-        if (settings.detailPages[typeNames[state.item.Type]] !== 'details') return;
-        if (state.button && !state.button.isConnected) { clear(); return; }
-        if (!state.button) mount(state);
-        else render(state);
+        if (mode !== 'details') return;
+        if (state.button && !state.button.isConnected) {
+            clearDetails();
+            return;
+        }
+        if (!state.button) {
+            mount(state);
+        } else {
+            render(state);
+        }
     }
-
-    // Events - Never forward the replacement control to a native playback handler.
-    function intercept(event) {
-        // Refresh just before native delegation so a newly resumable card stays resumable.
-        const cardButton = event.target.closest?.(cardSelector);
-        if (cardButton) syncCard(cardButton);
+    // Clicks - The Info button never reaches a native playback handler.
+    function onDetailsClick(event) {
         const button = event.target.closest?.('.lg-media-details');
         if (!button) return;
         event.preventDefault();
@@ -419,36 +575,65 @@
     function onViewShow(event) {
         if (event.target instanceof Element && event.target.matches('#itemDetailPage') && event.detail?.params?.id) {
             viewIds.set(event.target, event.detail.params.id);
-            clear();
+            clearDetails();
         }
+        syncDetails();
+    }
+
+    // =====================================================================
+    // Scheduler
+    // =====================================================================
+    let scheduled = 0, timer = 0;
+    function sync() {
+        if (stopped) return;
+        if (CARDS_ACTIVE) syncCards();
+        if (DETAILS_ACTIVE) syncDetails();
+    }
+    // Cards - Added or changed cards are synchronized once per frame; the timer covers the rest
+    // (Jellyfin's translator becoming available).
+    const observer = new MutationObserver(() => {
+        if (stopped || scheduled) return;
+        scheduled = requestAnimationFrame(() => {
+            scheduled = 0;
+            syncCards();
+        });
+    });
+    function start() {
+        if (!CARDS_ACTIVE && !DETAILS_ACTIVE && settings.cornerButtons === 'native') return;
+        document.head.append(style);
+        if (!CARDS_ACTIVE && !DETAILS_ACTIVE) return;
+        if (CARDS_ACTIVE) {
+            listen(window, 'click', onCardClick, true);
+            observer.observe(document.documentElement, {
+                childList: true, subtree: true, attributes: true,
+                attributeFilter: ['data-action', 'data-id', 'data-type', 'data-serverid', 'data-positionticks', 'lang', 'data-culture']
+            });
+        }
+        if (DETAILS_ACTIVE) {
+            listen(window, 'click', onDetailsClick, true);
+            listen(document, 'viewshow', onViewShow, true);
+        }
+        listen(window, 'hashchange', sync);
+        listen(window, 'popstate', sync);
+        timer = setInterval(sync, 500);
         sync();
     }
-    window.addEventListener('click', intercept, true);
-    window.addEventListener('hashchange', sync);
-    window.addEventListener('popstate', sync);
-    document.addEventListener('viewshow', onViewShow, true);
-    let scheduled = 0;
-    const observer = new MutationObserver(() => {
-        if (!stopped && !scheduled) scheduled = requestAnimationFrame(() => { scheduled = 0; syncCards(); });
-    });
-    observer.observe(document.documentElement, {childList:true, subtree:true, attributes:true,
-        attributeFilter:['data-action', 'data-id', 'data-type', 'data-serverid', 'data-positionticks', 'class', 'lang', 'data-culture']});
-    const timer = setInterval(sync, 500);
-    window[key] = { stop() {
-        stopped = true;
-        clearInterval(timer);
-        observer.disconnect();
-        cancelAnimationFrame(scheduled);
-        window.removeEventListener('click', intercept, true);
-        window.removeEventListener('hashchange', sync);
-        window.removeEventListener('popstate', sync);
-        document.removeEventListener('viewshow', onViewShow, true);
-        clear();
-        for (const [button, saved] of cards) restoreCard(button, saved);
-        for (const card of hiddenImages) card.removeAttribute('data-lg-media-hide-image');
-        hiddenImages.clear();
-        style.remove();
-        delete window[key];
-    } };
-    sync();
+
+    // =====================================================================
+    // Lifecycle
+    // =====================================================================
+    window[KEY] = {
+        stop() {
+            stopped = true;
+            clearInterval(timer);
+            observer.disconnect();
+            cancelAnimationFrame(scheduled);
+            listeners.forEach(fn => fn());
+            clearDetails();
+            clearCards();
+            style.remove();
+            delete window[KEY];
+        }
+    };
+    start();
 })();

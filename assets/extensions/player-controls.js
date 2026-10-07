@@ -1,16 +1,31 @@
-/* LumaaGlaass - Optional configurable in-player controls. */
+/* LumaaGlaass - Player controls extension. */
+;
 (() => {
     'use strict';
 
-    // Configuration - Set window.LumaaGlaassPlayerControlsOptions before loading.
-    // Example: { versions: true, episodes: true }. Defaults enable both controls.
-    // Invalid values use defaults. Save and fully reload after changes.
-    // Installation: docs/customization.md#in-player-controls.
+    // =====================================================================
+    // Configuration
+    // =====================================================================
+    // Options - window.LumaaGlaassPlayerControlsOptions = { versions, episodes }, default true.
+    // Docs: customization.md#player-controls.
+    const defaults = { versions: true, episodes: true };
     const configured = window.LumaaGlaassPlayerControlsOptions || {};
-    const settings = Object.freeze(Object.fromEntries(['versions', 'episodes'].map(name => [
-        name, typeof configured[name] === 'boolean' ? configured[name] : true
-    ])));
+    const flag = (value, fallback) => typeof value === 'boolean' ? value : fallback;
+    const settings = Object.freeze({
+        versions: flag(configured.versions, defaults.versions),
+        episodes: flag(configured.episodes, defaults.episodes)
+    });
 
+    // =====================================================================
+    // Instance
+    // =====================================================================
+    const KEY = '__lumaaGlaassPlayerControls';
+    window[KEY]?.stop();
+    let stopped = false;
+
+    // =====================================================================
+    // Localization
+    // =====================================================================
     // Localization - Share access to Jellyfin's translator across independent scripts.
     const nativeI18n = window.__lumaaGlaassI18n ||= (() => {
         let translator = null, runtime = null, retryAt = 0;
@@ -44,77 +59,205 @@
             }
         };
     })();
-    const key = '__lumaaGlaassPlayerControls';
-    window.__lumaaGlaassPlayerVersionSwitcher?.stop();
-    window.__lumaaGlaassPlayerEpisodeSwitcher?.stop();
-    window[key]?.stop();
-    let manager, button, episodeButton, opener, dialog, dialogItem, container, stopped = false, busy = false, generation = 0;
-    let dialogMode = 'versions', episodeRequest = 0;
-    // Reuse the version dialog's theme classes; scope local layout to this extension.
-    const style = document.createElement('style');
-    style.textContent = `
-      .dialog.lg-player-controls { font:inherit; color:var(--aa-text,#f5f5f7); margin:auto; inset:0; width:min(760px,calc(100vw - 32px)); max-width:calc(100% - 32px); max-height:calc(100dvh - 40px); padding:0; box-sizing:border-box; border-radius:24px; overflow:auto; color-scheme:dark; }
-      .lg-player-controls::backdrop { background:rgba(0,0,0,.55); }
-      .dialog.lg-player-controls[open] { display:flex; flex-direction:column; overflow:hidden; }
-      .lg-player-controls header { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:20px; flex-shrink:0; background:transparent; border-bottom:1px solid #ffffff20; }
-      .lg-player-controls h2 { font-size:20px; margin:0; overflow-wrap:anywhere; }
-      .lg-player-version-close { font:inherit; font-size:26px; color:inherit; background:var(--aa-surface); border:1px solid var(--aa-glass-edge,rgba(255,255,255,.12)); border-radius:50%; width:46px; height:46px; flex-shrink:0; cursor:pointer; }
-      .lg-player-version-body { padding:20px; min-height:0; overflow:auto; overscroll-behavior:contain; }
-      .lg-player-version-area { position:relative; padding-bottom:22px; }
-      .lg-player-version-area[data-can-scroll-down]::after { content:''; position:absolute; bottom:7px; left:calc(50% - 4px); width:7px; height:7px; border-right:2px solid rgba(255,255,255,.8); border-bottom:2px solid rgba(255,255,255,.8); transform:rotate(45deg); pointer-events:none; }
-      .lg-player-version-list { display:flex; flex-direction:column; gap:8px; max-height:55dvh; overflow:auto; overscroll-behavior:contain; scrollbar-gutter:stable; scrollbar-width:thin; scrollbar-color:rgba(255,255,255,.55) rgba(255,255,255,.08); padding:3px; padding-inline-end:14px; touch-action:pan-y; }
-      .lg-player-version-list::-webkit-scrollbar { width:8px; }
-      .lg-player-version-list::-webkit-scrollbar-track { background:rgba(255,255,255,.08); border-radius:8px; }
-      .lg-player-version-list::-webkit-scrollbar-thumb { background:rgba(255,255,255,.55); border-radius:8px; }
-      .lg-player-version-list::-webkit-scrollbar-thumb:hover { background:rgba(255,255,255,.75); }
-      .lg-player-version-option { font:inherit; font-size:14px; color:inherit; text-align:start; line-height:1.5; white-space:pre-wrap; overflow-wrap:anywhere; flex-shrink:0; padding:12px; min-height:44px; border:1px solid var(--aa-glass-edge,rgba(255,255,255,.12)); border-radius:10px; background:var(--aa-surface); cursor:pointer; }
-      .lg-player-version-option:is([aria-pressed=true],[aria-current=true]) { border-color:var(--aa-ui-selected-edge,rgba(255,255,255,.45)); background:var(--aa-ui-selected-surface,rgba(255,255,255,.16)); }
-      .lg-player-version-option:hover:not(:disabled):not([aria-pressed=true]):not([aria-current=true]) { background:var(--aa-ui-hover-surface,rgba(30,30,32,.4)); }
-      .lg-player-version-close:hover:not(:disabled) { background:var(--aa-media-hover-surface,rgba(30,30,32,.6)); }
-      .lg-player-controls :focus-visible { outline:2px solid white; outline-offset:2px; }
-      .lg-player-controls button:disabled { cursor:default; opacity:.45; }
-      .lg-player-version-status { margin:12px 0 0; text-align:center; font:inherit; }
-      .lg-player-version-status:empty { display:none; }
-      .lg-player-episodes .lg-player-version-list { height:55dvh; box-sizing:border-box; }
-      .lg-player-episodes .lg-player-version-status { display:block; min-height:1.5em; }
-      .lg-player-season-list { margin-bottom:16px; padding:3px; }
-      .lg-player-season-select { width:100%; max-width:100%; box-sizing:border-box; font:inherit; color:inherit; min-height:44px; }
-      .lg-player-season-select:not(:disabled) { cursor:pointer; }
-      .lg-player-season-select:disabled { cursor:default; }
-      .lg-player-season-list:empty { display:none; }
-      .lg-player-episode-option { display:flex; flex-direction:row; align-items:center; gap:14px; white-space:normal; }
-      .lg-player-episode-art { position:relative; display:grid; place-items:center; width:clamp(88px,22vw,160px); aspect-ratio:16/9; flex-shrink:0; overflow:hidden; border-radius:8px; background:rgba(255,255,255,.08); }
-      .lg-player-episode-art img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
-      .lg-player-episode-copy { display:flex; flex-direction:column; gap:4px; min-width:0; }
-      .lg-player-episode-meta { font-size:.875em; color:var(--aa-text-muted,#c5c5ca); }
-      @media(max-width:640px) {
-        .dialog.lg-player-controls { width:calc(100% - 24px); max-width:calc(100% - 24px); max-height:calc(100dvh - 32px); }
-        .lg-player-controls header,.lg-player-version-body { padding:16px; }
-      }
-      @media(prefers-reduced-transparency:reduce),(forced-colors:active) { .dialog.lg-player-controls { background:Canvas!important; color:CanvasText; backdrop-filter:none!important; } }
-    `;
-    document.head.append(style);
+    // Localization - English text of the Jellyfin keys used here, for when Jellyfin has no string.
+    const ENGLISH = {
+        Episodes: 'Episodes',
+        Episode: 'Episode',
+        Season: 'Season',
+        LabelVersion: 'Version',
+        ButtonClose: 'Close',
+        Played: 'Played',
+        MessagePleaseWait: 'Please wait. This may take a minute.',
+        MessageNoItemsAvailable: 'No Items are currently available.'
+    };
+    // Localization - The extension's own strings, by language. Jellyfin does not have them, and asking
+    // it for a missing key logs an error.
+    const THEME_STRINGS = {
+        en: {
+            PreviousSeason: 'Previous season',
+            NextSeason: 'Next season',
+            SeasonTarget: '{action}: {season}',
+            ListFailed: 'Unable to load this list. Close this window and try again.',
+            VersionFailed: 'Unable to switch version. Close this window and try again.',
+            EpisodeFailed: 'Unable to play this episode. Try again or close this window.',
+            EpisodesFailed: 'Unable to load episodes. Close this window and try again.'
+        },
+        fr: {
+            PreviousSeason: 'Saison précédente',
+            NextSeason: 'Saison suivante',
+            SeasonTarget: '{action} : {season}',
+            ListFailed: 'Impossible de charger cette liste. Fermez cette fenêtre et réessayez.',
+            VersionFailed: 'Impossible de changer de version. Fermez cette fenêtre et réessayez.',
+            EpisodeFailed: 'Impossible de lire cet épisode. Réessayez ou fermez cette fenêtre.',
+            EpisodesFailed: 'Impossible de charger les épisodes. Fermez cette fenêtre et réessayez.'
+        }
+    };
+    const language = () => (document.documentElement.lang || navigator.language).slice(0, 2).toLowerCase();
+    // Localization - Theme strings never go through Jellyfin; other keys use Jellyfin's string, else English.
+    const translate = key => key in THEME_STRINGS.en ?
+        THEME_STRINGS[language()]?.[key] || THEME_STRINGS.en[key] :
+        nativeI18n.translate(key) || ENGLISH[key] || key;
 
-    // Jellyfin does not expose this manager globally. Resolve only its matching
-    // Webpack module, with capability checks; do not execute unrelated modules.
+    // =====================================================================
+    // Shared helpers
+    // =====================================================================
+    const element = (tag, cls, text) => {
+        const node = document.createElement(tag);
+        if (cls) node.className = cls;
+        if (text) node.textContent = text;
+        return node;
+    };
+    const currentClient = () => {
+        try {
+            return window.ApiClient || window.ConnectionManager?.currentApiClient?.();
+        } catch { return null; }
+    };
+    const sameId = (a, b) => !!a && !!b && String(a).replace(/-/g, '').toLowerCase() === String(b).replace(/-/g, '').toLowerCase();
+    // Writes - Only real changes: the main theme's page observer and tooltip claim react to each write.
+    const setText = (node, value) => {
+        if (node && node.textContent !== value) node.textContent = value;
+    };
+    const setAttribute = (node, name, value) => {
+        if (node && node.getAttribute(name) !== value) node.setAttribute(name, value);
+    };
+    const setDisabled = (node, value) => {
+        if (node.disabled !== value) node.disabled = value;
+    };
+    // Titles - The main theme moves title to data-lg-tooltip for its styled hint: a title is read from
+    // either, and written (removed for null) only when it changes.
+    const titleOf = node => node.hasAttribute('title') ? node.getAttribute('title') : node.getAttribute('data-lg-tooltip');
+    const setTitle = (node, value) => {
+        if (titleOf(node) === value) return;
+        if (value === null) {
+            node.removeAttribute('title');
+            node.removeAttribute('data-lg-tooltip');
+        } else {
+            node.setAttribute('title', value);
+        }
+    };
+
+    // =====================================================================
+    // Styles
+    // =====================================================================
+    // Styles - lumaaglaass.css draws the dialog shell and glass, the lists, the close, option and
+    // season buttons with their states and every focus ring; this keeps the player's own layout.
+    const style = element('style', '', `
+        .lg-player-dialog-list {
+            max-height: 55dvh;
+            touch-action: pan-y;
+        }
+
+        .lg-player-dialog-status {
+            margin: 12px 0 0;
+            text-align: center;
+            font: inherit;
+        }
+
+        .lg-player-dialog-status:empty,
+        .lg-player-seasons:empty {
+            display: none;
+        }
+
+        .lg-player-dialog-episodes .lg-player-dialog-list {
+            height: 55dvh;
+            box-sizing: border-box;
+        }
+
+        .lg-player-seasons {
+            margin-bottom: 16px;
+            padding: 3px;
+        }
+
+        .lg-player-season-navigation {
+            display: grid;
+            grid-template-columns: var(--lg-size-action,44px) minmax(0,1fr) var(--lg-size-action,44px);
+            align-items: center;
+            gap: var(--lg-space-button-group,8px);
+        }
+
+        /* Season select - The field itself is the theme's .emby-select. */
+        .lg-player-season-select {
+            width: 100%;
+            min-width: 0;
+            max-width: 100%;
+        }
+
+        .lg-player-season-arrow .material-icons {
+            font-size: 24px;
+            line-height: 1;
+        }
+
+        .lg-player-episode {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 14px;
+            white-space: normal;
+        }
+
+        .lg-player-episode-image {
+            position: relative;
+            display: grid;
+            place-items: center;
+            width: clamp(88px,22vw,160px);
+            aspect-ratio: 16/9;
+            flex-shrink: 0;
+            overflow: hidden;
+            border-radius: var(--lg-radius-small,8px);
+            background: rgba(255,255,255,.08);
+        }
+
+        .lg-player-episode-image img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .lg-player-episode-image .lg-player-episode-watched {
+            position: absolute;
+            z-index: 1;
+            top: 6px;
+            right: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .lg-player-episode-copy {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 0;
+        }
+    `);
+
+    // =====================================================================
+    // Player context
+    // =====================================================================
+    let manager = null, runtime = null, retryAt = 0;
+    // Playback manager - Not exposed globally: find its one webpack module by signature, without
+    // running unrelated modules. The search runs at most every 5 s until it succeeds.
     function resolveManager() {
-        if (manager) return manager;
+        if (manager || Date.now() < retryAt) return manager;
+        retryAt = Date.now() + 5000;
         const chunks = window.webpackChunk;
-        if (!Array.isArray(chunks) || chunks.push === Array.prototype.push) return null;
-        let require;
-        const marker = 'lg-player-versions-' + Date.now();
-        chunks.push([[marker], {}, runtime => { require = runtime; }]);
-        if (!require?.m) return null;
-        const candidates = Object.entries(require.m).filter(([, factory]) => {
+        if (!runtime && Array.isArray(chunks) && chunks.push !== Array.prototype.push) {
+            chunks.push([['lg-player-manager-' + Date.now()], {}, value => { runtime = value; }]);
+        }
+        if (!runtime?.m) return null;
+        const candidates = Object.entries(runtime.m).filter(([, factory]) => {
             const source = String(factory);
-            return source.includes('getCurrentPlaylistIndex') && source.includes('getPlayerState') && source.includes('setAudioStreamIndex') && source.includes('playbackStartTime');
+            return source.includes('getCurrentPlaylistIndex') && source.includes('getPlayerState') &&
+                source.includes('setAudioStreamIndex') && source.includes('playbackStartTime');
         });
         if (candidates.length !== 1) return null;
-        const exports = require(candidates[0][0]);
-        manager = Object.values(exports).find(value => value && ['getCurrentPlayer', 'getPlayerState', 'currentItem', 'currentMediaSource', 'play', 'getPlaylist', 'getCurrentPlaylistIndex'].every(method => typeof value[method] === 'function'));
-        return manager || null;
+        manager = Object.values(runtime(candidates[0][0])).find(value => value &&
+            ['getCurrentPlayer', 'getPlayerState', 'currentItem', 'currentMediaSource', 'play', 'getPlaylist', 'getCurrentPlaylistIndex']
+                .every(method => typeof value[method] === 'function')) || null;
+        return manager;
     }
-
     function context() {
         const pm = resolveManager();
         const player = pm?.getCurrentPlayer();
@@ -124,215 +267,392 @@
         if (!item?.Id || !['Movie', 'Episode'].includes(item.Type) || !state.PlayState?.CanSeek) return null;
         return { pm, player, item, state };
     }
+    const sameItem = (item, other) => item?.Id === other.Id && item.ServerId === other.ServerId;
+    const samePlayback = (ctx, original) => ctx?.player === original.player && sameItem(ctx.item, original.item);
 
-    function label(mode = 'versions') {
-        return mode === 'episodes' ? translate('Episodes', 'Episodes') : translate('LabelVersion', 'Version');
+    // =====================================================================
+    // Dialog
+    // =====================================================================
+    // State - active is the open dialog with its parts; generation invalidates late responses once it
+    // closes; episodeRequest, a superseded season load.
+    let opener = null, active = null, busy = false, generation = 0, episodeRequest = 0;
+    function label(mode) {
+        return translate(mode === 'episodes' ? 'Episodes' : 'LabelVersion');
     }
-
-    function translate(name, fallback) {
-        return nativeI18n.translate(name) || fallback;
+    // Status - The key is stored so a language change retranslates the line.
+    const statusText = node => node.dataset.lgPlayerStatus ? translate(node.dataset.lgPlayerStatus) : '';
+    function setStatus(node, key) {
+        node.dataset.lgPlayerStatus = key;
+        setText(node, statusText(node));
     }
-
-    function setStatus(node, name, fallback) {
-        node.dataset.translation = name;
-        node.dataset.fallback = fallback;
-        node.textContent = name ? translate(name, fallback) : '';
-    }
-
-    function syncLabels() {
-        if (!dialog) return;
-        dialog.querySelector('h2').textContent = label(dialogMode);
-        dialog.querySelector('.lg-player-version-list').setAttribute('aria-label', label(dialogMode));
-        dialog.querySelector('.lg-player-version-close').setAttribute('aria-label', translate('ButtonClose', 'Close'));
-        const status = dialog.querySelector('.lg-player-version-status');
-        if (status.dataset.translation) {
-            const text = translate(status.dataset.translation, status.dataset.fallback);
-            if (status.textContent !== text) status.textContent = text;
-        }
-    }
-
-    function syncScrollHint() {
-        const list = dialog?.querySelector('.lg-player-version-list');
-        if (list) list.parentElement.toggleAttribute('data-can-scroll-down', list.scrollHeight - list.clientHeight - list.scrollTop > 2);
-    }
-
     function close() {
-        const wasOpen = Boolean(dialog);
+        const wasOpen = Boolean(active);
         generation++;
         episodeRequest++;
-        dialog?.close();
-        dialog?.remove();
-        container?.remove();
-        container = null;
-        dialog = null;
-        dialogItem = null;
-        if (wasOpen && opener?.isConnected) opener.focus({ preventScroll:true });
+        active?.dialog.close();
+        active?.dialog.remove();
+        active?.container.remove();
+        active = null;
+        if (wasOpen && opener?.isConnected) {
+            // The player buttons are disabled during a switch; once it is over, the opener must be
+            // enabled before the next sync, or it cannot take focus.
+            if (!busy) setDisabled(opener, false);
+            opener.focus({ preventScroll: true });
+        }
         opener = null;
     }
+    function syncScrollHint() {
+        const list = active?.list;
+        if (!list) return;
+        list.parentElement.toggleAttribute('data-lg-player-scroll-hint', list.scrollHeight - list.clientHeight - list.scrollTop > 2);
+    }
+    function syncSeasonArrows(seasons) {
+        const select = seasons?.querySelector('.lg-player-season-select');
+        if (!select) return;
+        for (const [direction, className, key] of [[-1, '.lg-player-season-previous', 'PreviousSeason'],
+            [1, '.lg-player-season-next', 'NextSeason']]) {
+            const arrow = seasons.querySelector(className);
+            if (!arrow) continue;
+            const target = select.options[select.selectedIndex + direction];
+            setDisabled(arrow, busy || select.disabled || !target);
+            const action = translate(key);
+            const name = target ?
+                translate('SeasonTarget').replace('{action}', action).replace('{season}', target.textContent.trim()) : action;
+            setAttribute(arrow, 'aria-label', name);
+            setTitle(arrow, name);
+        }
+    }
+    // Dialog - Closed once its playback ends or changes item (not during a switch, which closes it
+    // itself); otherwise retranslated in place.
+    function syncDialog(ctx) {
+        if (!active) return;
+        if (!busy && (!ctx || !sameItem(ctx.item, active.item))) {
+            close();
+            return;
+        }
+        setText(active.heading, label(active.mode));
+        setAttribute(active.list, 'aria-label', label(active.mode));
+        setAttribute(active.dismiss, 'aria-label', translate('ButtonClose'));
+        syncSeasonArrows(active.seasons);
+        setText(active.status, statusText(active.status));
+        syncScrollHint();
+    }
+    function focusCurrentChoice(dialog, list) {
+        if (active?.dialog !== dialog || !dialog.open) return;
+        const focused = document.activeElement;
+        if (focused !== dialog && focused !== active.dismiss) return;
+        (list.querySelector('[aria-pressed="true"],[aria-current="true"]') || list.querySelector('button:not(:disabled)'))?.focus();
+    }
+    async function open(mode, trigger) {
+        if (busy || active || typeof HTMLDialogElement === 'undefined') return;
+        const ctx = context();
+        if (!ctx) return;
+        if (mode === 'episodes' && (!settings.episodes || ctx.item.Type !== 'Episode' || !ctx.item.SeriesId)) return;
+        if (mode === 'versions' && !settings.versions) return;
+        const api = currentClient();
+        if (!api || api.serverId() !== ctx.item.ServerId) return;
+        opener = trigger;
+        // The native dialog classes keep the player's shortcut guard and the theme's dialog glass.
+        const dialog = element('dialog', 'dialog opened lg-player-dialog');
+        if (mode === 'episodes') dialog.classList.add('lg-player-dialog-episodes');
+        dialog.style.fontFamily = getComputedStyle(opener).fontFamily;
+        const content = element('div', 'lg-player-dialog-body');
+        const header = element('header', 'lg-player-dialog-header');
+        const heading = element('h2', '', label(mode));
+        heading.id = 'lg-player-dialog-title';
+        dialog.setAttribute('aria-labelledby', heading.id);
+        const dismiss = element('button', 'lg-player-dialog-close');
+        dismiss.type = 'button';
+        const dismissIcon = element('span', 'material-icons', 'close');
+        dismissIcon.setAttribute('aria-hidden', 'true');
+        dismiss.append(dismissIcon);
+        dismiss.setAttribute('aria-label', translate('ButtonClose'));
+        dismiss.addEventListener('click', close);
+        header.append(heading, dismiss);
+        const list = element('div', 'lg-player-dialog-list');
+        list.setAttribute('role', 'group');
+        list.setAttribute('aria-label', heading.textContent);
+        list.addEventListener('scroll', syncScrollHint, { passive: true });
+        const area = element('div', 'lg-player-dialog-area');
+        area.append(list);
+        const status = element('p', 'lg-player-dialog-status');
+        status.setAttribute('role', 'status');
+        setStatus(status, 'MessagePleaseWait');
+        const seasons = element('div', 'lg-player-seasons');
+        content.append(seasons, area, status);
+        dialog.append(header, content);
+        const container = element('div', 'dialogContainer');
+        container.append(dialog);
+        active = { dialog, container, item: ctx.item, mode, heading, dismiss, list, status, seasons };
+        (document.fullscreenElement || document.body).append(container);
+        dialog.addEventListener('cancel', event => {
+            event.preventDefault();
+            close();
+        });
+        // Prevent player keyboard shortcuts while interacting with the dialog.
+        dialog.addEventListener('keydown', event => event.stopPropagation());
+        // Keep native scrolling, but do not forward wheel gestures to the player.
+        dialog.addEventListener('wheel', event => event.stopPropagation(), { passive: true });
+        dialog.showModal();
+        if (mode === 'episodes') {
+            await loadEpisodes(api, ctx, dialog, list, status, seasons);
+        } else {
+            await loadVersions(api, ctx, dialog, list, status);
+        }
+    }
+    // Playback - play() may resolve before the new stream runs: poll every 200 ms for up to 20 s.
+    // started(next) returns true once it runs, false when another item took over, else nothing.
+    async function waitForPlayback(token, started) {
+        const until = Date.now() + 20000;
+        while (!stopped && token === generation && Date.now() < until) {
+            const verdict = started(context());
+            if (verdict !== undefined) return verdict;
+            await new Promise(resolve => setTimeout(resolve, 200));
+        }
+        return false;
+    }
+    // Switch - Lock the choices, start the new playback, close once it runs. play(token) returns whether
+    // it started, or null when playback moved on by itself, which also closes the obsolete dialog.
+    async function switchPlayback(status, failure, play) {
+        const controls = '.lg-player-dialog-option,.lg-player-season-select,.lg-player-season-arrow';
+        const token = generation;
+        busy = true;
+        active.dialog.querySelectorAll(controls).forEach(node => { node.disabled = true; });
+        setStatus(status, 'MessagePleaseWait');
+        let done = false;
+        try {
+            const started = await play(token);
+            if (started === false && !stopped && token === generation) throw new Error('The new playback did not start.');
+            done = true;
+        } catch (error) {
+            console.warn('LumaaGlaass player switch failed.', error);
+            if (active && token === generation) {
+                setStatus(status, failure);
+                active.dialog.querySelectorAll(controls).forEach(node => { node.disabled = false; });
+            }
+        } finally {
+            busy = false;
+            syncSeasonArrows(active?.seasons);
+        }
+        if (done && token === generation) close();
+    }
 
-    // Track indices belong to a source. Match language/type instead of copying
+    // =====================================================================
+    // Versions
+    // =====================================================================
+    async function loadVersions(api, ctx, dialog, list, status) {
+        const token = generation;
+        try {
+            const item = await api.getJSON(api.getUrl('Users/' + encodeURIComponent(api.getCurrentUserId()) + '/Items/' +
+                encodeURIComponent(ctx.item.Id), { Fields: 'MediaSources' }));
+            if (stopped || token !== generation || active?.dialog !== dialog) return;
+            if (!sameItem(context()?.item, ctx.item)) {
+                close();
+                return;
+            }
+            const sources = (item.MediaSources || []).filter(source => source.Id && !source.IsInfiniteStream);
+            if (sources.length < 2) {
+                setStatus(status, 'MessageNoItemsAvailable');
+                return;
+            }
+            for (const source of sources) {
+                const choice = element('button', 'lg-player-dialog-option', source.Name || source.Id);
+                choice.type = 'button';
+                choice.setAttribute('aria-pressed', String(ctx.state.PlayState.MediaSourceId === source.Id));
+                choice.addEventListener('click', () => changeVersion(source, ctx, status));
+                list.append(choice);
+            }
+            setStatus(status, '');
+            syncScrollHint();
+            focusCurrentChoice(dialog, list);
+        } catch {
+            if (active?.dialog === dialog) setStatus(status, 'ListFailed');
+        }
+    }
+    // Tracks - Track indices belong to a source. Match language/type instead of copying
     // an index from another file; otherwise let the new source choose defaults.
     function trackOptions(ctx, source) {
         const options = {};
-        for (const [type, field, option] of [['Audio', 'AudioStreamIndex', 'audioStreamIndex'], ['Subtitle', 'SubtitleStreamIndex', 'subtitleStreamIndex']]) {
+        for (const [type, field, option] of [['Audio', 'AudioStreamIndex', 'audioStreamIndex'],
+            ['Subtitle', 'SubtitleStreamIndex', 'subtitleStreamIndex']]) {
             const index = ctx.state.PlayState[field];
-            if (type === 'Subtitle' && index === -1) { options[option] = -1; continue; }
+            if (type === 'Subtitle' && index === -1) {
+                options[option] = -1;
+                continue;
+            }
             const previous = ctx.state.MediaSource?.MediaStreams?.find(stream => stream.Type === type && stream.Index === index);
             if (!previous?.Language) continue;
-            const matches = (source.MediaStreams || []).filter(stream => stream.Type === type && stream.Language === previous.Language && Boolean(stream.IsForced) === Boolean(previous.IsForced));
+            const matches = (source.MediaStreams || []).filter(stream => stream.Type === type && stream.Language === previous.Language &&
+                Boolean(stream.IsForced) === Boolean(previous.IsForced));
             const match = matches.find(stream => stream.Codec === previous.Codec && stream.Channels === previous.Channels) || matches[0];
             if (match) options[option] = match.Index;
         }
         return options;
     }
-
-    async function change(source, original, status) {
+    function changeVersion(source, original, status) {
         if (busy) return;
-        let ctx = context();
-        if (!ctx || ctx.player !== original.player || ctx.item.Id !== original.item.Id || ctx.item.ServerId !== original.item.ServerId) { close(); return; }
-        if (ctx.state.PlayState.MediaSourceId === source.Id) { close(); return; }
-        busy = true;
-        dialog?.querySelectorAll('.lg-player-version-list button').forEach(node => { node.disabled = true; });
-        setStatus(status, 'MessagePleaseWait', 'Please wait');
-        const token = generation;
-        try {
+        const ctx = context();
+        if (!samePlayback(ctx, original) || ctx.state.PlayState.MediaSourceId === source.Id) {
+            close();
+            return;
+        }
+        void switchPlayback(status, 'VersionFailed', async token => {
             const items = await ctx.pm.getPlaylist(ctx.player);
-            ctx = context();
-            if (stopped || token !== generation || !ctx || ctx.player !== original.player || ctx.item.Id !== original.item.Id || ctx.item.ServerId !== original.item.ServerId) return;
-            const startIndex = ctx.pm.getCurrentPlaylistIndex(ctx.player);
-            if (!Array.isArray(items) || items[startIndex]?.Id !== ctx.item.Id) throw new Error('The playback queue changed.');
-            const ticks = ctx.state.PlayState.PositionTicks;
-            if (!Number.isFinite(ticks) || ticks < 0 || (source.RunTimeTicks && ticks >= source.RunTimeTicks)) throw new Error('This version cannot resume at the current position.');
-            const paused = ctx.state.PlayState.IsPaused;
-            await ctx.pm.play({ items, startIndex, mediaSourceId:source.Id, startPositionTicks:ticks, enableRemotePlayers:false, fullscreen:false, ...trackOptions(ctx, source) });
-            // The native play promise may resolve before the new source is ready.
-            const until = Date.now() + 20000;
-            let confirmed = false;
-            while (!stopped && token === generation && Date.now() < until) {
-                const next = context();
-                if (next && next.item.Id !== original.item.Id) break;
-                if (next?.state.PlayState.MediaSourceId === source.Id) {
-                    if (paused) next.player.pause();
-                    confirmed = true;
-                    break;
-                }
-                await new Promise(resolve => setTimeout(resolve, 200));
+            const now = context();
+            if (stopped || token !== generation || !samePlayback(now, original)) return null;
+            const startIndex = now.pm.getCurrentPlaylistIndex(now.player);
+            if (!Array.isArray(items) || items[startIndex]?.Id !== now.item.Id) throw new Error('The playback queue changed.');
+            const ticks = now.state.PlayState.PositionTicks;
+            if (!Number.isFinite(ticks) || ticks < 0 || (source.RunTimeTicks && ticks >= source.RunTimeTicks)) {
+                throw new Error('This version cannot resume at the current position.');
             }
-            if (!confirmed && !stopped && token === generation) throw new Error('The selected version did not start.');
-            if (token === generation) close();
-        } catch (error) {
-            console.warn('LumaaGlaass player version switch failed.', error);
-            if (dialog && token === generation) {
-                setStatus(status, 'ErrorDefault', 'Unable to switch version. Close this window and try again.');
-                dialog.querySelectorAll('.lg-player-version-list button').forEach(node => { node.disabled = false; });
-            }
-        } finally { busy = false; }
+            const paused = now.state.PlayState.IsPaused;
+            await now.pm.play({
+                items, startIndex, mediaSourceId: source.Id, startPositionTicks: ticks,
+                enableRemotePlayers: false, fullscreen: false, ...trackOptions(now, source)
+            });
+            return waitForPlayback(token, next => {
+                if (next && next.item.Id !== original.item.Id) return false;
+                if (next?.state.PlayState.MediaSourceId !== source.Id) return undefined;
+                if (paused) next.player.pause();
+                return true;
+            });
+        });
     }
 
-    // Episodes use their own position and source defaults, never the previous
-    // episode's stream indices or playback timestamp.
-    async function changeEpisode(episode, items, original, status) {
+    // =====================================================================
+    // Episodes
+    // =====================================================================
+    // Episodes - A series' playable episodes, 100 per request until a short page or the total. A
+    // repeated episode (the server ignored StartIndex) or more than 5000 episodes is an error.
+    async function* episodePages(read, series, query) {
+        const seen = new Set();
+        for (let offset = 0; offset < 5000;) {
+            const result = await read('Shows/' + encodeURIComponent(series) + '/Episodes', { ...query, StartIndex: offset, Limit: 100 });
+            const items = result?.Items;
+            if (!Array.isArray(items)) throw new Error('Invalid episode response.');
+            for (const episode of items) {
+                if (episode.Id && seen.has(episode.Id)) throw new Error('Repeated episode page.');
+                if (episode.Id) seen.add(episode.Id);
+            }
+            yield items.filter(episode => episode.Type === 'Episode' && episode.Id && !episode.IsMissing &&
+                episode.LocationType !== 'Virtual' && (!episode.SeriesId || sameId(episode.SeriesId, series)));
+            offset += items.length;
+            if (items.length < 100 || (Number.isFinite(result.TotalRecordCount) && offset >= result.TotalRecordCount)) return;
+        }
+        throw new Error('Episode list too large.');
+    }
+    // Switch - An episode starts from its own position and source defaults, never the
+    // previous episode's stream indices or playback timestamp.
+    function changeEpisode(episode, items, original, status) {
         if (busy) return;
-        const ctx = context(), token = generation;
-        if (!ctx || ctx.player !== original.player || ctx.item.Id !== original.item.Id || ctx.item.ServerId !== original.item.ServerId) { close(); return; }
-        if (episode.Id === ctx.item.Id) { close(); return; }
-        busy = true;
-        dialog.querySelectorAll('.lg-player-version-option,.lg-player-season-select').forEach(n => { n.disabled = true; });
-        setStatus(status, 'MessagePleaseWait', 'Please wait');
-        try {
+        const ctx = context();
+        if (!samePlayback(ctx, original) || episode.Id === ctx.item.Id) {
+            close();
+            return;
+        }
+        void switchPlayback(status, 'EpisodeFailed', async token => {
             const position = episode.UserData?.PlaybackPositionTicks;
-            const resume = !episode.UserData?.Played && Number.isFinite(position) && position > 0 && (!episode.RunTimeTicks || position < episode.RunTimeTicks) ? position : 0;
-            await ctx.pm.play({ items, startIndex:items.indexOf(episode), startPositionTicks:resume, enableRemotePlayers:false, fullscreen:false });
-            const until = Date.now() + 20000;
-            let confirmed = false;
-            while (!stopped && token === generation && Date.now() < until) {
-                const next = context();
-                if (next?.item.Id === episode.Id && next.item.ServerId === original.item.ServerId) { confirmed = true; break; }
-                if (next && next.item.Id !== original.item.Id) break;
-                await new Promise(resolve => setTimeout(resolve, 200));
-            }
-            if (!confirmed && !stopped && token === generation) throw new Error('The selected episode did not start.');
-            if (token === generation) close();
-        } catch {
-            if (dialog && token === generation) {
-                setStatus(status, 'ErrorDefault', 'Unable to play this episode. Try again or close this window.');
-                dialog.querySelectorAll('.lg-player-version-option,.lg-player-season-select').forEach(n => { n.disabled = false; });
-            }
-        } finally { busy = false; }
+            const resume = !episode.UserData?.Played && Number.isFinite(position) && position > 0 &&
+                (!episode.RunTimeTicks || position < episode.RunTimeTicks) ? position : 0;
+            await ctx.pm.play({
+                items, startIndex: items.indexOf(episode), startPositionTicks: resume,
+                enableRemotePlayers: false, fullscreen: false
+            });
+            return waitForPlayback(token, next => {
+                if (sameItem(next?.item, { Id: episode.Id, ServerId: original.item.ServerId })) return true;
+                return next && next.item.Id !== original.item.Id ? false : undefined;
+            });
+        });
     }
-
-    async function loadEpisodes(api, ctx, node, list, status, seasons) {
+    function episodeChoice(api, episode, items, ctx, status) {
+        const choice = element('button', 'lg-player-dialog-option lg-player-episode');
+        choice.type = 'button';
+        choice.setAttribute('aria-current', String(episode.Id === ctx.item.Id));
+        const thumbnail = element('span', 'lg-player-episode-image');
+        thumbnail.setAttribute('aria-hidden', 'true');
+        thumbnail.append(element('span', 'material-icons', 'movie'));
+        const imageTag = episode.ImageTags?.Primary;
+        if (imageTag) {
+            const image = element('img');
+            image.alt = '';
+            image.loading = 'lazy';
+            image.decoding = 'async';
+            image.src = api.getUrl('Items/' + encodeURIComponent(episode.Id) + '/Images/Primary',
+                { tag: imageTag, maxWidth: 320, quality: 85 });
+            image.addEventListener('error', () => image.remove());
+            thumbnail.append(image);
+        }
+        const copy = element('span', 'lg-player-episode-copy');
+        const prefix = Number.isFinite(episode.IndexNumber) ? episode.IndexNumber + ' · ' : '';
+        const title = element('span', '', prefix + (episode.Name || translate('Episode')));
+        copy.append(title);
+        choice.append(thumbnail, copy);
+        if (episode.UserData?.Played) {
+            const watched = element('span', 'lg-player-episode-watched playedIndicator indicator');
+            const check = element('span', 'material-icons indicatorIcon check');
+            check.setAttribute('aria-hidden', 'true');
+            watched.append(check);
+            thumbnail.append(watched);
+            choice.setAttribute('aria-label', title.textContent + ' · ' + translate('Played'));
+        }
+        choice.addEventListener('click', () => changeEpisode(episode, items, ctx, status));
+        return choice;
+    }
+    async function loadEpisodes(api, ctx, dialog, list, status, seasons) {
         const token = generation;
-        const valid = () => {
-            const next = context();
-            return !stopped && generation === token && dialog === node && next?.item.Id === ctx.item.Id && next.item.ServerId === ctx.item.ServerId && next.player === ctx.player && api.getCurrentUserId() === userId;
-        };
         const userId = api.getCurrentUserId();
-        const read = (path, query) => api.getJSON(api.getUrl(path, {UserId:userId, ...query}));
+        const valid = () => !stopped && generation === token && active?.dialog === dialog && samePlayback(context(), ctx) &&
+            api.getCurrentUserId() === userId;
+        const read = (path, query) => api.getJSON(api.getUrl(path, { UserId: userId, ...query }));
+        let entries;
+        try {
+            const result = await read('Shows/' + encodeURIComponent(ctx.item.SeriesId) + '/Seasons', { IsMissing: false });
+            if (!valid()) return;
+            entries = (result.Items || []).filter(season => season.Id).sort((a, b) =>
+                (Number.isFinite(a.IndexNumber) ? a.IndexNumber : Infinity) - (Number.isFinite(b.IndexNumber) ? b.IndexNumber : Infinity));
+        } catch {
+            if (active?.dialog === dialog) setStatus(status, 'ListFailed');
+            return;
+        }
+        if (!entries.length) {
+            setStatus(status, 'MessageNoItemsAvailable');
+            return;
+        }
+        const select = element('select', 'emby-select lg-player-season-select');
+        select.setAttribute('aria-label', translate('Season'));
+        for (const season of entries) {
+            const choice = element('option', '', season.Name || translate('Season') + ' ' + (season.IndexNumber ?? ''));
+            choice.value = season.Id;
+            select.append(choice);
+        }
         const showSeason = async season => {
             if (busy || !valid()) return;
             const request = ++episodeRequest;
             // Keep the dialog and previous thumbnails stable while only this list loads.
             list.inert = true;
             list.setAttribute('aria-busy', 'true');
-            const select = seasons.querySelector('select');
-            if (select) select.value = season.Id;
-            setStatus(status, 'MessagePleaseWait', 'Please wait');
+            select.value = season.Id;
+            syncSeasonArrows(seasons);
+            setStatus(status, 'MessagePleaseWait');
             try {
                 const items = [];
-                let offset = 0;
-                while (true) {
-                    const result = await read('Shows/' + encodeURIComponent(ctx.item.SeriesId) + '/Episodes', {
-                        SeasonId:season.Id, StartIndex:offset, Limit:100, Fields:'UserData,SeriesId', IsMissing:false
-                    });
+                const query = { SeasonId: season.Id, IsMissing: false, Fields: 'UserData,SeriesId' };
+                for await (const episodes of episodePages(read, ctx.item.SeriesId, query)) {
                     if (!valid() || request !== episodeRequest) return;
-                    const batch = result.Items || [];
-                    items.push(...batch.filter(item => item.Id && item.Type === 'Episode' && !item.IsMissing && item.LocationType !== 'Virtual' && (!item.SeriesId || item.SeriesId === ctx.item.SeriesId)).map(item => ({...item, ServerId:ctx.item.ServerId})));
-                    offset += batch.length;
-                    if (!batch.length || offset >= (result.TotalRecordCount ?? offset)) break;
-                    if (offset >= 5000) throw new Error('Episode list too large.');
+                    items.push(...episodes.map(item => ({ ...item, ServerId: ctx.item.ServerId })));
                 }
-                const fragment = document.createDocumentFragment();
-                for (const episode of items) {
-                    const choice = document.createElement('button');
-                    choice.type = 'button'; choice.className = 'lg-player-version-option lg-player-episode-option';
-                    const active = episode.Id === ctx.item.Id;
-                    choice.setAttribute('aria-current', String(active));
-                    // Share the theme's selected-option state with versions and seasons.
-                    choice.setAttribute('aria-pressed', String(active));
-                    const art = document.createElement('span'); art.className = 'lg-player-episode-art';
-                    art.setAttribute('aria-hidden', 'true');
-                    const placeholder = document.createElement('span'); placeholder.className = 'material-icons'; placeholder.textContent = 'movie';
-                    art.append(placeholder);
-                    const imageTag = episode.ImageTags?.Primary;
-                    if (imageTag) {
-                        const image = document.createElement('img'); image.alt = ''; image.loading = 'lazy'; image.decoding = 'async';
-                        image.src = api.getUrl('Items/' + encodeURIComponent(episode.Id) + '/Images/Primary', {tag:imageTag, maxWidth:320, quality:85});
-                        image.onerror = () => image.remove();
-                        art.append(image);
-                    }
-                    const copy = document.createElement('span'); copy.className = 'lg-player-episode-copy';
-                    choice.append(art, copy);
-                    const title = document.createElement('span');
-                    const prefix = Number.isFinite(episode.IndexNumber) ? episode.IndexNumber + ' · ' : '';
-                    title.textContent = prefix + (episode.Name || translate('Episode', 'Episode'));
-                    copy.append(title);
-                    const detail = document.createElement('span'); detail.className = 'lg-player-episode-meta';
-                    if (!active) detail.textContent = episode.UserData?.Played ? translate('Played', 'Played') : '';
-                    if (detail.textContent) copy.append(detail);
-                    choice.onclick = () => changeEpisode(episode, items, ctx, status);
-                    fragment.append(choice);
-                }
-                list.replaceChildren(fragment);
+                list.replaceChildren(...items.map(episode => episodeChoice(api, episode, items, ctx, status)));
                 list.scrollTop = 0;
-                list.dataset.season = season.Id;
-                setStatus(status, items.length ? '' : 'MessageNoItemsAvailable', 'No episodes available.');
+                list.dataset.lgPlayerSeason = season.Id;
+                setStatus(status, items.length ? '' : 'MessageNoItemsAvailable');
                 syncScrollHint();
             } catch {
                 if (valid() && request === episodeRequest) {
                     // If loading fails, keep the selector consistent with the retained list.
-                    if (select && list.dataset.season) select.value = list.dataset.season;
-                    setStatus(status, 'ErrorDefault', 'Unable to load episodes. Close this window and try again.');
+                    if (list.dataset.lgPlayerSeason) select.value = list.dataset.lgPlayerSeason;
+                    syncSeasonArrows(seasons);
+                    setStatus(status, 'EpisodesFailed');
                 }
             } finally {
                 if (valid() && request === episodeRequest) {
@@ -341,148 +661,115 @@
                 }
             }
         };
-        const result = await read('Shows/' + encodeURIComponent(ctx.item.SeriesId) + '/Seasons', {IsMissing:false});
-        if (!valid()) return;
-        const entries = (result.Items || []).filter(s => s.Id);
-        if (!entries.length) { setStatus(status, 'MessageNoItemsAvailable', 'No seasons available.'); return; }
-        const select = document.createElement('select');
-        select.className = 'emby-select lg-player-season-select';
-        select.setAttribute('aria-label', translate('Season', 'Season'));
-        for (const season of entries) {
-            const choice = document.createElement('option'); choice.value = season.Id;
-            choice.textContent = season.Name || translate('Season', 'Season') + ' ' + (season.IndexNumber ?? '');
-            select.append(choice);
-        }
         if (entries.length > 1) {
-            select.onchange = event => { event.stopPropagation(); const season = entries.find(s => s.Id === select.value); if (season) showSeason(season); };
-            seasons.append(select);
-        } else seasons.textContent = select.options[0].textContent;
-        await showSeason(entries.find(s => s.Id === ctx.item.SeasonId) || entries.find(s => s.IndexNumber === ctx.item.ParentIndexNumber) || entries[0]);
+            select.addEventListener('change', event => {
+                event.stopPropagation();
+                const season = entries.find(entry => entry.Id === select.value);
+                if (season) void showSeason(season);
+            });
+            const arrow = (direction, className, icon) => {
+                const button = element('button', 'lg-player-season-arrow ' + className);
+                button.type = 'button';
+                const glyph = element('span', 'material-icons', icon);
+                glyph.setAttribute('aria-hidden', 'true');
+                button.append(glyph);
+                button.addEventListener('click', () => {
+                    const season = entries[select.selectedIndex + direction];
+                    if (season) void showSeason(season);
+                });
+                return button;
+            };
+            const navigation = element('div', 'lg-player-season-navigation');
+            navigation.append(arrow(-1, 'lg-player-season-previous', 'chevron_left'), select,
+                arrow(1, 'lg-player-season-next', 'chevron_right'));
+            seasons.append(navigation);
+        } else {
+            seasons.textContent = select.options[0].textContent;
+        }
+        await showSeason(entries.find(season => season.Id === ctx.item.SeasonId) ||
+            entries.find(season => season.IndexNumber === ctx.item.ParentIndexNumber) || entries[0]);
+        if (valid()) focusCurrentChoice(dialog, list);
     }
 
-    async function open(mode = 'versions') {
-        if (busy || dialog || typeof HTMLDialogElement === 'undefined') return;
-        const ctx = context();
-        if (!ctx) return;
-        if (mode === 'episodes' && (!settings.episodes || ctx.item.Type !== 'Episode' || !ctx.item.SeriesId)) return;
-        if (mode === 'versions' && !settings.versions) return;
-        dialogMode = mode;
-        const api = window.ApiClient;
-        if (!api || api.serverId() !== ctx.item.ServerId) return;
-        opener = mode === 'episodes' ? episodeButton : button;
-        const node = document.createElement('dialog');
-        dialog = node;
-        dialogItem = ctx.item;
-        // Keep the native dialog guard for player shortcuts, while matching the
-        // optional playback dialog's visual treatment rather than action sheets.
-        node.className = 'dialog opened lg-player-controls';
-        if (mode === 'episodes') node.classList.add('lg-player-episodes');
-        node.style.fontFamily = getComputedStyle(opener).fontFamily;
-        const content = document.createElement('div');
-        content.className = 'lg-player-version-body';
-        const header = document.createElement('header');
-        const title = document.createElement('h2');
-        title.id = 'lg-player-controls-title';
-        title.textContent = label(mode);
-        node.setAttribute('aria-labelledby', title.id);
-        const dismiss = document.createElement('button');
-        dismiss.className = 'lg-player-version-close';
-        dismiss.type = 'button';
-        dismiss.textContent = '×';
-        dismiss.setAttribute('aria-label', translate('ButtonClose', 'Close'));
-        dismiss.onclick = close;
-        header.append(title, dismiss);
-        const list = document.createElement('div');
-        list.className = 'lg-player-version-list';
-        list.setAttribute('role', 'group');
-        list.setAttribute('aria-label', title.textContent);
-        list.addEventListener('scroll', syncScrollHint, { passive:true });
-        const area = document.createElement('div');
-        area.className = 'lg-player-version-area';
-        area.append(list);
-        const status = document.createElement('p');
-        status.className = 'lg-player-version-status';
-        status.setAttribute('role', 'status');
-        setStatus(status, 'MessagePleaseWait', 'Please wait');
-        const seasons = document.createElement('div'); seasons.className = 'lg-player-season-list';
-        content.append(seasons, area, status);
-        node.append(header, content);
-        container = document.createElement('div');
-        container.className = 'dialogContainer lg-player-version-container';
-        container.append(node);
-        (document.fullscreenElement || document.body).append(container);
-        node.addEventListener('cancel', event => { event.preventDefault(); close(); });
-        // Prevent player keyboard shortcuts while interacting with the dialog.
-        node.addEventListener('keydown', event => event.stopPropagation());
-        // Keep native scrolling, but do not forward wheel gestures to the player.
-        node.addEventListener('wheel', event => event.stopPropagation(), { passive:true });
-        node.showModal();
-        const token = generation;
-        try {
-            if (mode === 'episodes') { await loadEpisodes(api, ctx, node, list, status, seasons); return; }
-            const item = await api.getJSON(api.getUrl('Users/' + encodeURIComponent(api.getCurrentUserId()) + '/Items/' + encodeURIComponent(ctx.item.Id), { Fields:'MediaSources' }));
-            if (stopped || token !== generation || dialog !== node) return;
-            if (context()?.item.Id !== ctx.item.Id) { close(); return; }
-            const sources = (item.MediaSources || []).filter(source => source.Id && !source.IsInfiniteStream);
-            if (sources.length < 2) { setStatus(status, 'MessageNoItemsAvailable', 'No alternative version available.'); return; }
-            for (const source of sources) {
-                const choice = document.createElement('button');
-                choice.type = 'button';
-                choice.className = 'lg-player-version-option';
-                const selected = ctx.state.PlayState.MediaSourceId === source.Id;
-                choice.setAttribute('aria-pressed', String(selected));
-                choice.textContent = source.Name || source.Id;
-                choice.onclick = () => change(source, ctx, status);
-                list.append(choice);
+    // =====================================================================
+    // Player buttons
+    // =====================================================================
+    let button = null, episodeButton = null;
+    function clearButtons() {
+        button?.remove();
+        episodeButton?.remove();
+        button = episodeButton = null;
+    }
+    function playerButton(className, icon, mode) {
+        const node = element('button', 'paper-icon-button-light autoSize ' + className);
+        node.type = 'button';
+        const glyph = element('span', 'largePaperIconButton material-icons', icon);
+        glyph.setAttribute('aria-hidden', 'true');
+        node.append(glyph);
+        node.addEventListener('click', () => void open(mode, node));
+        return node;
+    }
+    function syncButton(node, mode) {
+        setTitle(node, label(mode));
+        setAttribute(node, 'aria-label', label(mode));
+        setDisabled(node, busy);
+    }
+    function syncButtons(ctx) {
+        if (!ctx) {
+            clearButtons();
+            return;
+        }
+        // The OSD hides itself during playback; its buttons stay until it returns.
+        const anchor = document.querySelector('#videoOsdPage:not(.hide) .btnVideoOsdSettings');
+        if (!anchor) return;
+        if (settings.versions) {
+            if (!button?.isConnected) {
+                button = playerButton('lg-player-versions-button', 'video_library', 'versions');
+                anchor.before(button);
             }
-            setStatus(status, '', '');
-            syncScrollHint();
-        } catch { if (dialog === node) setStatus(status, 'ErrorDefault', 'Unable to load this list. Close this window and try again.'); }
+            syncButton(button, 'versions');
+        }
+        if (settings.episodes && ctx.item.Type === 'Episode' && ctx.item.SeriesId) {
+            if (!episodeButton?.isConnected) episodeButton = playerButton('lg-player-episodes-button', 'playlist_play', 'episodes');
+            const target = button || anchor;
+            if (episodeButton.nextElementSibling !== target) target.before(episodeButton);
+            syncButton(episodeButton, 'episodes');
+        } else {
+            episodeButton?.remove();
+            episodeButton = null;
+        }
     }
 
+    // =====================================================================
+    // Scheduler
+    // =====================================================================
+    let timer = 0;
     function sync() {
         if (stopped) return;
-        syncLabels();
-        syncScrollHint();
         try {
-            const anchor = document.querySelector('#videoOsdPage:not(.hide) .btnVideoOsdSettings');
-            const ctx = anchor && context();
-            if (!ctx) { button?.remove(); episodeButton?.remove(); button = episodeButton = null; if (!busy) close(); return; }
-            if (!busy && dialogItem && (ctx.item.Id !== dialogItem.Id || ctx.item.ServerId !== dialogItem.ServerId)) close();
-            if (settings.versions) {
-                if (!button?.isConnected) {
-                    button = document.createElement('button'); button.type = 'button';
-                    button.className = 'paper-icon-button-light autoSize lg-player-version-button';
-                    const icon = document.createElement('span'); icon.className = 'largePaperIconButton material-icons';
-                    icon.textContent = 'video_library'; icon.setAttribute('aria-hidden', 'true');
-                    button.append(icon); button.onclick = () => open('versions'); anchor.before(button);
-                }
-                button.title = label(); button.setAttribute('aria-label', label()); button.disabled = busy;
-            }
-            if (settings.episodes && ctx.item.Type === 'Episode' && ctx.item.SeriesId) {
-                if (!episodeButton?.isConnected) {
-                    episodeButton = document.createElement('button'); episodeButton.type = 'button';
-                    episodeButton.className = 'paper-icon-button-light autoSize lg-player-episode-button';
-                    const icon = document.createElement('span'); icon.className = 'largePaperIconButton material-icons';
-                    icon.textContent = 'playlist_play'; icon.setAttribute('aria-hidden', 'true');
-                    episodeButton.append(icon); episodeButton.onclick = () => open('episodes');
-                }
-                const target = button || anchor;
-                if (episodeButton.nextElementSibling !== target) target.before(episodeButton);
-                episodeButton.title = label('episodes'); episodeButton.setAttribute('aria-label', label('episodes')); episodeButton.disabled = busy;
-            } else { episodeButton?.remove(); episodeButton = null; }
+            const ctx = context();
+            syncDialog(ctx);
+            syncButtons(ctx);
         } catch (error) { console.debug('LumaaGlaass player controls are unavailable.', error); }
     }
-    let timer = null;
     function start() {
         if (!settings.versions && !settings.episodes) return;
-        if (!timer) timer = setInterval(sync, 1000);
+        document.head.append(style);
+        timer = setInterval(sync, 1000);
         sync();
     }
-    window[key] = {
+
+    // =====================================================================
+    // Lifecycle
+    // =====================================================================
+    window[KEY] = {
         stop() {
-            stopped = true; clearInterval(timer); close(); button?.remove(); episodeButton?.remove();
-            style.remove(); delete window[key];
+            stopped = true;
+            clearInterval(timer);
+            close();
+            clearButtons();
+            style.remove();
+            delete window[KEY];
         }
     };
     start();
