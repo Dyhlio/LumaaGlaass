@@ -149,16 +149,17 @@ configuration and loader or pasted script, then reload.
 | --- | --- | --- |
 | `native` | Keep native controls and actions | Keep the original button |
 | `details` | Replace an existing Play shortcut with an information icon opening its details | Show Info and navigate to the selected content's details |
-| `hide` | Hide overlay controls, preserving image links, progress and badges | Hide the main Play/Info button |
+| `hide` | Hide the central Play shortcut, preserving image links, progress, badges and corner actions | Hide the main Play/Info button |
 
 The information mode does not create buttons where none existed. Favorites, watched
-and menu controls stay unchanged in information mode; thumbnail hide mode hides those
-overlay controls too. Clicks on the image itself retain their native action.
+and menu controls stay unchanged in information mode. Thumbnail hide mode removes
+only the central Play shortcut; clicks on the image itself retain their native action.
 
 `cornerButtons` controls those three corner buttons (watched, favorite, more) on every
-thumbnail at once, independently of the Play shortcut: `native` keeps them, `hide`
-removes them everywhere. Polyfin and other servers running the unmodified Jellyfin
-Web 12.1 interface show them; Remux already hides them in its own stylesheet.
+thumbnail at once, independently of the Play shortcut: `native` preserves the
+server's controls even when the Play shortcut is hidden; `hide` removes them
+everywhere. Polyfin and other servers running the unmodified Jellyfin Web 12.1
+interface show them; Remux already hides them in its own stylesheet.
 
 ### Settings and priority
 

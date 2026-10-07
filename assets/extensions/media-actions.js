@@ -18,7 +18,8 @@
             home: { movies: 'native', episodes: 'native' },
             elsewhere: { movies: 'hide', episodes: 'hide' }
         },
-        // Corner buttons - Played, favorite and more in a thumbnail's corner: one switch for all three.
+        // Corner buttons - Played, favorite and more in a thumbnail's corner.
+        // This remains independent from the central thumbnail Play shortcut.
         cornerButtons: 'native',
         resumeButtons: { movies: 'native', episodes: 'native' },
         mainButtons: { collections: 'hide', series: 'details', seasons: 'details' }
@@ -155,7 +156,8 @@
     // Styles
     // =====================================================================
     const style = element('style', '', `
-        [data-lg-media-hide-thumbnail] :is(.cardOverlayButton,.listItemImageButton),
+        /* Hide only the central image Play shortcut. Corner actions follow cornerButtons. */
+        [data-lg-media-hide-thumbnail] :is(.cardOverlayContainer > .cardOverlayButton,.listItemImageButton),
         html body #itemDetailPage#itemDetailPage[data-lg-media-hide-resume] .mainDetailButtons .btnPlay,
         html body #itemDetailPage#itemDetailPage[data-lg-media-hide-main] .mainDetailButtons :is(.btnPlay,.btnReplay),
         html body #itemDetailPage [data-lg-media-replaced] {
