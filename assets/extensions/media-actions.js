@@ -30,9 +30,11 @@
     const choice = (value, fallback, allowed) => value === undefined ? fallback : allowed.includes(value) ? value : 'native';
     const group = (values, fallbacks, allowed) => Object.freeze(Object.fromEntries(
         Object.entries(fallbacks).map(([name, fallback]) => [name, choice(values?.[name], fallback, allowed)])));
+    const thumbnails = group(configured.thumbnails, defaults.thumbnails, MODES);
     const settings = Object.freeze({
-        thumbnails: group(configured.thumbnails, defaults.thumbnails, MODES),
+        thumbnails,
         seasonEpisodeThumbnails: choice(configured.seasonEpisodeThumbnails, defaults.seasonEpisodeThumbnails, MODES),
+        nextUpThumbnails: choice(configured.nextUpThumbnails, thumbnails.episodes, MODES),
         resumeThumbnails: Object.freeze({
             home: group(configured.resumeThumbnails?.home, defaults.resumeThumbnails.home, MODES),
             elsewhere: group(configured.resumeThumbnails?.elsewhere, defaults.resumeThumbnails.elsewhere, MODES)
@@ -44,7 +46,7 @@
     // Features - Card and details actions run only when one of their options is not native;
     // cornerButtons alone is pure CSS.
     const changed = groups => groups.flatMap(Object.values).some(mode => mode !== 'native');
-    const CARDS_ACTIVE = settings.seasonEpisodeThumbnails !== 'native' ||
+    const CARDS_ACTIVE = settings.seasonEpisodeThumbnails !== 'native' || settings.nextUpThumbnails !== 'native' ||
         changed([settings.thumbnails, settings.resumeThumbnails.home, settings.resumeThumbnails.elsewhere]);
     const DETAILS_ACTIVE = changed([settings.mainButtons, settings.resumeButtons]);
 
@@ -121,6 +123,7 @@
     };
     const route = () => location.hash.split('?')[0].replace(/\.html$/, '');
     const home = () => route() === '#/home';
+    const nextUp = () => route() === '#/list' && params().get('type')?.toLowerCase() === 'nextup';
     const currentClient = () => {
         try {
             return window.ApiClient || window.ConnectionManager?.currentApiClient?.();
@@ -262,6 +265,7 @@
             const onHome = home() && !!card.closest('#indexPage,.homePage');
             return settings.resumeThumbnails[onHome ? 'home' : 'elsewhere'][TYPE_GROUPS[card.dataset.type]] || 'native';
         }
+        if (card.dataset.type === 'Episode' && nextUp()) return settings.nextUpThumbnails;
         const seasonEpisode = card.dataset.type === 'Episode' &&
             card.closest('#itemDetailPage :is(#childrenCollapsible, #listChildrenCollapsible)');
         return seasonEpisode ? settings.seasonEpisodeThumbnails : settings.thumbnails[TYPE_GROUPS[card.dataset.type]];

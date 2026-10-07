@@ -96,8 +96,8 @@ Source selection and player controls remain independent.
 ### Install and configure
 
 Paste this complete loader into **Custom JavaScript** after the main theme loader.
-The values below are the defaults. Edit modes here, save and fully reload the
-client; there is no need to edit the downloaded script.
+The values below are a complete starting configuration. Edit modes here, save and
+fully reload the client; there is no need to edit the downloaded script.
 
 ```javascript
 (() => {
@@ -116,6 +116,7 @@ client; there is no need to edit the downloaded script.
             home: { movies: 'native', episodes: 'native' },
             elsewhere: { movies: 'hide', episodes: 'hide' }
         },
+        nextUpThumbnails: 'native',
         cornerButtons: 'native',
         resumeButtons: { movies: 'native', episodes: 'native' },
         mainButtons: {
@@ -175,14 +176,16 @@ interface show them; Remux already hides them in its own stylesheet.
 | `seasonEpisodeThumbnails` | Episode thumbnails in a details page's episode list |
 | `resumeThumbnails.home.movies/episodes` | Started movie/episode thumbnails on the home page |
 | `resumeThumbnails.elsewhere.movies/episodes` | Started movie/episode thumbnails on other pages |
+| `nextUpThumbnails` | Unstarted episode thumbnails in the Next Up page; omitted, it inherits `thumbnails.episodes` |
 | `cornerButtons` | Watched, favorite and more buttons in every thumbnail corner (`native` or `hide`) |
 | `resumeButtons.movies/episodes` | Resume button on a started movie/episode details page |
 | `mainButtons.collections/series/seasons` | Main button on the corresponding container details page |
 
 Types come from Jellyfin metadata, never from item names. Films inside a collection
 follow movie rules, not collection rules. `resumeThumbnails` applies to saved positive
-playback positions and overrides both `seasonEpisodeThumbnails` and `thumbnails`;
-`seasonEpisodeThumbnails` overrides `thumbnails.episodes`. No setting deletes or
+playback positions and overrides `nextUpThumbnails`, `seasonEpisodeThumbnails` and
+`thumbnails`. `nextUpThumbnails` overrides `thumbnails.episodes` in the Next Up page;
+`seasonEpisodeThumbnails` overrides `thumbnails.episodes` in a details-page episode list. No setting deletes or
 rewrites saved playback progress.
 
 `resumeButtons` accepts only `native` or `hide`: opening details when already
@@ -193,7 +196,8 @@ Resumable series, seasons and collections retain native controls.
 Missing options use the defaults shown above. Invalid modes fall back to native
 behavior. For example, set `thumbnails.collections: 'native'` to preserve collection
 thumbnail controls, or `resumeThumbnails.elsewhere.episodes: 'details'` to open details
-from episode resume shortcuts outside the home page.
+from episode resume shortcuts outside the home page. Set `nextUpThumbnails: 'native'`
+to preserve native shortcuts in Next Up while keeping another episode rule elsewhere.
 
 ### Limitations
 
