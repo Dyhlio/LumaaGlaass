@@ -3605,7 +3605,7 @@ html body :is(.cardPadder:has(.cardImageIcon),.defaultCardBackground,.listItemIm
 
 html body :is(.cardPadder,.defaultCardBackground,.listItemImage) .cardImageIcon {
     color: var(--lg-color-text) !important;
-    opacity: .45;
+    opacity: 0;
     text-shadow: none;
 }
 
