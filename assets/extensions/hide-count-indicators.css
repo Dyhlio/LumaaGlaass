@@ -1,7 +1,4 @@
-/* LumaaGlaass - Optional count badge hiding. */
-/* Configuration - No settings; add this import after the main theme to enable.
-   Remove the import (or pasted rules) and fully reload to restore count badges.
-   Installation: docs/customization.md#hide-count-indicators. */
+/* LumaaGlaass - Hide count indicators extension. */
 .countIndicator {
     display: none !important;
 }
