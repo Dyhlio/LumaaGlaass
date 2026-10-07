@@ -5921,7 +5921,7 @@ html.lg-has-now-playing-bar .backgroundContainer.withBackdrop {
 @layer lg-glass-controls {
     /* Glass controls - One resting glass for MUI, native and extension buttons; hover, keyboard
        focus and an open menu light it. */
-    html body :where(header.MuiAppBar-root > .MuiToolbar-root:first-child .MuiIconButton-root, header.MuiAppBar-root > .MuiToolbar-root:nth-child(2) .MuiButtonGroup-root :is(.MuiButtonGroup-groupedText,.MuiButtonGroup-groupedContained.MuiButtonGroup-lastButton), header.MuiAppBar-root > .MuiToolbar-root:nth-child(2) .MuiIconButton-root, header.MuiAppBar-root button[aria-controls="library-view-menu"], .skinHeader:not(.osdHeader) .headerButton:not(.headerUserButtonRound), .osdHeader :is(.headerButton:not(.headerUserButtonRound),.MuiIconButton-root), .lg-hero-info,.mainDetailButtons .detailButton,.lg-library-card button,.lg-library-page .paging button, .lg-source-dialog-close,.lg-player-dialog-close,.lg-player-season-arrow,.skip-button,.upNextDialog-button):not(:is(.btnPlay,.button-submit,:has(.playstatebutton-icon-played,:where(svg.MuiSvgIcon-colorError[data-testid="CheckIcon"])), [aria-pressed="true"],[aria-selected="true"],[aria-current="page"],.buttonActive)) {
+    html body :where(header.MuiAppBar-root > .MuiToolbar-root:first-child .MuiIconButton-root, header.MuiAppBar-root > .MuiToolbar-root:nth-child(2) .MuiButtonGroup-root :is(.MuiButtonGroup-groupedText,.MuiButtonGroup-groupedContained.MuiButtonGroup-lastButton), header.MuiAppBar-root > .MuiToolbar-root:nth-child(2) .MuiIconButton-root, header.MuiAppBar-root button[aria-controls="library-view-menu"], .itemsViewSettingsContainer :is(.listTextButton-autohide,.listIconButton-autohide), .skinHeader:not(.osdHeader) .headerButton:not(.headerUserButtonRound), .osdHeader :is(.headerButton:not(.headerUserButtonRound),.MuiIconButton-root), .lg-hero-info,.mainDetailButtons .detailButton,.lg-library-card button,.lg-library-page .paging button, .lg-source-dialog-close,.lg-player-dialog-close,.lg-player-season-arrow,.skip-button,.upNextDialog-button):not(:is(.btnPlay,.button-submit,:has(.playstatebutton-icon-played,:where(svg.MuiSvgIcon-colorError[data-testid="CheckIcon"])), [aria-pressed="true"],[aria-selected="true"],[aria-current="page"],.buttonActive)) {
         box-sizing: border-box;
         background: var(--lg-surface) !important;
         color: var(--lg-color-text) !important;
@@ -5943,6 +5943,24 @@ html.lg-has-now-playing-bar .backgroundContainer.withBackdrop {
         &:not(:disabled):not([aria-disabled="true"]):is(:hover,:focus-visible,.show-focus:focus,[aria-expanded="true"]) {
             background: var(--lg-state-hover) !important;
         }
+    }
+
+    /* List actions - Text controls use the toolbar pill; the More action is icon-only. */
+    html body .itemsViewSettingsContainer .listTextButton-autohide:not(:is(.btnPlay,.btnViewSettings)) {
+        min-height: var(--lg-size-action) !important;
+        padding: 0 16px !important;
+        border-radius: var(--lg-radius-pill) !important;
+    }
+
+    /* List actions - Icon-only controls keep the shared circular hit area. */
+    html body .itemsViewSettingsContainer :is(.listIconButton-autohide,.btnViewSettings) {
+        box-sizing: border-box;
+        width: var(--lg-size-action);
+        height: var(--lg-size-action);
+        min-width: var(--lg-size-action) !important;
+        min-height: var(--lg-size-action);
+        padding: 10px !important;
+        border-radius: 50% !important;
     }
 
     /* Secondary controls - Glass on interaction only, with no resting surface. */
