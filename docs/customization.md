@@ -1,41 +1,39 @@
 # Customization
 
-The base theme includes the mixed collection filter by default. Enable other
-options only when you need them.
+The base theme includes the collection filter by default. Enable other options
+only when you need them.
 
 [Back to installation](../README.md#installation)
 
 ## Before you start
 
 1. Install the main theme using the [installation instructions](../README.md#installation).
-2. Back up your current **Remux > Branding > Custom CSS** and **Custom JS**.
+2. Back up your current **Polyfin → Settings → Web player → Custom CSS** and
+   **Custom JavaScript**.
 3. Add the option in the field shown below. Keep the main theme installed.
 4. Save and fully reload the client after every change.
 
-The theme has been tested only on Remux using Jellyfin Web 10.11.11.
-Keep the **Dark** base theme selected.
+The theme targets Jellyfin Web 12.1 (tested on Polyfin and Remux). Earlier versions
+are not supported. Keep the **Dark** base theme selected.
 
 ## Choose an option
 
-Public JavaScript settings are documented at the top of each configurable script,
-before implementation code. Set them in its loader before loading the script,
-or before a pasted copy; save and fully reload after changes. Scripts without
-public settings say so in their header: add/remove their loader to enable/disable
-them. CSS overrides go after the main theme import. Internal constants are not
-additional public settings.
+Each script lists its options at the top. Set them in its loader, before the
+script loads (or before a pasted copy), then save and fully reload. CSS overrides
+go after the main theme import.
 
 | Option | What it does | Where to add it |
 | --- | --- | --- |
-| [Home carousel](#home-carousel) | Hide the home banner while keeping a still media background | Custom JS, before the main loader |
-| [Source selection](#source-selection) | Choose native controls, an inline panel or a playback dialog | Custom JS |
-| [In-player controls](#in-player-controls) | Enable version switching, episode browsing, or both | Custom JS |
-| [Media actions](#media-actions) | Configure native, information or hidden shortcuts by media type and context | Custom JS |
-| [Filter mixed collections](#filter-mixed-collections) | Show all items, movies only, or series only; enabled by default | Main Custom JS options |
+| [Home carousel](#home-carousel) | Hide the home banner while keeping a still media background | Main Custom JavaScript options |
+| [Collection filter](#collection-filter) | Show all items, movies only, or series only; enabled by default | Main Custom JavaScript options |
+| [Media actions](#media-actions) | Configure native, information or hidden shortcuts by media type and context | Custom JavaScript |
+| [Player controls](#player-controls) | Enable version switching, episode browsing, or both | Custom JavaScript |
+| [Source selection](#source-selection) | Choose native controls, an inline panel or a playback dialog | Custom JavaScript |
 | [Hide count indicators](#hide-count-indicators) | Hide numeric badges on cards and lists | Custom CSS |
-| [Visual adjustments](#visual-adjustments) | Adjust shared panel and selection colors | Custom CSS |
+| [Theme variables](#theme-variables) | Adjust the accent, glass, corners, spacing, text and timing | Custom CSS |
 
 **Source selection provides one mode at a time: native, panel or dialog.**
-The collection filter, hidden count badges, media actions and in-player controls
+The collection filter, hidden count badges, media actions and player controls
 can be used with any source-selection mode.
 
 ## Home carousel
@@ -50,68 +48,93 @@ configuration **before the pasted script**:
 
 ```javascript
 window.LumaaGlaassOptions = {
-  ...window.LumaaGlaassOptions,
-  homeCarousel: false
+    ...window.LumaaGlaassOptions,
+    homeCarousel: false
 };
 ```
 
 Set `homeCarousel: true` or remove this property to restore the carousel.
-No additional extension is required. Library and collection headers are unchanged.
+Library and collection cards are unchanged.
+
+The carousel and the still background pick up to eight movies and series at
+random across your libraries, each library getting a share. A title found in
+several libraries, or in both HD and 4K, appears once.
 
 Home keeps a successfully loaded backdrop from the same movie/series selection,
 without rotation. A full reload requests a new random selection. Up to four
 images are tried; if none loads, the last valid background from the same
 session/account is retained when available, otherwise the neutral background stays.
 
+## Collection filter
+
+The main theme shows **All / Movies / Shows** above collections containing both
+movies and series. It is enabled by default.
+
+The main loader defines `window.LumaaGlaassOptions`. Set `collectionFilter: false`
+there to disable the filter; save and fully reload. Missing or invalid values
+default to `true`. For a pasted main script, put the configuration before the script:
+
+```javascript
+window.LumaaGlaassOptions = {
+    ...window.LumaaGlaassOptions,
+    collectionFilter: false
+};
+```
+
+- Filters the native cards and section headings without changing their order.
+- Does not alter collection membership, watch history, or the main Play/Shuffle actions.
+- Shows other media types under **All** only.
+- Resets to **All** when switching collections; single-type collections have no filter.
+- Supports keyboard navigation, right-to-left layouts, and pointer feedback.
+- Uses Jellyfin's own translations, with English as a fallback.
+
 ## Media actions
 
 One optional script controls thumbnail shortcuts and selected details-page buttons.
-It replaces details-first navigation and image button hiding. Remove their loaders
-or pasted scripts before installing this option. Keep the main theme and unrelated
-extensions. Source selection and the in-player controls remain
-independent.
+Source selection and player controls remain independent.
 
 ### Install and configure
 
-Paste this complete loader into **Remux > Branding > Custom JS** after the main
-theme loader. The values below are the defaults. Edit modes here, save and fully
-reload Remux; there is no need to edit the downloaded script.
+Paste this complete loader into **Custom JavaScript** after the main theme loader.
+The values below are the defaults. Edit modes here, save and fully reload the
+client; there is no need to edit the downloaded script.
 
 ```javascript
 (() => {
-  window.LumaaGlaassMediaActionsOptions = {
-    catalog: {
-      movies: 'hide',
-      episodes: 'hide',
-      series: 'hide',
-      seasons: 'hide',
-      collections: 'hide',
-      libraries: 'hide',
-      folders: 'hide'
-    },
-    seasonEpisodeImages: 'details',
-    resumeImages: {
-      home: { movies: 'native', episodes: 'native' },
-      elsewhere: { movies: 'hide', episodes: 'hide' }
-    },
-    resumeDetailButtons: { movies: 'native', episodes: 'native' },
-    detailPages: {
-      collections: 'hide',
-      series: 'details',
-      seasons: 'details'
-    }
-  };
+    window.LumaaGlaassMediaActionsOptions = {
+        thumbnails: {
+            movies: 'hide',
+            episodes: 'hide',
+            series: 'hide',
+            seasons: 'hide',
+            collections: 'hide',
+            libraries: 'hide',
+            folders: 'hide'
+        },
+        seasonEpisodeThumbnails: 'details',
+        resumeThumbnails: {
+            home: { movies: 'native', episodes: 'native' },
+            elsewhere: { movies: 'hide', episodes: 'hide' }
+        },
+        cornerButtons: 'native',
+        resumeButtons: { movies: 'native', episodes: 'native' },
+        mainButtons: {
+            collections: 'hide',
+            series: 'details',
+            seasons: 'details'
+        }
+    };
 
-  const id = 'lumaaglaass-media-actions-script';
-  if (document.getElementById(id)) return;
-  const script = document.createElement('script');
-  script.id = id;
-  script.src = 'https://cdn.jsdelivr.net/gh/Dyhlio/LumaaGlaass@main/assets/extensions/media-actions.js';
-  script.onerror = () => {
-    script.remove();
-    console.error('LumaaGlaass media actions could not be loaded.');
-  };
-  document.head.appendChild(script);
+    const id = 'lg-media-actions-script';
+    if (document.getElementById(id)) return;
+    const script = document.createElement('script');
+    script.id = id;
+    script.src = 'https://cdn.jsdelivr.net/gh/Dyhlio/LumaaGlaass@main/assets/extensions/media-actions.js';
+    script.onerror = () => {
+        script.remove();
+        console.error('LumaaGlaass media actions could not be loaded.');
+    };
+    document.head.appendChild(script);
 })();
 ```
 
@@ -122,68 +145,67 @@ configuration and loader or pasted script, then reload.
 
 ### Modes
 
-| Mode | Image shortcuts | Collection, series or season main button |
+| Mode | Thumbnail Play shortcut | Collection, series or season main button |
 | --- | --- | --- |
 | `native` | Keep native controls and actions | Keep the original button |
-| `details` | Replace an existing Play shortcut with an information icon opening its details | Show Open and navigate to the selected content's details |
-| `hide` | Hide overlay controls, preserving image links, progress and badges | Hide the main Play/Open button |
+| `details` | Replace an existing Play shortcut with an information icon opening its details | Show Info and navigate to the selected content's details |
+| `hide` | Hide overlay controls, preserving image links, progress and badges | Hide the main Play/Info button |
 
 The information mode does not create buttons where none existed. Favorites, watched
-and menu controls stay unchanged in information mode; image hide mode hides those
+and menu controls stay unchanged in information mode; thumbnail hide mode hides those
 overlay controls too. Clicks on the image itself retain their native action.
+
+`cornerButtons` controls those three corner buttons (watched, favorite, more) on every
+thumbnail at once, independently of the Play shortcut: `native` keeps them, `hide`
+removes them everywhere. Polyfin and other servers running the unmodified Jellyfin
+Web 12.1 interface show them; Remux already hides them in its own stylesheet.
 
 ### Settings and priority
 
 | Setting | Scope |
 | --- | --- |
-| `catalog.movies` | Movie thumbnails |
-| `catalog.episodes` | Episode thumbnails outside the higher-priority cases below |
-| `catalog.series` | Series thumbnails |
-| `catalog.seasons` | Season thumbnails |
-| `catalog.collections` | BoxSet collection thumbnails |
-| `catalog.libraries` | CollectionFolder and UserView library thumbnails |
-| `catalog.folders` | Folder thumbnails |
-| `seasonEpisodeImages` | Episode images in a details page's child list |
-| `resumeImages.home.movies/episodes` | Started movie/episode thumbnails on the home page |
-| `resumeImages.elsewhere.movies/episodes` | Started movie/episode thumbnails on other pages |
-| `resumeDetailButtons.movies/episodes` | Resume button on a started movie/episode details page |
-| `detailPages.collections/series/seasons` | Main button on the corresponding container details page |
+| `thumbnails.movies` | Movie thumbnails |
+| `thumbnails.episodes` | Episode thumbnails outside the higher-priority cases below |
+| `thumbnails.series` | Series thumbnails |
+| `thumbnails.seasons` | Season thumbnails |
+| `thumbnails.collections` | BoxSet collection thumbnails |
+| `thumbnails.libraries` | CollectionFolder and UserView library thumbnails |
+| `thumbnails.folders` | Folder thumbnails |
+| `seasonEpisodeThumbnails` | Episode thumbnails in a details page's episode list |
+| `resumeThumbnails.home.movies/episodes` | Started movie/episode thumbnails on the home page |
+| `resumeThumbnails.elsewhere.movies/episodes` | Started movie/episode thumbnails on other pages |
+| `cornerButtons` | Watched, favorite and more buttons in every thumbnail corner (`native` or `hide`) |
+| `resumeButtons.movies/episodes` | Resume button on a started movie/episode details page |
+| `mainButtons.collections/series/seasons` | Main button on the corresponding container details page |
 
-Types are determined from Jellyfin metadata, never names such as Netflix or
-Populaire. Films inside a collection follow movie rules, not collection rules.
-Home detection uses the home route and home page container, not translated headings.
-Resume image rules apply to saved positive playback positions and override both
-season episode image and catalog rules. Season episode image rules override catalog
-episode rules. No setting deletes or rewrites saved playback progress.
+Types come from Jellyfin metadata, never from item names. Films inside a collection
+follow movie rules, not collection rules. `resumeThumbnails` applies to saved positive
+playback positions and overrides both `seasonEpisodeThumbnails` and `thumbnails`;
+`seasonEpisodeThumbnails` overrides `thumbnails.episodes`. No setting deletes or
+rewrites saved playback progress.
 
-`resumeDetailButtons` accepts only `native` or `hide`: opening details when already
+`resumeButtons` accepts only `native` or `hide`: opening details when already
 on the same page would be redundant. It does not hide the separate restart button.
 Unstarted movie/episode main buttons and player controls remain unchanged.
 Resumable series, seasons and collections retain native controls.
 
 Missing options use the defaults shown above. Invalid modes fall back to native
-behavior. For example, set `catalog.collections: 'native'` to preserve collection
-image controls, or `resumeImages.elsewhere.episodes: 'details'` to open details
+behavior. For example, set `thumbnails.collections: 'native'` to preserve collection
+thumbnail controls, or `resumeThumbnails.elsewhere.episodes: 'details'` to open details
 from episode resume shortcuts outside the home page.
 
-### Compatibility and limitations
+### Limitations
 
-Open on a series uses Next Up; a season stays within its own episodes, selecting
+Info on a series uses Next Up; a season stays within its own episodes, selecting
 the first unplayed episode or the first episode if all are watched. A collection
 opens the first item in native collection playback order. Metadata failures do
 not hide native controls; failed target lookup displays a translated status.
 
-Labels use Jellyfin's native translator. If translation is unavailable, information
-replacements remain native. Music, live TV, chapters, playlist items and player
-controls are excluded. Only Remux using Jellyfin Web 10.11.11 has been validated.
+Labels use Jellyfin's own translations (its Info button label). If they are
+unavailable, information replacements remain native. Music, live TV, chapters,
+playlist items and player controls are excluded.
 
-Do not also load `details-first.js` or `hide-image-buttons.js`. Those retired
-installation URLs are replaced by this single option. Their settings objects are
-not automatically migrated: use the explicit configuration above. The new script
-stops already-running legacy instances when loaded, but removing their loaders is
-still necessary to avoid asynchronous reactivation.
-
-## In-player controls
+## Player controls
 
 One optional extension provides both player controls. Enable either feature or both.
 Set options before loading; missing or invalid values default to `true`.
@@ -191,44 +213,33 @@ Save and fully reload after changing options. Both disabled means no player poll
 
 ```javascript
 (() => {
-  window.LumaaGlaassPlayerControlsOptions = {
-    versions: true,
-    episodes: true
-  };
-  const id = 'lumaaglaass-player-controls-script';
-  if (document.getElementById(id)) return;
-  const script = document.createElement('script');
-  script.id = id;
-  script.src = 'https://cdn.jsdelivr.net/gh/Dyhlio/LumaaGlaass@main/assets/extensions/player-controls.js';
-  script.onerror = () => {
-    script.remove();
-    console.error('LumaaGlaass player controls could not be loaded.');
-  };
-  document.head.appendChild(script);
+    window.LumaaGlaassPlayerControlsOptions = {
+        versions: true,
+        episodes: true
+    };
+    const id = 'lg-player-controls-script';
+    if (document.getElementById(id)) return;
+    const script = document.createElement('script');
+    script.id = id;
+    script.src = 'https://cdn.jsdelivr.net/gh/Dyhlio/LumaaGlaass@main/assets/extensions/player-controls.js';
+    script.onerror = () => {
+        script.remove();
+        console.error('LumaaGlaass player controls could not be loaded.');
+    };
+    document.head.appendChild(script);
 })();
 ```
 
 Keep the main theme installed. Alternatively, define the same configuration and
 paste [player-controls.js](../assets/extensions/player-controls.js) below it.
-Use one method only. Styles are included. Remove the loader or pasted code and
-reload to uninstall. When both controls are enabled, their order is Episodes,
-Versions, Settings.
+Use one method only. Remove the loader or pasted code and reload to uninstall.
+When both controls are enabled, their order is Episodes, Versions, Settings.
 
-### Migration from separate player extensions
+### Version switcher
 
-Replace the old version/episode loaders or pasted scripts with the loader above.
-The old files have been removed from `main`; do not rely on cached copies. Set
-`versions` and `episodes` explicitly to keep the features you want. Remove
-obsolete pasted implementations to prevent them restarting later, then fully
-reload. The new script stops already-running older implementations during migration.
-
-## In-player version switcher
-
-Configured with `versions` in [In-player controls](#in-player-controls).
-
-Adds a **Version** button beside the settings button in the integrated player.
-Choose another version to restart playback at the current timestamp. A loading
-delay is expected; this is not a seamless stream switch.
+Enabled by `versions`. Adds a **Version** button beside the settings button in the
+integrated player. Choose another version to restart playback at the current
+timestamp. A loading delay is expected; this is not a seamless stream switch.
 
 - Supports seekable movies and episodes in the local integrated player, not casting or external players.
 - Keeps the current queue and requests the same playback position.
@@ -238,42 +249,30 @@ delay is expected; this is not a seamless stream switch.
 
 Different cuts of a movie can show different scenes at the same timestamp.
 Switching to a version shorter than the current position is rejected. This option
-uses internal Jellyfin modules and has only been tested on the Remux setup noted
-above; future client changes may require an update. If switching remains pending,
-close the window and reload the client if needed. Closing does not cancel a
-playback request already sent to Jellyfin.
+uses internal Jellyfin modules; future client changes may require an update. If
+switching remains pending, close the window and reload the client if needed.
+Closing does not cancel a playback request already sent to Jellyfin.
 
-## In-player episode switcher
+### Episode switcher
 
-Configured with `episodes` in [In-player controls](#in-player-controls).
+Enabled by `episodes`. Adds an **Episodes** button for series episodes; films do
+not show it. It opens the current season, marks the current episode and allows
+selecting another season.
 
-The episodes option adds an **Episodes** button for series episodes. Each entry
-displays its episode thumbnail when available, with a neutral
-placeholder if absent or unavailable. Images load lazily. Seasons use the shared
-themed native dropdown, with a bounded, scrollable picker on supported browsers
-and a native fallback elsewhere. A single season is displayed as plain text.
-Selecting a season only updates the list, not playback. Episode lists are paginated
-when fetched and scroll independently.
-The button is only shown for episodes with a series identity. It opens the current season, allows selecting
-another season, and marks the current episode. Films do not show this button.
-Choosing an episode plays the selected season queue from that episode, using its
-saved progress when unfinished. Already watched episodes start from the beginning.
-Source and track indices are not copied from the previous episode. A loading
-delay is expected; this is not a seamless switch. Closing the dialog does not
-cancel a playback request already submitted.
+- Each entry shows its episode thumbnail when available, with a neutral placeholder
+  otherwise. Images load lazily.
+- Seasons use the shared themed dropdown. A single season is displayed as plain text;
+  with several, Previous/Next arrows flank the dropdown and stop at the first and last season.
+- Selecting a season only updates the list, not playback. Episode lists are paginated
+  when fetched and scroll independently within a bounded height.
+- Choosing an episode plays the selected season queue from that episode, using its
+  saved progress when unfinished. Already watched episodes start from the beginning.
+  Source and track indices are not copied from the previous episode.
 
-It supports seekable episodes in the local integrated player, not casting or
-external players. Like version switching, it relies on internal Jellyfin modules;
-future client changes may require an update.
-
-## Copying the code
-
-- CSS belongs in **Custom CSS**. All `@import` lines must come before ordinary CSS rules.
-- JavaScript belongs in **Custom JS**, without `<script>` tags.
-- Keep the main theme loader and add the loader for each option you want.
-- For each file, use either its loader/import or its full contents, never both.
-- Remove old prototypes of the same feature before enabling its published file.
-- No download, build step, or extra plugin is required for these options in Remux.
+A loading delay is expected; this is not a seamless switch. Closing the dialog does
+not cancel a playback request already submitted. It supports seekable episodes in the
+local integrated player, not casting or external players, and relies on internal
+Jellyfin modules; future client changes may require an update.
 
 ## Source selection
 
@@ -286,28 +285,26 @@ remains required; the selected mode adapts to desktop, tablet and mobile.
 | `panel` | Show a source list on the details page |
 | `dialog` | Choose a version and available tracks after pressing Play or Resume |
 
-### Installation and mode selection
+### Install and choose a mode
 
-Remove the old `source-panel.js` and `playback-dialog.js` loaders or pasted scripts,
-including local prototypes. Those files have been replaced by this extension.
-Then add this loader to **Custom JS**, keeping the main theme:
+Add this loader to **Custom JavaScript**, keeping the main theme:
 
 ```javascript
 (() => {
-  window.LumaaGlaassSourceSelectionOptions = {
-    mode: 'native' // Change to 'panel' or 'dialog', save and fully reload.
-  };
-  const id = 'lumaaglaass-source-selection-script';
-  if (document.getElementById(id)) return;
+    window.LumaaGlaassSourceSelectionOptions = {
+        mode: 'native' // Change to 'panel' or 'dialog', save and fully reload.
+    };
+    const id = 'lg-source-selection-script';
+    if (document.getElementById(id)) return;
 
-  const script = document.createElement('script');
-  script.id = id;
-  script.src = 'https://cdn.jsdelivr.net/gh/Dyhlio/LumaaGlaass@main/assets/extensions/source-selection.js';
-  script.onerror = () => {
-    script.remove();
-    console.error('LumaaGlaass source selection could not be loaded.');
-  };
-  document.head.appendChild(script);
+    const script = document.createElement('script');
+    script.id = id;
+    script.src = 'https://cdn.jsdelivr.net/gh/Dyhlio/LumaaGlaass@main/assets/extensions/source-selection.js';
+    script.onerror = () => {
+        script.remove();
+        console.error('LumaaGlaass source selection could not be loaded.');
+    };
+    document.head.appendChild(script);
 })();
 ```
 
@@ -318,7 +315,6 @@ Changing the object after loading does not switch modes until a full reload.
 Alternatively, define the configuration object and paste the complete
 [source-selection.js](../assets/extensions/source-selection.js) below it.
 Use one installation method only; pasted copies need manual updates.
-Styles are included, with no extra CSS import.
 
 ### Panel mode
 
@@ -344,55 +340,12 @@ fallbacks if native translations are unavailable. Unsupported browsers or pages
 without a usable native version selector retain native behavior. Home banners,
 trailers and shuffle are not intercepted.
 
-### Compatibility and removal
+### Limitations
 
-Use only this loader, not the retired panel/dialog loaders. The extension stops
-already-running legacy instances when loaded, but their loaders must be removed
-to prevent later asynchronous reactivation.
-
-Media actions and the in-player controls remain separate options.
-Player controls act during playback and work with all three modes.
-No mode manufactures audio/subtitle tracks missing from Remux.
-Native dropdown rendering can vary by browser. Tested on Remux using Jellyfin Web
-10.11.11; other clients and versions have not been validated.
-
-To return to native controls, set `mode: 'native'` or remove this extension and
-reload. Keep the main theme installed. Available on `main`; older release tags
-may not contain this file.
-
-## Filter mixed collections
-
-The main theme includes **All / Movies / Shows** above collections containing
-both movies and series. It is enabled by default, including after updating an
-existing installation. No extra extension is required.
-
-The main loader defines `window.LumaaGlaassOptions`. Set `collectionFilter: false`
-there to disable the filter, or `true` to enable it; save and fully reload.
-Missing or invalid values default to `true`. For a pasted main script, put the
-configuration before the script:
-
-```javascript
-window.LumaaGlaassOptions = {
-  ...window.LumaaGlaassOptions,
-  collectionFilter: false
-};
-```
-
-The filter shares the main theme scheduler and installs no separate observer.
-When disabled, it creates no filter UI. Reloading with the option disabled restores
-previously filtered elements. Filtering never changes the library contents.
-
-- Filters the native cards and section headings without changing their order.
-- Does not alter collection membership, watch history, or the main Play/Shuffle actions.
-- Shows other media types under **All** only.
-- Resets to **All** when switching collections; single-type collections have no filter.
-- Supports keyboard navigation, right-to-left layouts, and pointer feedback.
-- Uses the client translator when exposed, otherwise bundled native Jellyfin strings.
-  Missing translations fall back to English. No translation service or extra library query is used.
-
-Remove the old `collection-filter.js` loader or pasted copy when migrating.
-The old file has been removed from `main`. Update the main script too: older main versions
-do not contain the integrated filter.
+Player controls act during playback and work with all three modes. No mode
+manufactures audio/subtitle tracks missing from the server. Native dropdown rendering
+can vary by browser. To return to native controls, set `mode: 'native'` or remove
+this extension and reload.
 
 ## Hide count indicators
 
@@ -408,7 +361,7 @@ media-source indicators, and counts written as ordinary text.
 To enable it, use these two lines at the top of **Custom CSS**:
 
 ```css
-@import url('https://cdn.jsdelivr.net/gh/Dyhlio/LumaaGlaass@main/assets/branding.css');
+@import url('https://cdn.jsdelivr.net/gh/Dyhlio/LumaaGlaass@main/assets/lumaaglaass.css');
 @import url('https://cdn.jsdelivr.net/gh/Dyhlio/LumaaGlaass@main/assets/extensions/hide-count-indicators.css');
 ```
 
@@ -420,52 +373,150 @@ after your existing CSS. Its complete rule is:
 
 ```css
 .countIndicator {
-  display: none !important;
+    display: none !important;
 }
 ```
 
 Save and fully reload the client. To restore the badges, remove the optional
-import or pasted rule and reload again. If you added both, remove both.
+import or pasted rule and reload again. Only elements using Jellyfin's
+`countIndicator` class are hidden; no counts or watch history are deleted.
 
-Only elements using Jellyfin's `countIndicator` class are hidden. This is a visual
-change: no counts or watch history are deleted. The rule also works with the
-v1.0.0 base theme; the optional file is available on `main`, not in older release tags.
+## Theme variables
 
-## Visual adjustments
+Every color, glass effect, corner, spacing and timing of the theme comes from a
+small set of CSS variables. Change one, and every control that uses it follows:
+the theme writes no second copy of these values.
 
-These are optional overrides for existing shared CSS variables, not a separate
-settings screen. They affect the components that use those variables, not every
-color or corner in Jellyfin.
-
-Paste this block at the **end of Custom CSS**, after all imports and any pasted
-theme styles. Change only the values you want:
+Paste an override block at the **end of Custom CSS**, after all imports and any
+pasted theme styles, and keep only the lines you change:
 
 ```css
 html:root {
-  --aa-surface: rgba(30, 30, 32, 0.4);
-  --aa-hover-surface: rgba(255, 255, 255, 0.08);
-  --aa-selected-surface: rgba(255, 255, 255, 0.16);
-  --aa-option-gap: 2px;
+    --lg-color-accent: #4f8cff;
+    --lg-radius-scale: 0.5;
 }
 ```
 
-The values above are the current defaults, so pasting them alone does not change
-the appearance.
+### Quick recipes
 
-| Variable | Effect | Example adjustment |
+| Goal | Paste inside `html:root { … }` |
+| --- | --- |
+| Colored accent (Play, checkboxes, sliders, progress, scrollbars) | `--lg-color-accent: #4f8cff;` `--lg-color-text-on-primary: #ffffff;` |
+| Square corners everywhere | `--lg-radius-scale: 0;` |
+| Softer or rounder corners | `--lg-radius-scale: 0.5;` or `--lg-radius-scale: 1.5;` |
+| More opaque glass | `--lg-surface: rgba(30, 30, 32, 0.7);` |
+| Lighter blur, or none | `--lg-blur-control: 8px;` `--lg-blur-panel: 12px;` (or `0px` for both) |
+| Snappier or calmer motion | `--lg-duration: 0.12s;` `--lg-duration-slow: 0.3s;` (double them for calmer) |
+| Tighter page layout | `--lg-space-gutter: 16px;` `--lg-space-header-gap: 20px;` |
+| Another font | `--lg-font: "Inter", sans-serif;` (load the font yourself, for example with an `@import` before the theme) |
+
+### Colors
+
+| Variable | Default | Effect |
 | --- | --- | --- |
-| `--aa-surface` | Shared panel background | Change the final value from `0.4` to `0.65` for a more opaque background |
-| `--aa-hover-surface` | Shared hover background | Change `0.08` to `0.12` for a stronger hover highlight |
-| `--aa-selected-surface` | Shared selected background | Change `0.16` to `0.22` for a stronger selection highlight |
-| `--aa-option-gap` | Space between styled native dropdown options | Change `2px` to `4px` for more spacing |
+| `--lg-color-accent` | `#f5f5f7` | The one accent: Play and submit actions, the active tab, checked checkboxes, switches, sliders, progress bars, scrollbars and MUI tints. Every translucent variant derives from it |
+| `--lg-color-text-on-primary` | `#151517` | Text on the accent; switch to white with a dark accent |
+| `--lg-surface-primary-hover` | `#fff` | Primary actions under the pointer |
+| `--lg-color-text` / `--lg-color-text-secondary` | `#f5f5f7` / `rgba(245, 245, 247, 0.72)` | Text on glass, then metadata and helper text; keep the second at least `0.65` opaque |
+| `--lg-color-focus` | `#f5f5f7` | Keyboard focus ring of every control |
+| `--lg-color-background` | `#25272c` | Page background behind the artwork |
+| `--lg-color-panel` | `#353840` | Home carousel panel shown while artwork loads |
 
-Opacity values run from `0` (transparent) to `1` (opaque). Check text contrast
-against both bright and dark artwork after changing them. Native dropdown styling
-depends on browser support; some browsers keep their system option menus.
-Keep operating-system accessibility preferences enabled.
+### Glass and depth
+
+| Variable | Default | Effect |
+| --- | --- | --- |
+| `--lg-surface` | `rgba(30, 30, 32, 0.4)` | Glass tint of every panel and control; hover and open states derive from it |
+| `--lg-surface-hover` / `--lg-surface-open` | 8% / 14% white mixed in | Hover and open/pressed glass; keep open above hover |
+| `--lg-surface-row-hover` / `--lg-surface-row-selected` | white `0.08` / `0.12` | Hover and selection of list and menu rows |
+| `--lg-surface-artwork-veil` | `rgba(30, 30, 32, 0.6)` | Darkening behind actions drawn over posters |
+| `--lg-edge` / `--lg-edge-open` | white `0.12` / `0.24` | Borders and dividers, then the edge of open menus and focused fields |
+| `--lg-blur-control` / `--lg-blur-panel` | `18px` / `32px` | Blur behind buttons and fields, then behind cards, panels, menus and tooltips |
+| `--lg-blur-backdrop` | `12px` | Blur of the background artwork |
+| `--lg-shadow-panel` / `--lg-shadow-card` | — | Depth of floating panels (menus, dialogs), then of cards on the page; lighten both together |
+
+### Shape
+
+| Variable | Default | Effect |
+| --- | --- | --- |
+| `--lg-radius-scale` | `1` | Multiplies every corner below and every other corner of the theme: `0` squares them all, `1.5` rounds them more. Circles stay round |
+| `--lg-radius-pill` | `999px` | Buttons, tabs, chips and toolbar groups |
+| `--lg-radius` | `14px` | Fields, selects, cards and posters |
+| `--lg-radius-panel` / `--lg-radius-panel-compact` | `24px` / `18px` | Large panels (page card, home carousel, details, dialogs, player bars), then the same panels on phones; images inside them follow, 6px softer |
+| `--lg-radius-popup` | `16px` | Menus and dropdown panels |
+| `--lg-radius-option` | `10px` | Rows inside menus and dropdowns |
+| `--lg-radius-drawer` / `--lg-radius-drawer-option` | `32px` / `12px` | Side navigation drawer, then its rows |
+| `--lg-radius-small` | `8px` | Checkboxes, tooltips and small thumbnails |
+
+Each radius default is written as a multiple of `--lg-radius-scale`. A value you
+set directly, such as `--lg-radius: 6px;`, replaces that role at every scale.
+
+### Spacing and size
+
+| Variable | Default | Effect |
+| --- | --- | --- |
+| `--lg-space-gutter` | `clamp(16px, 3.4vw, 64px)` | Side inset of every page |
+| `--lg-space-header-gap` | `32px` | Distance between the navigation bar and the first block of every page |
+| `--lg-space-button-group` | `8px` | Space between neighbouring buttons |
+| `--lg-space-option` / `--lg-space-popup` | `2px` / `6px` | Space between menu rows, then inside menus |
+| `--lg-space-list-option` | `8px` | Space between source, version and episode choices (extensions) |
+| `--lg-size-action` / `--lg-size-option` | `44px` / `44px` | Round actions, then menu rows; keep at least `44px` for touch |
+| `--lg-page-card-height` | `304px` | Height of the library and collection page card |
+| `--lg-cast-width` | `clamp(112px, 10vw, 180px)` | Width of cast cards on details pages |
+
+### Text
+
+| Variable | Default | Effect |
+| --- | --- | --- |
+| `--lg-font` | system font | Font of the whole interface |
+| `--lg-font-section-title` | `clamp(21px, 2vw, 28px)` | Row titles on home, libraries and details |
+| `--lg-page-card-title-size` / `--lg-page-card-title-weight` | `clamp(30px, 3.5vw, 56px)` / `600` | Title of the library and collection page card |
+
+### Motion
+
+| Variable | Default | Effect |
+| --- | --- | --- |
+| `--lg-duration` | `0.2s` | Hover, focus and open feedback of every control |
+| `--lg-duration-slow` | `0.5s` | Larger movements: card focus zoom, carousel crossfade, favorite pop |
+| `--lg-ease` | smooth deceleration | Easing of every transition |
+
+Reduced-motion preferences remove these animations whatever their values.
+
+### Internal variables
+
+Variables not listed above are internal: the accent channels
+(`--lg-color-accent-rgb`), the state hooks (`--lg-state-*`, overridden by the
+accessibility modes), `--lg-focus-ring`, `--lg-motion`, `--lg-select-arrow` and the
+values the script writes (`--lg-header-bottom`, `--lg-content-top`,
+`--lg-scrollbar-width`, `--lg-library-controls-*`…) with `--lg-page-start`, derived
+from them. Overriding them can break states or layout.
+
+### Accessibility and design roles
+
+Accessibility preferences change these same variables: reduced transparency, more
+contrast and forced colors make `--lg-surface` opaque and the glass blurs `0px`,
+reduced transparency also replaces the background artwork with the plain page color,
+and more contrast brightens `--lg-edge` and `--lg-edge-open`. An override written after the import applies in
+those modes too; wrap it in `@media (prefers-reduced-transparency: no-preference)`
+to keep the accessible values. Check text contrast against bright and dark artwork
+after changing colors or opacity. Native dropdown styling depends on browser
+support; some browsers keep their system option menus.
+
+The design roles are intentional: Play is a filled pill, secondary actions are
+glass circles, navigation uses pills/tabs, and menus use selectable rows sharing
+one muted selected surface, without a redundant checkmark. Keyboard focus is a
+separate outline, and selection stays visible during hover.
 
 To undo these adjustments, remove the override block and reload. Do not edit
 the CDN files or replace the whole theme just to change these values.
+
+## Copying the code
+
+- CSS belongs in **Custom CSS**. All `@import` lines must come before ordinary CSS rules.
+- JavaScript belongs in **Custom JavaScript**, without `<script>` tags.
+- Keep the main theme loader and add the loader for each option you want.
+- For each file, use either its loader/import or its full contents, never both.
+- No download, build step or plugin is needed for these options.
 
 ## Updating and troubleshooting
 
@@ -475,15 +526,14 @@ the CDN files or replace the whole theme just to change these values.
   only when the native details page offers multiple versions.
 - **No collection filter:** it appears only in collections containing both movies
   and series.
-- **No audio or subtitle choices:** the dialog mirrors the options exposed by
-  Remux for the selected version. It does not create missing tracks.
-- **An old appearance remains:** remove duplicate loaders, pasted prototypes, and
-  obsolete personal overrides. On desktop, try **Ctrl+F5**. jsDelivr caching may
-  still delay updates.
+- **No audio or subtitle choices:** the dialog mirrors the options the server
+  exposes for the selected version. It does not create missing tracks.
+- **An old appearance remains:** remove duplicate loaders and personal overrides
+  that no longer apply. On desktop, try **Ctrl+F5**. jsDelivr caching may still
+  delay updates.
 - **Returning to the default interface:** remove only the optional loader, import,
-  or pasted code, then reload. Keep `branding.css` and `branding.js`.
+  or pasted code, then reload. Keep `lumaaglaass.css` and `lumaaglaass.js`.
 
 The examples use `@main` to follow the current branch. For a fixed installation,
 use the same published commit SHA or release tag in the main theme and optional
-file URLs. The chosen revision must contain every file you use. Do not assume an
-option exists in an older release, and do not use a tag before it is published.
+file URLs. The chosen revision must contain every file you use.
