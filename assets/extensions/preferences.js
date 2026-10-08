@@ -12,6 +12,7 @@
     const host = root?.preferences;
     const selects = root?.selects;
     if (!host || !selects) return;
+    const assetUrl = typeof host.assetUrl === 'function' ? host.assetUrl : path => host.assets + path;
 
     let stopped = false;
     const { element, setAttribute, translate: nativeTranslate, language, params, route, sameId } = host;
@@ -316,7 +317,7 @@
         const style = document.createElement('link');
         style.id = STYLE_ID;
         style.rel = 'stylesheet';
-        style.href = host.assets + 'extensions/preferences.css';
+        style.href = assetUrl('extensions/preferences.css');
         style.setAttribute('data-lg-managed', '');
         document.head.append(style);
     };
@@ -632,10 +633,10 @@
         node.setAttribute('data-lg-managed', '');
         if (asset.key) {
             window[asset.global] = options;
-            node.src = host.assets + asset.file;
+            node.src = assetUrl(asset.file);
         } else {
             node.rel = 'stylesheet';
-            node.href = host.assets + asset.file;
+            node.href = assetUrl(asset.file);
         }
         const settle = loaded => {
             if (stopped) return;

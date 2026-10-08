@@ -19,13 +19,16 @@
     const preferencesEnabled = flag(configured.preferences, defaults.preferences);
     let settings = loaderSettings;
     // Assets - Extensions load from this script's folder when it comes from the repository, so a pinned
-    // revision stays pinned; a pasted copy has no such folder and uses the main branch.
-    const ASSETS = (() => {
+    // revision stays pinned. A query suffix also follows every extension, which makes a cache-busted
+    // main script and its dependent files update as one unit. A pasted copy uses the main branch.
+    const ASSET_SOURCE = (() => {
         const source = document.currentScript?.src || '';
-        return /\/assets\/lumaaglaass\.js(?:[?#].*)?$/.test(source) ?
-            source.replace(/lumaaglaass\.js(?:[?#].*)?$/, '') :
-            'https://cdn.jsdelivr.net/gh/Dyhlio/LumaaGlaass@main/assets/';
+        const match = source.match(/^(.*\/assets\/)lumaaglaass\.js([?#].*)?$/);
+        return match ? { root: match[1], suffix: match[2] || '' } :
+            { root: 'https://cdn.jsdelivr.net/gh/Dyhlio/LumaaGlaass@main/assets/', suffix: '' };
     })();
+    const ASSETS = ASSET_SOURCE.root;
+    const assetUrl = path => ASSETS + path + ASSET_SOURCE.suffix;
     // Settings - Used by the optional preferences extension. It changes only the two options that
     // belong to the main theme; all extension-specific choices stay in that extension.
     function applyCoreSettings(values) {
@@ -2124,6 +2127,7 @@
         selects: selectController,
         preferences: {
             assets: ASSETS,
+            assetUrl,
             defaults: loaderSettings,
             api: currentClient,
             sessionKey,
@@ -2167,7 +2171,7 @@
     if (preferencesEnabled && !document.getElementById('lg-preferences-script')) {
         const script = document.createElement('script');
         script.id = 'lg-preferences-script';
-        script.src = ASSETS + 'extensions/preferences.js';
+        script.src = assetUrl('extensions/preferences.js');
         script.setAttribute('data-lg-managed', '');
         script.onerror = () => {
             script.remove();
