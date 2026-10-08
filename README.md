@@ -79,6 +79,7 @@ scripts:
     window.LumaaGlaassOptions = {
         preferences: false,
         homeCarousel: true,
+        homeLibraryNamesOnly: false,
         collectionFilter: true
     };
 
@@ -97,11 +98,16 @@ scripts:
 })();
 ```
 
-The configuration above shows the exact defaults: `preferences` is `false`,
-while `homeCarousel` and `collectionFilter` are `true`. Set
+The configuration above shows the exact defaults: `preferences` and
+`homeLibraryNamesOnly` are `false`, while `homeCarousel` and `collectionFilter`
+are `true`. Set
 `homeCarousel: false` in this loader to hide the home carousel while keeping a
 still media background, then save and fully reload. See [Home carousel](docs/customization.md#home-carousel)
 for background behavior. No additional loader is needed.
+
+Set `homeLibraryNamesOnly: true` to show only each library's existing name on
+its Recently Added row on the home page. The label comes from Jellyfin's own
+library navigation, so it works without matching or translating the row title.
 
 Collections mixing movies and series show All / Movies / Shows by default. Set
 `collectionFilter: false` in the same loader to disable the filter; see

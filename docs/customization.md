@@ -28,6 +28,7 @@ go after the main theme import.
 | --- | --- | --- |
 | [Settings page](#settings-page) | Choose theme appearance and optional features for this account | Enable `preferences: true` in main Custom JavaScript |
 | [Home carousel](#home-carousel) | Hide the home banner while keeping a still media background | Main Custom JavaScript options |
+| [Home library titles](#home-library-titles) | Show only the library name on Recently Added rows | Main Custom JavaScript options |
 | [Collection filter](#collection-filter) | Show all items, movies only, or series only; enabled by default | Main Custom JavaScript options |
 | [Media actions](#media-actions) | Configure native, information or hidden shortcuts by media type and context | Custom JavaScript |
 | [Player controls](#player-controls) | Enable version switching, episode browsing, or both | Custom JavaScript |
@@ -48,12 +49,12 @@ display preferences, so they follow the account on every device. The browser
 cache only applies the last saved choice while the server answer is loading.
 
 Its initial values match the extension defaults: carousel and collection filter
-on, count indicators shown, both player controls on, source selection native,
-and every media action native.
+on, library-only recent titles off, count indicators shown, both player controls
+on, source selection native, and every media action native.
 
-The page controls the home carousel, collection filter, count indicators, player
-controls, source selection, media actions (including **À suivre**) and the public
-theme variables. Theme variables preview immediately; **Save** applies and
+The page controls the home carousel, home library titles, collection filter,
+count indicators, player controls, source selection, media actions (including
+**À suivre**) and the public theme variables. Theme variables preview immediately; **Save** applies and
 stores every setting for the account. The reset beside one theme variable clears
 only that variable's saved value. **Reset to defaults** restores the whole form;
 use **Save** to keep those defaults for the account.
@@ -100,6 +101,24 @@ Home keeps a successfully loaded backdrop from the same movie/series selection,
 without rotation. A full reload requests a new random selection. Up to four
 images are tried; if none loads, the last valid background from the same
 session/account is retained when available, otherwise the neutral background stays.
+
+## Home library titles
+
+`homeLibraryNamesOnly` defaults to `false`. Set it to `true` in the main loader
+to replace each home-page Recently Added title with only its library's existing
+name, including any icon already used by the library.
+
+```javascript
+window.LumaaGlaassOptions = {
+    ...window.LumaaGlaassOptions,
+    homeLibraryNamesOnly: true
+};
+```
+
+The theme identifies these rows from their library link, not from translated
+text. It therefore works with every interface language and does not change
+library, search, detail or other page titles. Set the option back to `false` or
+remove it to restore Jellyfin's native row titles.
 
 ## Collection filter
 

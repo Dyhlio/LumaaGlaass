@@ -6,14 +6,15 @@
     // =====================================================================
     // Configuration
     // =====================================================================
-    // Options - window.LumaaGlaassOptions = { preferences, homeCarousel, collectionFilter }.
-    // homeCarousel and collectionFilter default to true. preferences is optional and defaults to false.
-    // Docs: customization.md#home-carousel, #collection-filter, #settings-page.
-    const defaults = { preferences: false, homeCarousel: true, collectionFilter: true };
+    // Options - window.LumaaGlaassOptions = { preferences, homeCarousel, homeLibraryNamesOnly, collectionFilter }.
+    // homeCarousel and collectionFilter default to true. homeLibraryNamesOnly and preferences default to false.
+    // Docs: customization.md#home-carousel, #home-library-titles, #collection-filter, #settings-page.
+    const defaults = { preferences: false, homeCarousel: true, homeLibraryNamesOnly: false, collectionFilter: true };
     const configured = window.LumaaGlaassOptions || {};
     const flag = (value, fallback) => typeof value === 'boolean' ? value : fallback;
     const loaderSettings = Object.freeze({
         homeCarousel: flag(configured.homeCarousel, defaults.homeCarousel),
+        homeLibraryNamesOnly: flag(configured.homeLibraryNamesOnly, defaults.homeLibraryNamesOnly),
         collectionFilter: flag(configured.collectionFilter, defaults.collectionFilter)
     });
     const preferencesEnabled = flag(configured.preferences, defaults.preferences);
@@ -29,11 +30,12 @@
     })();
     const ASSETS = ASSET_SOURCE.root;
     const assetUrl = path => ASSETS + path + ASSET_SOURCE.suffix;
-    // Settings - Used by the optional preferences extension. It changes only the two options that
+    // Settings - Used by the optional preferences extension. It changes only the main-theme options that
     // belong to the main theme; all extension-specific choices stay in that extension.
     function applyCoreSettings(values) {
         const next = values ? Object.freeze({
             homeCarousel: flag(values.homeCarousel, loaderSettings.homeCarousel),
+            homeLibraryNamesOnly: flag(values.homeLibraryNamesOnly, loaderSettings.homeLibraryNamesOnly),
             collectionFilter: flag(values.collectionFilter, loaderSettings.collectionFilter)
         }) : loaderSettings;
         if (next.homeCarousel !== settings.homeCarousel) clearHome();
@@ -150,7 +152,8 @@
         } catch { return ''; }
     };
     const params = () => new URLSearchParams(location.hash.split('?')[1] || '');
-    const sameId = (a, b) => !!a && !!b && String(a).replace(/-/g, '').toLowerCase() === String(b).replace(/-/g, '').toLowerCase();
+    const idKey = value => String(value || '').replace(/-/g, '').toLowerCase();
+    const sameId = (a, b) => !!a && !!b && idKey(a) === idKey(b);
     const visible = node => node && !node.closest('.hide,[hidden]') && node.getClientRects().length > 0;
     // Writes - Only real changes: the page observer and the tooltip claim react to each write.
     const setText = (node, value) => {
@@ -711,6 +714,41 @@
         identity = key;
     }
     const homeSections = page => page && [...page.querySelectorAll('.homeSectionsContainer')].find(visible);
+    // Recent titles - A home row links to tab=1 of one library. Its matching navigation link provides
+    // the library label already chosen by Jellyfin, so simplification never needs translated title text.
+    function clearHomeLibraryTitles() {
+        document.querySelectorAll('[data-lg-home-recent-title]').forEach(heading => {
+            if (heading.textContent === heading.dataset.lgHomeRecentLabel) {
+                setText(heading, heading.dataset.lgHomeRecentTitle);
+            }
+            delete heading.dataset.lgHomeRecentTitle;
+            delete heading.dataset.lgHomeRecentLabel;
+        });
+    }
+    function syncHomeLibraryTitles() {
+        if (!enabled() || !settings.homeLibraryNamesOnly || !home()) {
+            clearHomeLibraryTitles();
+            return;
+        }
+        const page = [...document.querySelectorAll('.homePage')].find(visible);
+        if (!page) return;
+        const labels = new Map();
+        for (const link of document.querySelectorAll('.lnkMediaFolder[href]')) {
+            const query = new URLSearchParams(link.getAttribute('href').split('?')[1] || '');
+            const id = idKey(query.get('topParentId')), label = link.textContent.trim();
+            if (id && label && !labels.has(id)) labels.set(id, label);
+        }
+        for (const heading of page.querySelectorAll('.verticalSection .sectionTitleContainer > a.more.sectionTitleTextButton[href] > .sectionTitle')) {
+            const query = new URLSearchParams(heading.parentElement.getAttribute('href').split('?')[1] || '');
+            const label = labels.get(idKey(query.get('topParentId')));
+            if (query.get('tab') !== '1' || !label) continue;
+            if (heading.textContent !== heading.dataset.lgHomeRecentLabel) {
+                heading.dataset.lgHomeRecentTitle = heading.textContent;
+            }
+            heading.dataset.lgHomeRecentLabel = label;
+            setText(heading, label);
+        }
+    }
     // Banner - A shell of its final size holds its place from the first home frame, filled by the
     // session's items or a load; none after an empty load (a later find then moves the rows once).
     function syncHero() {
@@ -1146,7 +1184,7 @@
             itemTypes.clear();
             routeItemsKey = key;
         }
-        return String(id).replace(/-/g, '').toLowerCase();
+        return idKey(id);
     }
     // Item - Returned when known; otherwise asked for (again 30 s after a failure), and its answer
     // runs a pass.
@@ -2185,6 +2223,7 @@
         } else {
             collectionFilterController.stop();
         }
+        syncHomeLibraryTitles();
         if (on) {
             syncHomeSession(api, key);
             syncHero();

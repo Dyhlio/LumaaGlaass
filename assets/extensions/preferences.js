@@ -45,6 +45,8 @@
             SettingsTheme: 'Theme',
             SettingsHomeCarousel: 'Home carousel',
             SettingsHomeCarouselHelp: 'Rotating artwork on the home page. Off, a still media background remains.',
+            SettingsHomeLibraryNamesOnly: 'Recently added titles',
+            SettingsHomeLibraryNamesOnlyHelp: 'Shows only the library name on Recently Added rows on the home page.',
             SettingsCollectionFilter: 'Collection filter',
             SettingsCollectionFilterHelp: 'All / Movies / Shows above collections that mix movies and series.',
             SettingsCountIndicators: 'Hide count indicators',
@@ -175,6 +177,8 @@
             SettingsTheme: 'Thème',
             SettingsHomeCarousel: 'Carrousel d’accueil',
             SettingsHomeCarouselHelp: 'Images défilantes sur l’accueil. Désactivé, un fond fixe reste affiché.',
+            SettingsHomeLibraryNamesOnly: 'Titres des ajouts récents',
+            SettingsHomeLibraryNamesOnlyHelp: 'Affiche uniquement le nom de la médiathèque sur les rangées Ajouts récents de l’accueil.',
             SettingsCollectionFilter: 'Filtre des collections',
             SettingsCollectionFilterHelp: 'Tout / Films / Séries au-dessus des collections mêlant films et séries.',
             SettingsCountIndicators: 'Masquer les compteurs',
@@ -343,6 +347,10 @@
         {
             title: 'SettingsTheme', fields: [
                 { path: 'homeCarousel', label: 'SettingsHomeCarousel', help: 'SettingsHomeCarouselHelp', fallback: host.defaults.homeCarousel },
+                {
+                    path: 'homeLibraryNamesOnly', label: 'SettingsHomeLibraryNamesOnly',
+                    help: 'SettingsHomeLibraryNamesOnlyHelp', fallback: host.defaults.homeLibraryNamesOnly
+                },
                 {
                     path: 'collectionFilter', label: 'SettingsCollectionFilter', help: 'SettingsCollectionFilterHelp',
                     fallback: host.defaults.collectionFilter
@@ -654,12 +662,13 @@
         state.loading = true;
         document.head.append(node);
     }
-    // Apply - The theme's two settings change in place (the banner rebuilds); files load or stop;
+    // Apply - Main-theme preferences change in place; files load or stop;
     // theme variables apply unless the open page previews its own.
     function applyPreferences(saved) {
         activePreferences = preferencesSession ? normalizePreferences(saved) : null;
         host.applyCore(activePreferences ? {
             homeCarousel: activePreferences.homeCarousel,
+            homeLibraryNamesOnly: activePreferences.homeLibraryNamesOnly,
             collectionFilter: activePreferences.collectionFilter
         } : null);
         Object.keys(PREFERENCE_ASSETS).forEach(syncAsset);
