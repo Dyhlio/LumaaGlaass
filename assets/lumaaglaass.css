@@ -5456,9 +5456,10 @@ body #itemDetailPage.itemDetailPage[data-lg-detail-poster] {
     }
 
     & .trackSelections .selectVideo:disabled {
-        min-height: 28px;
-        padding: 0 !important;
-        background: transparent !important;
+        min-height: 48px;
+        padding: 12px 14px !important;
+        background: var(--lg-surface) !important;
+        border-color: var(--lg-edge) !important;
     }
 
     & .trackSelections:not(:has(.selectSourceContainer:not(.hide),.selectAudioContainer:not(.hide),.selectSubtitlesContainer:not(.hide))) > .selectVideoContainer {
@@ -5675,6 +5676,14 @@ body :is(#castContent,#guestCastContent) .cardText {
     body #itemDetailPage .selectVideoContainer[data-lg-video-summary]::after {
         content: attr(data-lg-video-summary) / "";
         grid-column: 2;
+        display: flex;
+        align-items: center;
+        box-sizing: border-box;
+        min-height: 48px;
+        padding: 12px 14px;
+        border: 1px solid var(--lg-edge);
+        border-radius: var(--lg-radius);
+        background: var(--lg-surface);
         white-space: normal;
         overflow-wrap: anywhere;
         font-size: 14px;
