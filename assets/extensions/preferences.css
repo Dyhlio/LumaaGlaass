@@ -77,23 +77,6 @@
         }
     }
 
-    & .lg-preferences-secondary {
-        margin: 0 0 12px;
-
-        &:not(:disabled):is(:hover,:focus-visible) {
-            background-color: var(--lg-state-hover) !important;
-            color: var(--lg-color-text) !important;
-        }
-    }
-
-    /* Submit - The host makes this button sticky. In a settings page that puts it over nearby
-       controls, so it stays in the form flow after the last setting instead. */
-    & .button-submit {
-        position: relative !important;
-        inset: auto !important;
-        z-index: auto !important;
-    }
-
     /* Theme variables - The variable's name, then a control row: the field, its unit and a reset. */
     & code.lg-preference-label {
         font-family: ui-monospace, SFMono-Regular, Consolas, monospace;

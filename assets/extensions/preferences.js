@@ -765,7 +765,7 @@
             submit: element('button', 'raised button-submit block emby-button'),
             submitText: element('span', '', translate('Save')),
             status: element('p', 'fieldDescription lg-preferences-status'),
-            secondary: element('button', 'button-flat emby-button lg-preferences-secondary')
+            secondary: element('button', 'raised emby-button lg-preferences-secondary')
         };
         const note = asset => {
             const node = element('p', 'fieldDescription lg-preferences-note', translate('SettingsExternal'));

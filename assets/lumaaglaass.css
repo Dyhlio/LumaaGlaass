@@ -79,7 +79,6 @@
     --lg-space-option-inset: 9px 12px;
     --lg-space-list-option: 8px;
     --lg-space-popup: 6px;
-    --lg-space-sticky-submit: 24px;
     --lg-size-action: 44px;
     --lg-size-option: 44px;
     --lg-font: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -807,10 +806,18 @@ html[data-theme="dark"] .MuiOutlinedInput-root {
     backdrop-filter: blur(var(--lg-blur-control));
 }
 
-/* Forms - Submit actions follow their final field so they never cover a setting or its menu. */
+/* Forms - Submit actions follow their final field with a clear gap. */
 .button-submit,
 html[data-theme="dark"] #displayPreferencesPage form button[type="submit"].MuiButton-root {
     margin-top: 48px !important;
+}
+
+/* User preferences - Saving stays in the form flow instead of covering a setting or its menu. */
+.userPreferencesPage form > .button-submit,
+#lg-preferences form > .button-submit {
+    position: relative !important;
+    inset: auto !important;
+    z-index: auto !important;
 }
 
 .mdl-switch__input:checked + .mdl-switch__label + .mdl-switch__trackContainer > .mdl-switch__track {
