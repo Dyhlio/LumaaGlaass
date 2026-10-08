@@ -69,24 +69,6 @@
         max-width: 50%;
     }
 
-    /* Select picker - Base selects use a top-layer picker. Give every generated field its own
-       anchor so the picker remains directly below that field in browsers with customizable selects. */
-    @supports (appearance: base-select) {
-        & .lg-preference-select {
-            anchor-name: var(--lg-preference-anchor);
-        }
-
-        & .lg-preference-select::picker(select) {
-            position: fixed;
-            position-anchor: var(--lg-preference-anchor);
-            top: calc(anchor(bottom) + 8px);
-            right: auto;
-            bottom: auto;
-            left: anchor(left);
-            margin: 0;
-        }
-    }
-
     & .lg-preferences-status {
         margin: 0 0 12px;
 

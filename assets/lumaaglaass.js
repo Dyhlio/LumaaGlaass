@@ -156,6 +156,173 @@
     const setAttribute = (node, name, value) => {
         if (node && node.getAttribute(name) !== value) node.setAttribute(name, value);
     };
+
+    // Selects - The browser's customizable picker can lose its anchor inside a scrolling host view.
+    // LumaaGlaass-owned selects therefore share one viewport-positioned picker, while their native
+    // controls remain the source of truth for values, forms and change events.
+    function createSelectController() {
+        let active = null;
+        const states = new Set();
+        const picker = element('div', 'lg-select-picker');
+        picker.id = 'lg-select-picker';
+        picker.setAttribute('role', 'listbox');
+        picker.hidden = true;
+        const selectedIndex = state => {
+            const index = state.control.selectedIndex;
+            return index >= 0 && !state.control.options[index]?.disabled ? index :
+                [...state.control.options].findIndex(option => !option.disabled);
+        };
+        const choices = () => [...picker.querySelectorAll('.lg-select-option:not(:disabled)')];
+        const close = focus => {
+            const state = active;
+            if (!state) return;
+            active = null;
+            picker.hidden = true;
+            picker.replaceChildren();
+            state.trigger.setAttribute('aria-expanded', 'false');
+            if (focus && state.trigger.isConnected) state.trigger.focus();
+        };
+        const sync = state => {
+            if (!states.has(state)) return;
+            setText(state.trigger, state.control.selectedOptions[0]?.textContent || '');
+            state.trigger.disabled = state.control.disabled;
+        };
+        const position = () => {
+            const state = active;
+            if (!state || picker.hidden) return;
+            const rect = state.trigger.getBoundingClientRect();
+            const inset = 12, gap = 8;
+            const viewportWidth = document.documentElement.clientWidth || window.innerWidth;
+            const viewportHeight = document.documentElement.clientHeight || window.innerHeight;
+            const width = Math.min(rect.width, Math.max(0, viewportWidth - inset * 2));
+            const left = Math.min(Math.max(inset, rect.left), viewportWidth - inset - width);
+            picker.style.width = width + 'px';
+            picker.style.maxHeight = Math.min(360, viewportHeight * .55) + 'px';
+            picker.style.left = '0px';
+            picker.style.right = 'auto';
+            picker.style.top = '0px';
+            picker.style.bottom = 'auto';
+            picker.style.visibility = 'hidden';
+            const origin = picker.getBoundingClientRect();
+            const host = origin.left || origin.top ? state.portal.getBoundingClientRect() : null;
+            const minX = Math.max(inset, host?.left ?? -Infinity);
+            const maxX = Math.min(viewportWidth - inset, host?.right ?? Infinity);
+            const boundedLeft = Math.max(minX, Math.min(left, maxX - width));
+            const minY = Math.max(inset, host?.top ?? 0) + inset;
+            const maxY = Math.min(viewportHeight - inset, host?.bottom ?? Infinity) - inset;
+            const height = picker.getBoundingClientRect().height;
+            const below = Math.max(0, maxY - rect.bottom - gap);
+            const above = Math.max(0, rect.top - minY - gap);
+            const top = below < Math.min(height, 160) && above > below ? rect.top - height - gap : rect.bottom + gap;
+            picker.style.left = Math.round(boundedLeft - origin.left) + 'px';
+            picker.style.top = Math.round(Math.max(minY, Math.min(top, maxY - height)) - origin.top) + 'px';
+            picker.style.visibility = '';
+        };
+        const choose = (state, index) => {
+            const option = state.control.options[index];
+            if (!option || option.disabled) return;
+            if (state.control.selectedIndex !== index) {
+                state.control.selectedIndex = index;
+                state.control.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            sync(state);
+            close(true);
+        };
+        const open = (state, direction) => {
+            if (!states.has(state) || state.control.disabled || !state.control.options.length) return;
+            if (active === state) {
+                close(true);
+                return;
+            }
+            close(false);
+            active = state;
+            if (picker.parentElement !== state.portal) state.portal.append(picker);
+            state.trigger.setAttribute('aria-expanded', 'true');
+            [...state.control.options].forEach((option, index) => {
+                const choice = element('button', 'lg-select-option', option.textContent);
+                choice.type = 'button';
+                choice.dataset.lgSelectIndex = String(index);
+                choice.setAttribute('role', 'option');
+                choice.setAttribute('aria-selected', String(option.selected));
+                choice.tabIndex = option.selected ? 0 : -1;
+                choice.disabled = option.disabled;
+                choice.addEventListener('click', () => choose(state, index));
+                picker.append(choice);
+            });
+            picker.hidden = false;
+            position();
+            const current = selectedIndex(state);
+            const options = choices();
+            const choice = options.find(node => Number(node.dataset.lgSelectIndex) === current) || options[
+                direction === 'up' ? options.length - 1 : 0
+            ];
+            choice?.focus();
+        };
+        const create = ({ shellClass = '', controlClass = '', triggerClass = '', portal = document.body } = {}) => {
+            const control = element('select', 'lg-select-native' + (controlClass ? ' ' + controlClass : ''));
+            const shell = element('div', 'lg-select' + (shellClass ? ' ' + shellClass : ''));
+            const trigger = element('button', 'emby-button lg-select-trigger' + (triggerClass ? ' ' + triggerClass : ''));
+            trigger.type = 'button';
+            trigger.setAttribute('aria-haspopup', 'listbox');
+            trigger.setAttribute('aria-expanded', 'false');
+            control.tabIndex = -1;
+            control.setAttribute('aria-hidden', 'true');
+            const state = { control, shell, trigger, portal, sync: () => sync(state) };
+            states.add(state);
+            trigger.addEventListener('click', () => open(state));
+            trigger.addEventListener('keydown', event => {
+                if (!['ArrowDown', 'ArrowUp'].includes(event.key)) return;
+                event.preventDefault();
+                open(state, event.key === 'ArrowDown' ? 'down' : 'up');
+            });
+            control.addEventListener('change', state.sync);
+            const observer = new MutationObserver(state.sync);
+            observer.observe(control, { attributes: true, attributeFilter: ['disabled'] });
+            state.destroy = () => {
+                if (!states.delete(state)) return;
+                if (active === state) close(false);
+                observer.disconnect();
+            };
+            shell.append(control, trigger);
+            return state;
+        };
+        listen(document, 'pointerdown', event => {
+            if (active && !active.shell.contains(event.target) && !picker.contains(event.target)) close(false);
+        }, true);
+        listen(document, 'keydown', event => {
+            if (!active) return;
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                close(true);
+                return;
+            }
+            const options = choices();
+            const current = options.indexOf(document.activeElement);
+            if (event.key === 'Home' || event.key === 'End' || event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                event.preventDefault();
+                const index = event.key === 'Home' ? 0 : event.key === 'End' ? options.length - 1 :
+                    Math.min(options.length - 1, Math.max(0, current + (event.key === 'ArrowDown' ? 1 : -1)));
+                options[index]?.focus();
+                return;
+            }
+            if ((event.key === 'Enter' || event.key === ' ') && document.activeElement?.dataset.lgSelectIndex !== undefined) {
+                event.preventDefault();
+                choose(active, Number(document.activeElement.dataset.lgSelectIndex));
+            }
+        });
+        listen(window, 'resize', position);
+        listen(window, 'scroll', position, true);
+        listen(document, 'visibilitychange', () => { if (document.hidden) close(false); });
+        return {
+            create,
+            stop() {
+                close(false);
+                [...states].forEach(state => state.destroy());
+                picker.remove();
+            }
+        };
+    }
+    const selectController = createSelectController();
     // Owned attributes - Attributes written on native controls keep the value they replaced and one
     // value per owner; releasing one shows the next, unless the page has written its own since.
     const ownedAttributes = new Map();
@@ -1954,6 +2121,7 @@
         get status() {
             return { active: Boolean(heroParts && hero?.isConnected), items: items.length, loading, error: lastError };
         },
+        selects: selectController,
         preferences: {
             assets: ASSETS,
             defaults: loaderSettings,
@@ -1989,6 +2157,7 @@
             clearDetails();
             clearSheetTrigger();
             tooltipController.stop();
+            selectController.stop();
             restoreOwnedAttributes();
             clearInputModality();
             delete window[KEY];

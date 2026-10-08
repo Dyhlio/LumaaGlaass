@@ -8,8 +8,10 @@
     // =====================================================================
     const KEY = '__lumaaGlaassPreferences';
     window[KEY]?.stop();
-    const host = window.__lumaaGlaass?.preferences;
-    if (!host) return;
+    const root = window.__lumaaGlaass;
+    const host = root?.preferences;
+    const selects = root?.selects;
+    if (!host || !selects) return;
 
     let stopped = false;
     const { element, setAttribute, translate: nativeTranslate, language, params, route, sameId } = host;
@@ -21,12 +23,13 @@
     const setText = (node, value) => {
         if (node && node.textContent !== value) node.textContent = value;
     };
-    // Native select - Every generated select gets a unique anchor for its top-layer picker.
-    let selectAnchor = 0;
+    // Selects - Preference fields use the shared theme controller; this page owns its data and
+    // layout, while the main script owns opening, placement, keyboard support and cleanup.
+    const preferenceSelects = new Set();
     const preferenceSelect = () => {
-        const control = element('select', 'emby-select-withcolor emby-select lg-preference-select');
-        control.style.setProperty('--lg-preference-anchor', '--lg-preference-select-' + ++selectAnchor);
-        return control;
+        const state = selects.create({ shellClass: 'lg-preference-select' });
+        preferenceSelects.add(state);
+        return state;
     };
 
     // =====================================================================
@@ -768,19 +771,24 @@
             if (section.asset) block.append(note(section.asset));
             for (const field of section.fields) {
                 const id = 'lg-setting-' + field.path.replace(/\./g, '-');
-                let row, control;
+                let row, control, select;
                 if (field.choices) {
                     row = element('div', 'lg-preference');
                     const label = element('label', 'lg-preference-label', translate(field.label));
-                    control = preferenceSelect();
+                    select = preferenceSelect();
+                    control = select.control;
                     for (const choice of field.choices) {
                         const option = element('option', '', translate(MODE_LABELS[choice]));
                         option.value = choice;
                         control.append(option);
                     }
                     control.id = id;
-                    label.htmlFor = id;
-                    row.append(label, control);
+                    label.id = id + '-label';
+                    select.trigger.id = id + '-trigger';
+                    select.trigger.setAttribute('aria-labelledby', label.id);
+                    label.htmlFor = select.trigger.id;
+                    select.sync();
+                    row.append(label, select.shell);
                     state.controls.set(field.path, { field, control, row, asset: field.asset || section.asset });
                 } else {
                     row = element('label', 'lg-preference lg-preference-switch');
@@ -842,6 +850,12 @@
         const state = preferencesPage;
         if (!state) return;
         preferencesPage = null;
+        for (const select of preferenceSelects) {
+            if (state.container.contains(select.shell)) {
+                select.destroy();
+                preferenceSelects.delete(select);
+            }
+        }
         state.container.remove();
         state.hidden.forEach(node => { node.hidden = false; });
         if (state.title === null) state.page.removeAttribute('data-title');
@@ -902,12 +916,15 @@
             entry.alpha.dataset.lgVariable = variable.name;
             control.append(entry.input, entry.alpha);
         } else if (type.control === 'weight') {
-            entry.input = preferenceSelect();
+            const select = preferenceSelect();
+            entry.input = select.control;
             for (const value of ['', '100', '200', '300', '400', '500', '600', '700', '800', '900']) {
                 const option = element('option', '', value || translate('SettingsDefault') + ' (' + variable.fallback + ')');
                 option.value = value;
                 entry.input.append(option);
             }
+            entry.select = select;
+            select.sync();
         } else {
             entry.input = element('input', 'emby-input lg-theme-input');
             if (type.control === 'number') {
@@ -922,7 +939,12 @@
         }
         entry.input.id = id;
         entry.input.dataset.lgVariable = variable.name;
-        if (type.control === 'weight') control.append(entry.input);
+        if (type.control === 'weight') {
+            label.id = id + '-label';
+            entry.select.trigger.id = id + '-trigger';
+            entry.select.trigger.setAttribute('aria-labelledby', label.id);
+            control.append(entry.select.shell);
+        }
         entry.reset.type = 'button';
         entry.reset.setAttribute('aria-label', translate('SettingsReset') + ' ' + name);
         const icon = element('span', 'material-icons undo');
@@ -931,7 +953,7 @@
         entry.reset.addEventListener('click', () => {
             setThemeEntry(entry, '');
             previewTheme(state);
-            entry.input.focus();
+            (entry.select?.trigger || entry.input).focus();
         });
         control.append(entry.reset);
         state.theme.set(variable.name, entry);
@@ -952,6 +974,7 @@
         } else {
             input.value = value ? variable.type.fromCss(value) : '';
         }
+        entry.select?.sync();
         entry.reset.disabled = !value;
     }
     function themeEntryValue({ variable, input, alpha, set }) {
@@ -992,6 +1015,7 @@
             row.hidden = !externallyManaged && !required;
             control.disabled = externallyManaged || !required;
         }
+        for (const select of preferenceSelects) select.sync();
         for (const [asset, node] of state.notes) node.hidden = !locked.get(asset);
     }
     // Reset - Defaults update the form and its theme preview only. Save remains the explicit
@@ -1107,6 +1131,8 @@
             observer.disconnect();
             window.removeEventListener('hashchange', schedule);
             listeners.forEach(fn => fn());
+            for (const select of preferenceSelects) select.destroy();
+            preferenceSelects.clear();
             clearPreferences();
             document.getElementById(STYLE_ID)?.remove();
             host.applyCore(null);

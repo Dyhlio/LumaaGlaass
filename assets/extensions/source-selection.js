@@ -21,6 +21,7 @@
     const KEY = '__lumaaGlaassSourceSelection';
     window[KEY]?.stop();
     let stopped = false;
+    const selects = window.__lumaaGlaass?.selects || null;
 
     // =====================================================================
     // Localization
@@ -262,7 +263,7 @@
             min-width: 0;
         }
 
-        .lg-source-dialog-field select {
+        .lg-source-dialog-field :is(select,.lg-select) {
             width: 100%;
             min-width: 0;
         }
@@ -470,8 +471,9 @@
         }
         function close() {
             if (!active) return;
-            const { dialog, trigger } = active;
+            const { dialog, trigger, fields } = active;
             active = null;
+            fields.forEach(field => field.picker?.destroy());
             dialog.close();
             dialog.remove();
             if (trigger.isConnected) trigger.focus({ preventScroll: true });
@@ -519,6 +521,7 @@
                 }
                 field.select.selectedIndex = native.selectedIndex;
                 setDisabled(field.select, native.disabled);
+                field.picker?.sync();
             }
             setAttribute(active.dismiss, 'aria-label', translate('ButtonClose'));
             setDisabled(launch, !selectable(ctx.select, ctx.select.selectedOptions[0]) || !active.trigger.isConnected ||
@@ -558,8 +561,11 @@
             const fields = ['.selectAudio', '.selectSubtitles'].map(selector => {
                 const wrapper = element('label', 'lg-source-dialog-field');
                 const label = element('span');
-                const select = element('select', 'emby-select');
-                wrapper.append(label, select);
+                const picker = selects?.create({ portal: dialog });
+                const select = picker?.control || element('select', 'emby-select');
+                label.id = 'lg-source-dialog-' + selector.slice(1) + '-label';
+                if (picker) picker.trigger.setAttribute('aria-labelledby', label.id);
+                wrapper.append(label, picker?.shell || select);
                 tracks.append(wrapper);
                 select.addEventListener('change', () => {
                     const native = ctx.form.querySelector(selector);
@@ -570,7 +576,7 @@
                     choose(native, select.selectedIndex);
                     sync();
                 });
-                const field = { selector, wrapper, label, select, signature: null };
+                const field = { selector, wrapper, label, select, picker, signature: null };
                 return field;
             });
             body.append(sourceLabel, sourceArea, tracks);

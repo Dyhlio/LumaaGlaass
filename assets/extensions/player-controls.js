@@ -22,6 +22,7 @@
     const KEY = '__lumaaGlaassPlayerControls';
     window[KEY]?.stop();
     let stopped = false;
+    const selects = window.__lumaaGlaass?.selects || null;
 
     // =====================================================================
     // Localization
@@ -175,8 +176,8 @@
             gap: var(--lg-space-button-group,8px);
         }
 
-        /* Season select - The field itself is the theme's .emby-select. */
-        .lg-player-season-select {
+        /* Season selector - The shared field fills the space between its previous and next actions. */
+        :is(.lg-player-season-select,.lg-player-season-select-shell) {
             width: 100%;
             min-width: 0;
             max-width: 100%;
@@ -289,6 +290,7 @@
         const wasOpen = Boolean(active);
         generation++;
         episodeRequest++;
+        active?.seasonPicker?.destroy();
         active?.dialog.close();
         active?.dialog.remove();
         active?.container.remove();
@@ -619,13 +621,19 @@
             setStatus(status, 'MessageNoItemsAvailable');
             return;
         }
-        const select = element('select', 'emby-select lg-player-season-select');
+        const seasonPicker = selects?.create({
+            controlClass: 'lg-player-season-select', shellClass: 'lg-player-season-select-shell', portal: dialog
+        });
+        const select = seasonPicker?.control || element('select', 'emby-select lg-player-season-select');
+        if (active?.dialog === dialog) active.seasonPicker = seasonPicker;
         select.setAttribute('aria-label', translate('Season'));
+        if (seasonPicker) seasonPicker.trigger.setAttribute('aria-label', translate('Season'));
         for (const season of entries) {
             const choice = element('option', '', season.Name || translate('Season') + ' ' + (season.IndexNumber ?? ''));
             choice.value = season.Id;
             select.append(choice);
         }
+        seasonPicker?.sync();
         const showSeason = async season => {
             if (busy || !valid()) return;
             const request = ++episodeRequest;
@@ -633,6 +641,7 @@
             list.inert = true;
             list.setAttribute('aria-busy', 'true');
             select.value = season.Id;
+            seasonPicker?.sync();
             syncSeasonArrows(seasons);
             setStatus(status, 'MessagePleaseWait');
             try {
@@ -651,6 +660,7 @@
                 if (valid() && request === episodeRequest) {
                     // If loading fails, keep the selector consistent with the retained list.
                     if (list.dataset.lgPlayerSeason) select.value = list.dataset.lgPlayerSeason;
+                    seasonPicker?.sync();
                     syncSeasonArrows(seasons);
                     setStatus(status, 'EpisodesFailed');
                 }
@@ -680,7 +690,7 @@
                 return button;
             };
             const navigation = element('div', 'lg-player-season-navigation');
-            navigation.append(arrow(-1, 'lg-player-season-previous', 'chevron_left'), select,
+            navigation.append(arrow(-1, 'lg-player-season-previous', 'chevron_left'), seasonPicker?.shell || select,
                 arrow(1, 'lg-player-season-next', 'chevron_right'));
             seasons.append(navigation);
         } else {

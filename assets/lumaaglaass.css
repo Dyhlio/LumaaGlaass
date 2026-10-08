@@ -3173,6 +3173,121 @@ html body select:is(.emby-select,.emby-select-withcolor):not([multiple]):not([si
     }
 }
 
+/* Controlled selects - LumaaGlaass-created selectors use one popup placed from the trigger's
+   viewport box. The native select remains present for its value and change event. */
+.lg-select {
+    position: relative;
+    min-width: 0;
+}
+
+.lg-select-native {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    border: 0;
+    padding: 0;
+    clip-path: inset(50%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.lg-select-trigger {
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    inline-size: 100%;
+    min-block-size: 48px;
+    margin: 0;
+    padding-block: 7px;
+    padding-inline: 14px 56px;
+    border: 1px solid var(--lg-edge);
+    border-radius: var(--lg-radius);
+    color: var(--lg-color-text);
+    font: inherit;
+    font-size: 15px;
+    text-align: start;
+    background-color: var(--lg-surface);
+    background-image: var(--lg-select-arrow);
+    background-repeat: no-repeat;
+    background-size: 32px 32px;
+    background-position: right 10px center;
+    backdrop-filter: blur(var(--lg-blur-control));
+    -webkit-backdrop-filter: blur(var(--lg-blur-control));
+    cursor: pointer;
+    transition: background-color var(--lg-duration) var(--lg-ease), border-color var(--lg-duration) var(--lg-ease);
+
+    &:dir(rtl) {
+        background-position: left 10px center;
+    }
+
+    &:not(:disabled):is(:hover,:focus-visible,[aria-expanded="true"]) {
+        border-color: var(--lg-edge-open);
+        background-color: var(--lg-surface-open);
+    }
+
+    &:disabled {
+        opacity: .5;
+        cursor: default;
+    }
+
+    @media (max-width: 640px) {
+        font-size: 16px;
+    }
+}
+
+.lg-select-picker {
+    position: fixed;
+    z-index: 2000;
+    box-sizing: border-box;
+    overflow: auto;
+    overscroll-behavior: contain;
+    padding: var(--lg-space-popup);
+    border: 1px solid var(--lg-edge);
+    border-radius: var(--lg-radius-popup);
+    color: var(--lg-color-text);
+    background: var(--lg-surface);
+    backdrop-filter: blur(var(--lg-blur-panel));
+    -webkit-backdrop-filter: blur(var(--lg-blur-panel));
+    box-shadow: var(--lg-shadow-panel);
+
+    &[hidden] {
+        display: none;
+    }
+}
+
+.lg-select-option {
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    inline-size: 100%;
+    min-block-size: var(--lg-size-option);
+    margin: 0;
+    padding: var(--lg-space-option-inset);
+    border: 1px solid transparent;
+    border-radius: var(--lg-radius-option);
+    color: inherit;
+    font: inherit;
+    line-height: 1.5;
+    text-align: start;
+    background: transparent;
+    cursor: pointer;
+
+    & + .lg-select-option {
+        margin-block-start: var(--lg-space-option);
+    }
+
+    &:not(:disabled):is(:hover,:focus-visible) {
+        border-color: var(--lg-edge-open);
+        background: var(--lg-surface-row-hover);
+        outline: none;
+    }
+
+    &[aria-selected="true"] {
+        background: var(--lg-surface-row-selected);
+    }
+}
+
 html body .button-submit {
     box-sizing: border-box;
     font-family: var(--lg-font);
