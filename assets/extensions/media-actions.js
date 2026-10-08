@@ -10,19 +10,19 @@
     // Docs: customization.md#media-actions.
     const defaults = {
         thumbnails: {
-            movies: 'hide', episodes: 'hide', series: 'hide', seasons: 'hide',
-            collections: 'hide', libraries: 'hide', folders: 'hide'
+            movies: 'native', episodes: 'native', series: 'native', seasons: 'native',
+            collections: 'native', libraries: 'native', folders: 'native'
         },
-        seasonEpisodeThumbnails: 'details',
+        seasonEpisodeThumbnails: 'native',
         resumeThumbnails: {
             home: { movies: 'native', episodes: 'native' },
-            elsewhere: { movies: 'hide', episodes: 'hide' }
+            elsewhere: { movies: 'native', episodes: 'native' }
         },
         // Corner buttons - Played, favorite and more in a thumbnail's corner.
         // This remains independent from the central thumbnail Play shortcut.
         cornerButtons: 'native',
         resumeButtons: { movies: 'native', episodes: 'native' },
-        mainButtons: { collections: 'hide', series: 'details', seasons: 'details' }
+        mainButtons: { collections: 'native', series: 'native', seasons: 'native' }
     };
     const configured = window.LumaaGlaassMediaActionsOptions || {};
     const MODES = ['native', 'details', 'hide'];

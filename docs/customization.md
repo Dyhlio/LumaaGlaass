@@ -1,7 +1,8 @@
 # Customization
 
-The base theme includes the collection filter by default. Enable other options
-only when you need them.
+The optional theme settings page chooses every feature and visual value for one
+account. The existing manual loaders remain available for a fixed configuration
+that applies to every account.
 
 [Back to installation](../README.md#installation)
 
@@ -10,7 +11,8 @@ only when you need them.
 1. Install the main theme using the [installation instructions](../README.md#installation).
 2. Back up your current **Polyfin → Settings → Web player → Custom CSS** and
    **Custom JavaScript**.
-3. Add the option in the field shown below. Keep the main theme installed.
+3. Either enable the settings page, or add the manual option or extension loader
+   described below. Keep the main theme installed.
 4. Save and fully reload the client after every change.
 
 The theme targets Jellyfin Web 12.1 (tested on Polyfin and Remux). Earlier versions
@@ -24,6 +26,7 @@ go after the main theme import.
 
 | Option | What it does | Where to add it |
 | --- | --- | --- |
+| [Settings page](#settings-page) | Choose theme appearance and optional features for this account | Enable `preferences: true` in main Custom JavaScript |
 | [Home carousel](#home-carousel) | Hide the home banner while keeping a still media background | Main Custom JavaScript options |
 | [Collection filter](#collection-filter) | Show all items, movies only, or series only; enabled by default | Main Custom JavaScript options |
 | [Media actions](#media-actions) | Configure native, information or hidden shortcuts by media type and context | Custom JavaScript |
@@ -35,6 +38,39 @@ go after the main theme import.
 **Source selection provides one mode at a time: native, panel or dialog.**
 The collection filter, hidden count badges, media actions and player controls
 can be used with any source-selection mode.
+
+## Settings page
+
+`preferences` defaults to `false`. Add `preferences: true` to
+`window.LumaaGlaassOptions` in the main loader to opt in, then open
+**Settings → LumaaGlaass**. The page saves choices in this account's Jellyfin
+display preferences, so they follow the account on every device. The browser
+cache only applies the last saved choice while the server answer is loading.
+
+Its initial values match the extension defaults: carousel and collection filter
+on, count indicators shown, both player controls on, source selection native,
+and every media action native.
+
+The page controls the home carousel, collection filter, count indicators, player
+controls, source selection, media actions (including **À suivre**) and the public
+theme variables. Theme variables preview immediately; **Save** applies and
+stores every setting for the account. The reset beside one theme variable clears
+only that variable's saved value. **Reset to defaults** restores the whole form;
+use **Save** to keep those defaults for the account.
+
+The settings page offers all three source modes: **Native**, **Panel** and
+**Dialog**.
+
+Use this page instead of individual extension loaders. Player controls activate
+when **Version** or **Episodes** is enabled; media actions activate automatically
+when one of their menus changes from **Native**. If an old loader or count
+indicator import remains in the server configuration, the matching control is
+locked so two copies can never manage the same feature. Remove that legacy loader
+to make the choice available per account. Leaving `preferences` out preserves
+the existing manual configuration exactly.
+
+Administrators can open another user's preferences from that user's settings.
+Jellyfin remains responsible for enforcing who may update each account.
 
 ## Home carousel
 
@@ -103,26 +139,26 @@ fully reload the client; there is no need to edit the downloaded script.
 (() => {
     window.LumaaGlaassMediaActionsOptions = {
         thumbnails: {
-            movies: 'hide',
-            episodes: 'hide',
-            series: 'hide',
-            seasons: 'hide',
-            collections: 'hide',
-            libraries: 'hide',
-            folders: 'hide'
+            movies: 'native',
+            episodes: 'native',
+            series: 'native',
+            seasons: 'native',
+            collections: 'native',
+            libraries: 'native',
+            folders: 'native'
         },
-        seasonEpisodeThumbnails: 'details',
+        seasonEpisodeThumbnails: 'native',
         resumeThumbnails: {
             home: { movies: 'native', episodes: 'native' },
-            elsewhere: { movies: 'hide', episodes: 'hide' }
+            elsewhere: { movies: 'native', episodes: 'native' }
         },
         nextUpThumbnails: 'native',
         cornerButtons: 'native',
         resumeButtons: { movies: 'native', episodes: 'native' },
         mainButtons: {
-            collections: 'hide',
-            series: 'details',
-            seasons: 'details'
+            collections: 'native',
+            series: 'native',
+            seasons: 'native'
         }
     };
 
@@ -355,7 +391,8 @@ this extension and reload.
 ## Hide count indicators
 
 This optional stylesheet hides Jellyfin's numeric count badges. They remain
-visible unless you enable it.
+visible unless you enable it. Prefer **Settings → LumaaGlaass** for a per-account
+choice; the import below remains for a fixed server-wide choice.
 
 **Hidden:** unplayed/unwatched item counts, including episodes on series and season
 cards; item-count badges on container cards; and their `99+` variants.

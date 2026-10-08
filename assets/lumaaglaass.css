@@ -637,8 +637,8 @@ html body :is(.mdl-spinner,.MuiCircularProgress-root,.progressring) {
     -webkit-backdrop-filter: blur(var(--lg-blur-control));
 }
 
-/* Loading - Remux moves the spinner to 80px/21px but keeps Jellyfin's -5vh margins, which
-   put it on the profile button. */
+/* Loading - The client keeps negative margins on this spinner, which can place it on the profile
+   button. */
 html body .docspinner {
     inset: calc(var(--lg-header-bottom,55px) + 16px) auto auto 50% !important;
     margin: 0 !important;
@@ -807,13 +807,10 @@ html[data-theme="dark"] .MuiOutlinedInput-root {
     backdrop-filter: blur(var(--lg-blur-control));
 }
 
-/* Forms - Submit actions stay in view at the end of long forms. */
+/* Forms - Submit actions follow their final field so they never cover a setting or its menu. */
 .button-submit,
 html[data-theme="dark"] #displayPreferencesPage form button[type="submit"].MuiButton-root {
-    position: sticky;
-    bottom: var(--lg-space-sticky-submit);
     margin-top: 48px !important;
-    z-index: 2;
 }
 
 .mdl-switch__input:checked + .mdl-switch__label + .mdl-switch__trackContainer > .mdl-switch__track {
@@ -1007,8 +1004,7 @@ html[data-theme="dark"] .MuiMenu-paper .MuiMenuItem-root:not(:has(:is(.MuiListIt
     overflow-wrap: anywhere;
 }
 
-/* Menus - Remux adds a CheckIcon and empty alignment cells; hidden but kept in the DOM
-   for selection detection. */
+/* Menus - Empty alignment cells stay in the DOM for selection detection but remain hidden. */
 html[data-theme="dark"] :is(.MuiMenu-paper,:is(#selectview-popover,[data-lg-library-popover="selectview"]) > .MuiPopover-paper):has(.MuiMenuItem-root > .MuiListItemIcon-root svg[data-testid="CheckIcon"]) .MuiMenuItem-root > .MuiListItemIcon-root:is(:empty,:has(svg[data-testid="CheckIcon"])) {
     display: none;
 }
@@ -1830,7 +1826,7 @@ header.MuiAppBar-root .MuiButtonGroup-root:empty {
     padding: .4em 1.4em .4em 1em !important;
 }
 
-/* Playback - Polyfin's version search spins in the pill's icon slot: the label stays, and the
+/* Playback - Version search spins in the pill's icon slot: the label stays, and the
    spinner is sized and laid out in one row so it can neither wrap nor overlap. */
 html body #itemDetailPage .btnPlay:has(.polyfinSpinner) {
     display: inline-flex !important;
@@ -2203,6 +2199,7 @@ html[data-theme="dark"] .settingsContainer .MuiFormHelperText-root.MuiFormHelper
 .subtitleappearance-preview {
     background: linear-gradient(140deg, var(--lg-color-accent), #111) !important;
 }
+
 
 /* ---------------------------------------------------------------------- */
 /* Player                                                                 */
@@ -5439,8 +5436,8 @@ body #itemDetailPage.itemDetailPage[data-lg-detail-poster] {
             column-gap: 12px;
         }
 
-        /* Compatibility - Labels come from data-lg-track-label (script): child nodes trip
-           the Remux childList guard. */
+        /* Compatibility - Labels come from data-lg-track-label so child nodes do not trigger a
+           selection rebuild. */
         & .trackSelections .detailTrackSelect[data-lg-track-label]:not(:disabled) {
             position: relative;
             font-size: 0 !important;
@@ -5522,8 +5519,8 @@ body :is(#castContent,#guestCastContent) .cardText {
         font-size: 24px !important;
     }
 
-    /* Playback - The summary is mirrored in data-lg-video-summary; child nodes would make
-       Remux reset the selections. */
+    /* Playback - The summary is mirrored in data-lg-video-summary; child nodes would reset the
+       selections. */
     body #itemDetailPage .selectVideoContainer[data-lg-video-summary] {
         position: relative;
     }

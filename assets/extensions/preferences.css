@@ -1,0 +1,279 @@
+/* LumaaGlaass - Optional per-account preferences. */
+
+/* Settings - The LumaaGlaass page (script): settings glass sections holding rows of a label and its
+   switch or select. */
+#lg-preferences {
+    & .readOnlyContent {
+        margin: 0 auto;
+    }
+
+    & .lg-preferences-fields {
+        min-width: 0;
+        margin: 0;
+        padding: 0;
+        border: 0;
+    }
+
+    & .lg-preferences-intro {
+        margin: 0 0 24px;
+    }
+
+    & :is(.lg-preferences-description,.lg-preferences-note) {
+        margin: 0 0 12px;
+    }
+
+    & .lg-preferences-note {
+        color: var(--lg-color-text);
+    }
+
+    & .lg-preference {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        min-height: var(--lg-size-option);
+        padding-block: 8px;
+
+        & + .lg-preference {
+            border-top: 1px solid var(--lg-edge);
+        }
+
+        &:has(:is(input,select):disabled) :is(.lg-preference-label,.lg-preference-help) {
+            opacity: .5;
+        }
+    }
+
+    & .lg-preference-switch:not(:has(:disabled)) {
+        cursor: pointer;
+    }
+
+    & .lg-preference-text {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+    }
+
+    & .lg-preference-label {
+        color: var(--lg-color-text);
+    }
+
+    & .lg-preference-help {
+        padding: 0;
+    }
+
+    & .lg-preference-select {
+        flex: 0 1 16em;
+        width: 16em;
+        min-width: 0;
+        max-width: 50%;
+    }
+
+    /* Select picker - Base selects use a top-layer picker. Give every generated field its own
+       anchor so the picker remains directly below that field in browsers with customizable selects. */
+    @supports (appearance: base-select) {
+        & .lg-preference-select {
+            anchor-name: var(--lg-preference-anchor);
+        }
+
+        & .lg-preference-select::picker(select) {
+            position: fixed;
+            position-anchor: var(--lg-preference-anchor);
+            top: calc(anchor(bottom) + 8px);
+            right: auto;
+            bottom: auto;
+            left: anchor(left);
+            margin: 0;
+        }
+    }
+
+    & .lg-preferences-status {
+        margin: 0 0 12px;
+
+        &:empty {
+            display: none;
+        }
+    }
+
+    & .lg-preferences-secondary {
+        margin: 0 0 12px;
+
+        &:not(:disabled):is(:hover,:focus-visible) {
+            background-color: var(--lg-state-hover) !important;
+            color: var(--lg-color-text) !important;
+        }
+    }
+
+    /* Submit - The host makes this button sticky. In a settings page that puts it over nearby
+       controls, so it stays in the form flow after the last setting instead. */
+    & .button-submit {
+        position: relative !important;
+        inset: auto !important;
+        z-index: auto !important;
+    }
+
+    /* Theme variables - The variable's name, then a control row: the field, its unit and a reset. */
+    & code.lg-preference-label {
+        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+        font-size: .9em;
+        overflow-wrap: anywhere;
+    }
+
+    & .lg-theme-control {
+        display: flex;
+        flex: 0 0 min(20em, 50%);
+        align-items: center;
+        gap: var(--lg-space-button-group);
+        min-width: 0;
+
+        & .lg-preference-select {
+            flex: 1 1 auto;
+            max-width: none;
+        }
+    }
+
+    & .lg-theme-input {
+        flex: 1 1 auto;
+        box-sizing: border-box;
+        width: 100%;
+        min-width: 0;
+        min-height: 40px;
+        border-radius: var(--lg-radius);
+        font: inherit;
+    }
+
+    & .lg-theme-unit {
+        color: var(--lg-color-text-secondary);
+    }
+
+    & .lg-theme-color {
+        flex: 0 0 auto;
+        box-sizing: border-box;
+        width: 44px;
+        height: 32px;
+        padding: 2px;
+        border: 1px solid var(--lg-edge);
+        border-radius: var(--lg-radius-small);
+        background: var(--lg-surface);
+
+        &::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        /* Vendor pseudo-elements stay in separate rules: an unknown one drops its whole list. */
+        &::-webkit-color-swatch {
+            border: 0;
+            border-radius: calc(var(--lg-radius-small) - 2px);
+        }
+
+        &::-moz-color-swatch {
+            border: 0;
+            border-radius: calc(var(--lg-radius-small) - 2px);
+        }
+    }
+
+    & .lg-theme-alpha {
+        flex: 1 1 auto;
+        min-width: 0;
+        accent-color: var(--lg-color-accent);
+    }
+
+    & .lg-theme-reset {
+        flex: 0 0 auto;
+        display: inline-grid;
+        place-items: center;
+        width: 32px;
+        height: 32px;
+        margin: 0;
+        padding: 0;
+        border-radius: 50%;
+
+        &:disabled {
+            visibility: hidden;
+        }
+    }
+
+    & .lg-theme-recipes-title {
+        margin: 16px 0 8px;
+        font-size: 1em;
+    }
+
+    & .lg-theme-recipes {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--lg-space-button-group);
+
+        & .lg-theme-recipe {
+            margin: 0;
+        }
+    }
+
+    /* Narrow screens - A select or a variable's control takes the whole row, under its label. */
+    @media (max-width: 640px) {
+        & .lg-preference:has(> :is(.lg-preference-select,.lg-theme-control)) {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 8px;
+        }
+
+        & :is(.lg-preference-select,.lg-theme-control) {
+            flex-basis: auto;
+            width: 100%;
+            max-width: none;
+        }
+    }
+}
+
+/* Switches - The settings page's on/off fields: a pill whose thumb crosses to the accent. Forced
+   colors keep the system colors the tokens already name. */
+.lg-switch {
+    appearance: none;
+    position: relative;
+    flex: 0 0 auto;
+    box-sizing: border-box;
+    width: 44px;
+    height: 26px;
+    margin: 0;
+    border: 1px solid var(--lg-edge);
+    border-radius: var(--lg-radius-pill);
+    background: var(--lg-surface);
+    transition: background-color var(--lg-duration) var(--lg-ease), border-color var(--lg-duration) var(--lg-ease);
+
+    &::before {
+        content: "";
+        position: absolute;
+        top: 3px;
+        inset-inline-start: 3px;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--lg-color-text-secondary);
+        transition: translate var(--lg-duration) var(--lg-ease), background-color var(--lg-duration) var(--lg-ease);
+    }
+
+    &:not(:checked):not(:disabled):hover {
+        background: var(--lg-state-hover);
+    }
+
+    &:checked {
+        border-color: var(--lg-surface-primary);
+        background: var(--lg-surface-primary);
+
+        &::before {
+            translate: 18px 0;
+            background: var(--lg-color-text-on-primary);
+        }
+
+        &:dir(rtl)::before {
+            translate: -18px 0;
+        }
+    }
+
+    &:disabled {
+        opacity: .5;
+    }
+
+    @media (forced-colors: active) {
+        forced-color-adjust: none;
+    }
+}

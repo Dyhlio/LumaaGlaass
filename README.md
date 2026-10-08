@@ -33,6 +33,7 @@
 - **Focused search** - A simplified search page without visible suggestions.
 - **Refined controls** - Version, audio, and subtitle selectors with clear favorite and watched states.
 - **Accessibility preferences** - Reduced-motion, reduced-transparency, more-contrast and forced-colors styles.
+- **Per-account settings** - An optional settings page for theme appearance and features, saved with each Jellyfin account.
 - **Easy customization** - One line each for the accent color, the roundness of every corner, the glass, spacing, font and animation speed; see [Theme variables](docs/customization.md#theme-variables).
 - **Localized labels** - Follow Jellyfin's selected language, with English as a fallback for missing translations.
 
@@ -76,6 +77,7 @@ scripts:
 ```js
 (() => {
     window.LumaaGlaassOptions = {
+        preferences: false,
         homeCarousel: true,
         collectionFilter: true
     };
@@ -95,9 +97,10 @@ scripts:
 })();
 ```
 
-The configuration above shows the defaults. Set `homeCarousel: false` in this
-loader to hide the home carousel while keeping a still media background, then
-save and fully reload. See [Home carousel](docs/customization.md#home-carousel)
+The configuration above shows the exact defaults: `preferences` is `false`,
+while `homeCarousel` and `collectionFilter` are `true`. Set
+`homeCarousel: false` in this loader to hide the home carousel while keeping a
+still media background, then save and fully reload. See [Home carousel](docs/customization.md#home-carousel)
 for background behavior. No additional loader is needed.
 
 Collections mixing movies and series show All / Movies / Shows by default. Set
@@ -106,9 +109,16 @@ Collections mixing movies and series show All / Movies / Shows by default. Set
 
 Alternatively, open [lumaaglaass.js](assets/lumaaglaass.js), copy the full file, and paste
 it into **Custom JavaScript** instead of the loader. Use only one method, not both.
-For a pasted copy, place `window.LumaaGlaassOptions = { homeCarousel: false };`
-before the script if you want to disable the carousel.
+For a pasted copy, place the configuration before the script, for example
+`window.LumaaGlaassOptions = { preferences: true, homeCarousel: false };` to
+enable the settings page and disable the carousel.
 The CSS import does not load JavaScript; both installation steps are required.
+
+Change `preferences` to `true` to add **Settings → LumaaGlaass** in the web client. There,
+each account can choose the theme appearance and optional features. No separate
+extension loaders or CSS imports are needed when using this settings page. Its
+default is `false` so omitting it keeps the existing fixed Custom JavaScript and
+Custom CSS configuration unchanged.
 
 **3. Save and reload**
 
@@ -146,6 +156,8 @@ LumaaGlaass/
 │       ├── hide-count-indicators.css
 │       ├── media-actions.js
 │       ├── player-controls.js
+│       ├── preferences.css
+│       ├── preferences.js
 │       └── source-selection.js
 ├── docs/
 │   ├── assets/

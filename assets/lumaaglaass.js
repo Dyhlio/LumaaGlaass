@@ -6,15 +6,37 @@
     // =====================================================================
     // Configuration
     // =====================================================================
-    // Options - window.LumaaGlaassOptions = { homeCarousel, collectionFilter }, both default true.
-    // Docs: customization.md#home-carousel, #collection-filter.
-    const defaults = { homeCarousel: true, collectionFilter: true };
+    // Options - window.LumaaGlaassOptions = { preferences, homeCarousel, collectionFilter }.
+    // homeCarousel and collectionFilter default to true. preferences is optional and defaults to false.
+    // Docs: customization.md#home-carousel, #collection-filter, #settings-page.
+    const defaults = { preferences: false, homeCarousel: true, collectionFilter: true };
     const configured = window.LumaaGlaassOptions || {};
     const flag = (value, fallback) => typeof value === 'boolean' ? value : fallback;
-    const settings = Object.freeze({
+    const loaderSettings = Object.freeze({
         homeCarousel: flag(configured.homeCarousel, defaults.homeCarousel),
         collectionFilter: flag(configured.collectionFilter, defaults.collectionFilter)
     });
+    const preferencesEnabled = flag(configured.preferences, defaults.preferences);
+    let settings = loaderSettings;
+    // Assets - Extensions load from this script's folder when it comes from the repository, so a pinned
+    // revision stays pinned; a pasted copy has no such folder and uses the main branch.
+    const ASSETS = (() => {
+        const source = document.currentScript?.src || '';
+        return /\/assets\/lumaaglaass\.js(?:[?#].*)?$/.test(source) ?
+            source.replace(/lumaaglaass\.js(?:[?#].*)?$/, '') :
+            'https://cdn.jsdelivr.net/gh/Dyhlio/LumaaGlaass@main/assets/';
+    })();
+    // Settings - Used by the optional preferences extension. It changes only the two options that
+    // belong to the main theme; all extension-specific choices stay in that extension.
+    function applyCoreSettings(values) {
+        const next = values ? Object.freeze({
+            homeCarousel: flag(values.homeCarousel, loaderSettings.homeCarousel),
+            collectionFilter: flag(values.collectionFilter, loaderSettings.collectionFilter)
+        }) : loaderSettings;
+        if (next.homeCarousel !== settings.homeCarousel) clearHome();
+        settings = next;
+        schedule();
+    }
 
     // =====================================================================
     // Instance
@@ -75,17 +97,18 @@
         All: 'All',
         Movies: 'Movies',
         Shows: 'Shows',
-        Filter: 'Filter'
+        Filter: 'Filter',
+        Save: 'Save'
     };
     // Localization - The theme's own strings, by language. Jellyfin does not have them, and asking
     // it for a missing key logs an error.
     const THEME_STRINGS = {
         en: {
-            PlaybackUnavailable: 'Automatic playback did not start. Check the available sources, then use Play to retry.'
+            PlaybackUnavailable: 'Automatic playback did not start. Check the available sources, then use Play to retry.',
         },
         fr: {
             PlaybackUnavailable:
-                'La lecture automatique n’a pas démarré. Vérifiez les sources disponibles, puis utilisez Lire pour réessayer.'
+                'La lecture automatique n’a pas démarré. Vérifiez les sources disponibles, puis utilisez Lire pour réessayer.',
         }
     };
     const language = () => (document.documentElement.lang || navigator.language).slice(0, 2).toLowerCase();
@@ -312,8 +335,8 @@
         }
         return list;
     };
-    // Random items - Polyfin ignores SortBy Random and Remux sends full items: a one-item probe gives
-    // the total, then a window of limit items at a random index of it reaches the whole catalog.
+    // Random items - A one-item probe gives the total, then a window at a random index reaches the
+    // whole catalog even when a client ignores random sorting.
     async function randomItems(api, userId, query, limit) {
         const probe = await api.getItems(userId, { ...query, Limit: 1 });
         if (!probe?.Items?.length) return [];
@@ -326,7 +349,7 @@
         const result = await api.getItems(userId, { ...query, SortBy: 'Random', Limit: pool });
         return shuffle(result?.Items || []).slice(0, limit);
     }
-    // Collections - A folder of collections (Polyfin catalogs) has no media: two random collections
+    // Collections - A folder of collections has no media: two random collections
     // stand in for it, each passed to onItems as it answers, so a slow one never holds the other.
     async function collectionItems(api, userId, parentId, query, limit, onItems) {
         const collections = await pickedItems(api, userId,
@@ -461,14 +484,14 @@
                     IncludeItemTypes: 'Movie,Series', Recursive: true, EnableImages: true, ImageTypes: 'Backdrop,Primary',
                     Fields: 'Overview,Genres,CommunityRating,OfficialRating,ProductionYear,ProviderIds,' + BACKDROP_FIELDS
                 };
-                // Library-scoped queries only: Polyfin returns nothing to account-wide ones. Ten
+                // Library-scoped queries make each library contribute. Ten
                 // items per view give every library a share instead of the largest one.
                 const views = (await api.getUserViews({}, userId))?.Items || [];
                 const parts = views.map(() => []);
                 const direct = views.map((view, i) => randomItems(api, userId, { ...query, ParentId: view.Id }, 10)
                     .then(items => { parts[i] = items; }, () => {}));
-                // A folder of collections turns to them at once; a slow one (a cold Polyfin catalog takes
-                // seconds) joins only within the budget, and warms up the server for next time.
+                // A folder of collections turns to them at once; a slow response joins only within the
+                // budget and can finish warming up in the background.
                 const collections = direct.map((done, i) => done.then(() => parts[i].length ? null :
                     collectionItems(api, userId, views[i].Id, query, 10, items => parts[i].push(...items))).catch(() => {}));
                 await Promise.all(direct);
@@ -709,7 +732,7 @@
             resumeClock();
         }
     }
-    // Playback - Press the native Play once Remux marks streams ready, within 45 s; past that,
+    // Playback - Press the native Play once streams are ready, within 45 s; past that,
     // explain on the page why playback did not start.
     function consumePlay() {
         if (!pending) return;
@@ -1408,7 +1431,8 @@
             stop: clearCollectionFilter
         };
     }
-    const collectionFilterController = settings.collectionFilter ? createCollectionFilter() : null;
+    // Filter - Always built: the user's settings turn it on and off during the session.
+    const collectionFilterController = createCollectionFilter();
 
     // =====================================================================
     // Details
@@ -1455,7 +1479,7 @@
         });
     }
     // Tracks - Expose the selected track label as attributes for the stylesheet: editing a
-    // select's children (selectedcontent included) makes Remux reset the selection.
+    // select's children (selectedcontent included) can reset the selection.
     function syncTrackLabels() {
         document.querySelectorAll('.trackSelections select').forEach(select => {
             const label = select.selectedOptions[0]?.textContent || '';
@@ -1577,7 +1601,7 @@
         popup.hidden = true;
         // described is the control the shown popup describes (aria-describedby), as its title did.
         let active = null, described = null, source = '', timer = 0, claiming = false;
-        // A script that puts a title back as soon as it moves (Polyfin's held Play buttons) would
+        // A script that puts a title back as soon as it moves would
         // loop with the claim forever: a title moved three times in one task stays native.
         let moves = new Map(), movesTimer = 0, rivals = new WeakMap();
         // Non-rendered elements keep their title semantics.
@@ -1879,7 +1903,11 @@
             restoreOwnedAttributes();
         }
         syncLastBackdrop(key);
-        collectionFilterController?.sync(context, key);
+        if (settings.collectionFilter) {
+            collectionFilterController.sync(context, key);
+        } else {
+            collectionFilterController.stop();
+        }
         if (on) {
             syncHomeSession(api, key);
             syncHero();
@@ -1891,9 +1919,10 @@
             void mount();
         }, 150);
     };
-    // Observer - One for the whole page. The banner and the tooltip popup (written on every hover)
-    // are ignored: their own writes would run the passes again, and mount the banner in a loop.
-    const ownMutation = record => record.target instanceof Element && (record.target.closest('#lg-hero,#lg-tooltip') !== null ||
+    // Observer - One for the whole page. The banner, the tooltip popup (written on every hover) and the
+    // settings form are ignored: their own writes would run the passes again, and mount the banner in a loop.
+    const ownMutation = record => record.target instanceof Element &&
+        (record.target.closest('#lg-hero,#lg-tooltip,#lg-preferences') !== null ||
         (record.type === 'childList' && [...record.addedNodes, ...record.removedNodes].every(node => node === tooltipController.popup)));
     const observer = new MutationObserver(records => {
         if (!records.every(ownMutation)) schedule();
@@ -1925,6 +1954,21 @@
         get status() {
             return { active: Boolean(heroParts && hero?.isConnected), items: items.length, loading, error: lastError };
         },
+        preferences: {
+            assets: ASSETS,
+            defaults: loaderSettings,
+            api: currentClient,
+            sessionKey,
+            element,
+            setAttribute,
+            translate,
+            language,
+            params,
+            route,
+            sameId,
+            enabled,
+            applyCore: applyCoreSettings
+        },
         stop() {
             stopped = true;
             openStyleGate();
@@ -1940,7 +1984,8 @@
             clearPendingControls();
             clearPageCard();
             clearLibraryPopovers();
-            collectionFilterController?.stop();
+            collectionFilterController.stop();
+            window.__lumaaGlaassPreferences?.stop();
             clearDetails();
             clearSheetTrigger();
             tooltipController.stop();
@@ -1950,4 +1995,15 @@
         }
     };
     schedule();
+    if (preferencesEnabled && !document.getElementById('lg-preferences-script')) {
+        const script = document.createElement('script');
+        script.id = 'lg-preferences-script';
+        script.src = ASSETS + 'extensions/preferences.js';
+        script.setAttribute('data-lg-managed', '');
+        script.onerror = () => {
+            script.remove();
+            console.error('LumaaGlaass could not load the preferences extension.');
+        };
+        document.head.append(script);
+    }
 })();
