@@ -161,11 +161,13 @@
     };
 
     // Selects - The browser's customizable picker can lose its anchor inside a scrolling host view.
-    // LumaaGlaass-owned selects therefore share one viewport-positioned picker, while their native
-    // controls remain the source of truth for values, forms and change events.
+    // Managed selects share one viewport-positioned picker, while their native controls remain the
+    // source of truth for values, forms and change events.
     function createSelectController() {
         let active = null;
+        let generatedId = 0;
         const states = new Set();
+        const stateByControl = new WeakMap();
         const picker = element('div', 'lg-select-picker');
         picker.id = 'lg-select-picker';
         picker.setAttribute('role', 'listbox');
@@ -261,17 +263,17 @@
             ];
             choice?.focus();
         };
-        const create = ({ shellClass = '', controlClass = '', triggerClass = '', portal = document.body } = {}) => {
-            const control = element('select', 'lg-select-native' + (controlClass ? ' ' + controlClass : ''));
-            const shell = element('div', 'lg-select' + (shellClass ? ' ' + shellClass : ''));
+        const triggerElement = triggerClass => {
             const trigger = element('button', 'emby-button lg-select-trigger' + (triggerClass ? ' ' + triggerClass : ''));
             trigger.type = 'button';
             trigger.setAttribute('aria-haspopup', 'listbox');
             trigger.setAttribute('aria-expanded', 'false');
-            control.tabIndex = -1;
-            control.setAttribute('aria-hidden', 'true');
+            return trigger;
+        };
+        const register = ({ control, shell, trigger, portal, restore = null }) => {
             const state = { control, shell, trigger, portal, sync: () => sync(state) };
             states.add(state);
+            stateByControl.set(control, state);
             trigger.addEventListener('click', () => open(state));
             trigger.addEventListener('keydown', event => {
                 if (!['ArrowDown', 'ArrowUp'].includes(event.key)) return;
@@ -280,14 +282,75 @@
             });
             control.addEventListener('change', state.sync);
             const observer = new MutationObserver(state.sync);
-            observer.observe(control, { attributes: true, attributeFilter: ['disabled'] });
+            observer.observe(control, { attributes: true, attributeFilter: ['disabled'], childList: true, subtree: true });
             state.destroy = () => {
                 if (!states.delete(state)) return;
                 if (active === state) close(false);
                 observer.disconnect();
+                stateByControl.delete(control);
+                restore?.();
             };
-            shell.append(control, trigger);
             return state;
+        };
+        const create = ({ shellClass = '', controlClass = '', triggerClass = '', portal = document.body } = {}) => {
+            const control = element('select', 'lg-select-native' + (controlClass ? ' ' + controlClass : ''));
+            const shell = element('div', 'lg-select' + (shellClass ? ' ' + shellClass : ''));
+            const trigger = triggerElement(triggerClass);
+            control.tabIndex = -1;
+            control.setAttribute('aria-hidden', 'true');
+            shell.append(control, trigger);
+            return register({ control, shell, trigger, portal });
+        };
+        const adopt = (control, { shellClass = '', triggerClass = '', portal = document.body } = {}) => {
+            const existing = stateByControl.get(control);
+            if (existing) return existing;
+            if (!(control instanceof HTMLSelectElement) || !control.parentElement) return null;
+            const parent = control.parentElement;
+            const shell = element('div', 'lg-select' + (shellClass ? ' ' + shellClass : ''));
+            const trigger = triggerElement(triggerClass);
+            const original = {
+                tabIndex: control.tabIndex,
+                ariaHidden: control.getAttribute('aria-hidden'),
+                labels: []
+            };
+            const triggerId = control.id ? control.id + '-trigger' : 'lg-select-trigger-' + ++generatedId;
+            trigger.id = triggerId;
+            if (control.id) {
+                const labels = [...document.querySelectorAll('label[for]')].filter(label => label.htmlFor === control.id);
+                labels.forEach((label, index) => {
+                    original.labels.push({ label, htmlFor: label.htmlFor, id: label.id });
+                    if (!label.id) label.id = control.id + '-label-' + index;
+                    label.htmlFor = triggerId;
+                });
+                if (labels.length) trigger.setAttribute('aria-labelledby', labels.map(label => label.id).join(' '));
+            }
+            if (!trigger.hasAttribute('aria-labelledby') && control.hasAttribute('aria-labelledby')) {
+                trigger.setAttribute('aria-labelledby', control.getAttribute('aria-labelledby'));
+            }
+            if (!trigger.hasAttribute('aria-labelledby') && control.hasAttribute('aria-label')) {
+                trigger.setAttribute('aria-label', control.getAttribute('aria-label'));
+            }
+            control.classList.add('lg-select-native');
+            control.tabIndex = -1;
+            control.setAttribute('aria-hidden', 'true');
+            parent.insertBefore(shell, control);
+            shell.append(control, trigger);
+            return register({
+                control, shell, trigger, portal,
+                restore: () => {
+                    original.labels.forEach(({ label, htmlFor, id }) => {
+                        label.htmlFor = htmlFor;
+                        if (id) label.id = id;
+                        else label.removeAttribute('id');
+                    });
+                    control.classList.remove('lg-select-native');
+                    control.tabIndex = original.tabIndex;
+                    if (original.ariaHidden === null) control.removeAttribute('aria-hidden');
+                    else control.setAttribute('aria-hidden', original.ariaHidden);
+                    if (shell.parentElement) shell.before(control);
+                    shell.remove();
+                }
+            });
         };
         listen(document, 'pointerdown', event => {
             if (active && !active.shell.contains(event.target) && !picker.contains(event.target)) close(false);
@@ -318,6 +381,8 @@
         listen(document, 'visibilitychange', () => { if (document.hidden) close(false); });
         return {
             create,
+            adopt,
+            get: control => stateByControl.get(control) || null,
             stop() {
                 close(false);
                 [...states].forEach(state => state.destroy());
@@ -326,6 +391,46 @@
         };
     }
     const selectController = createSelectController();
+    // Preference selects - Host pages use native selects inside a scrolling view. Adopt each regular
+    // field on those pages so the shared picker keeps its viewport position; media-track selects keep
+    // their dedicated playback behavior.
+    const preferenceSelects = new Set();
+    function clearPreferenceSelects() {
+        for (const select of preferenceSelects) select.destroy();
+        preferenceSelects.clear();
+    }
+    function syncPreferenceSelects() {
+        if (!route().startsWith('#/mypreferences')) {
+            clearPreferenceSelects();
+            return;
+        }
+        const current = new Set();
+        for (const control of document.querySelectorAll('select.emby-select,select.emby-select-withcolor')) {
+            if (!(control instanceof HTMLSelectElement)) continue;
+            const existing = selectController.get(control);
+            if (existing) {
+                if (existing.shell.classList.contains('lg-host-select')) {
+                    existing.sync();
+                    preferenceSelects.add(existing);
+                    current.add(existing);
+                }
+                continue;
+            }
+            if (control.multiple || control.size > 1 || control.classList.contains('detailTrackSelect') ||
+                control.classList.contains('lg-select-native')) continue;
+            const select = selectController.adopt(control, { shellClass: 'lg-host-select' });
+            if (!select) continue;
+            select.sync();
+            preferenceSelects.add(select);
+            current.add(select);
+        }
+        for (const select of [...preferenceSelects]) {
+            if (!select.control.isConnected || !current.has(select)) {
+                select.destroy();
+                preferenceSelects.delete(select);
+            }
+        }
+    }
     // Owned attributes - Attributes written on native controls keep the value they replaced and one
     // value per owner; releasing one shows the next, unless the page has written its own since.
     const ownedAttributes = new Map();
@@ -2064,6 +2169,8 @@
         syncPageCard(context);
         placeLibraryControlsIf(moved, true);
         syncPendingControls(on);
+        if (on) syncPreferenceSelects();
+        else clearPreferenceSelects();
         if (on) {
             syncLibraryPopovers();
             syncMenuTriggers();
@@ -2161,6 +2268,7 @@
             clearDetails();
             clearSheetTrigger();
             tooltipController.stop();
+            clearPreferenceSelects();
             selectController.stop();
             restoreOwnedAttributes();
             clearInputModality();

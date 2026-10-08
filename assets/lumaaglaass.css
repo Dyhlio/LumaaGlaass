@@ -3173,23 +3173,30 @@ html body select:is(.emby-select,.emby-select-withcolor):not([multiple]):not([si
     }
 }
 
-/* Controlled selects - LumaaGlaass-created selectors use one popup placed from the trigger's
-   viewport box. The native select remains present for its value and change event. */
+/* Controlled selects - LumaaGlaass and regular preference selectors use one popup placed from the
+   trigger's viewport box. The native select remains present for its value and change event. */
 .lg-select {
     position: relative;
     min-width: 0;
 }
 
 .lg-select-native {
-    position: absolute;
-    inline-size: 1px;
-    block-size: 1px;
-    margin: -1px;
-    border: 0;
-    padding: 0;
+    position: absolute !important;
+    inline-size: 1px !important;
+    block-size: 1px !important;
+    min-block-size: 0 !important;
+    min-height: 0 !important;
+    margin: -1px !important;
+    border: 0 !important;
+    padding: 0 !important;
     clip-path: inset(50%);
     opacity: 0;
     pointer-events: none;
+}
+
+.lg-host-select {
+    inline-size: 100%;
+    max-inline-size: 100%;
 }
 
 .lg-select-trigger {
