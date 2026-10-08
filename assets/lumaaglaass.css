@@ -374,6 +374,14 @@ html[data-theme="dark"] header.MuiAppBar-root.MuiAppBar-positionFixed {
     --Paper-shadow: none !important;
 }
 
+/* Playback - Hide browsing navigation as soon as the real player is mounted, before the route
+   observer runs. The class remains a fallback; the player OSD keeps its own controls. */
+html:has(.videoPlayerContainer) header.MuiAppBar-root,
+html.lg-is-playback-page header.MuiAppBar-root {
+    visibility: hidden;
+    pointer-events: none;
+}
+
 /* Navigation - Scrolled capsule from first paint; MUI elevation must not change it. */
 html[data-theme="dark"] header.MuiAppBar-root > .MuiToolbar-root:first-child > .MuiStack-root:first-of-type,
 .lg-collection-filter-group {

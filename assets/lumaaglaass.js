@@ -1148,6 +1148,10 @@
         root.style.setProperty('--lg-scrollbar-width', `${scrollbar}px`);
         return true;
     }
+    // Playback - The app navigation belongs to browsing, never to the player or its startup spinner.
+    function syncPlaybackPage(on) {
+        document.documentElement.classList.toggle('lg-is-playback-page', on && route() === '#/video');
+    }
     // Page marks - Set on <html> while their selector matches, for rules a page-wide :has() would
     // slow down: the legacy header (rendered, hidden, in every layout), home, the now playing bar.
     const PAGE_MARKS = {
@@ -2198,6 +2202,7 @@
         observeLayout(on);
         const moved = syncHeaderInset(on);
         syncPageMarks(on);
+        syncPlaybackPage(on);
         if (on) {
             syncDetails(key, context);
         } else {
@@ -2298,6 +2303,7 @@
             clearLastBackdrop();
             clearHome();
             clearHeaderInset();
+            syncPlaybackPage(false);
             clearPageMarks();
             clearPendingControls();
             clearPageCard();
