@@ -258,14 +258,15 @@
             card.hasAttribute('data-playlistitemid') || card.hasAttribute('data-playlistid')) {
             return 'native';
         }
+        // The page-specific episode rule takes priority over started-item rules.
+        if (card.dataset.type === 'Episode' && nextUp()) return settings.nextUpThumbnails;
         const position = Number(card.getAttribute('data-positionticks') || 0);
         if (!Number.isFinite(position) || position < 0) return 'native';
-        // Resume rules win in every section; progress is left untouched.
+        // Resume rules apply to started items everywhere else; progress itself is left untouched.
         if (position > 0) {
             const onHome = home() && !!card.closest('#indexPage,.homePage');
             return settings.resumeThumbnails[onHome ? 'home' : 'elsewhere'][TYPE_GROUPS[card.dataset.type]] || 'native';
         }
-        if (card.dataset.type === 'Episode' && nextUp()) return settings.nextUpThumbnails;
         const seasonEpisode = card.dataset.type === 'Episode' &&
             card.closest('#itemDetailPage :is(#childrenCollapsible, #listChildrenCollapsible)');
         return seasonEpisode ? settings.seasonEpisodeThumbnails : settings.thumbnails[TYPE_GROUPS[card.dataset.type]];
