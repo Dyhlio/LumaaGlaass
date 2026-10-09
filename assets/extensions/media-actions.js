@@ -6,21 +6,25 @@
     // =====================================================================
     // Configuration
     // =====================================================================
-    // Options - window.LumaaGlaassMediaActionsOptions: native, details or hide (cornerButtons: native or hide).
+    // Options - window.LumaaGlaassMediaActionsOptions: native, details or hide (cornerButtons: native or hide per item group).
     // Docs: customization.md#media-actions.
+    // Item groups - Shared by thumbnail and corner-button settings; changing one setting never changes the other.
+    const TYPE_GROUPS = Object.freeze({
+        Movie: 'movies', Episode: 'episodes', Series: 'series', Season: 'seasons', BoxSet: 'collections',
+        CollectionFolder: 'libraries', UserView: 'libraries', Folder: 'folders'
+    });
+    const GROUP_KEYS = Object.freeze([...new Set(Object.values(TYPE_GROUPS))]);
+    const nativeGroup = () => Object.fromEntries(GROUP_KEYS.map(name => [name, 'native']));
     const defaults = {
-        thumbnails: {
-            movies: 'native', episodes: 'native', series: 'native', seasons: 'native',
-            collections: 'native', libraries: 'native', folders: 'native'
-        },
+        thumbnails: nativeGroup(),
         seasonEpisodeThumbnails: 'native',
         resumeThumbnails: {
             home: { movies: 'native', episodes: 'native' },
             elsewhere: { movies: 'native', episodes: 'native' }
         },
-        // Corner buttons - Played, favorite and more in a thumbnail's corner.
+        // Corner buttons - Watched, favorite and more actions in a thumbnail's corner.
         // This remains independent from the central thumbnail Play shortcut.
-        cornerButtons: 'native',
+        cornerButtons: nativeGroup(),
         mainButtons: { collections: 'native', series: 'native', seasons: 'native' }
     };
     const configured = window.LumaaGlaassMediaActionsOptions || {};
@@ -30,6 +34,10 @@
     const group = (values, fallbacks, allowed) => Object.freeze(Object.fromEntries(
         Object.entries(fallbacks).map(([name, fallback]) => [name, choice(values?.[name], fallback, allowed)])));
     const thumbnails = group(configured.thumbnails, defaults.thumbnails, MODES);
+    // Compatibility - A previous scalar applied one corner-button mode to every item group.
+    const configuredCornerButtons = typeof configured.cornerButtons === 'string'
+        ? Object.fromEntries(GROUP_KEYS.map(name => [name, configured.cornerButtons]))
+        : configured.cornerButtons;
     const settings = Object.freeze({
         thumbnails,
         seasonEpisodeThumbnails: choice(configured.seasonEpisodeThumbnails, defaults.seasonEpisodeThumbnails, MODES),
@@ -38,13 +46,14 @@
             home: group(configured.resumeThumbnails?.home, defaults.resumeThumbnails.home, MODES),
             elsewhere: group(configured.resumeThumbnails?.elsewhere, defaults.resumeThumbnails.elsewhere, MODES)
         }),
-        cornerButtons: choice(configured.cornerButtons, defaults.cornerButtons, BUTTON_MODES),
+        cornerButtons: group(configuredCornerButtons, defaults.cornerButtons, BUTTON_MODES),
         mainButtons: group(configured.mainButtons, defaults.mainButtons, MODES)
     });
     // Features - Card and details actions run only when one of their options is not native;
-    // cornerButtons alone is pure CSS.
+    // corner buttons share the card observer, but keep their own per-group setting and marker.
     const changed = groups => groups.flatMap(Object.values).some(mode => mode !== 'native');
-    const CARDS_ACTIVE = settings.seasonEpisodeThumbnails !== 'native' || settings.nextUpThumbnails !== 'native' ||
+    const CARDS_ACTIVE = changed([settings.cornerButtons]) || settings.seasonEpisodeThumbnails !== 'native' ||
+        settings.nextUpThumbnails !== 'native' ||
         changed([settings.thumbnails, settings.resumeThumbnails.home, settings.resumeThumbnails.elsewhere]);
     const DETAILS_ACTIVE = changed([settings.mainButtons]);
 
@@ -164,6 +173,12 @@
             display: none !important;
         }
 
+        /* Corner actions - Hide the desktop action group or only More in the mobile group, which also contains Play. */
+        [data-lg-media-hide-corner-buttons] .cardOverlayContainer > .cardOverlayButton-br:not(.cardIndicators),
+        [data-lg-media-hide-corner-buttons] .cardOverlayButton-br:not(.cardIndicators) > [data-action="menu"] {
+            display: none !important;
+        }
+
         html body #itemDetailPage#itemDetailPage .mainDetailButtons .lg-media-details {
             max-width: 100%;
             white-space: nowrap;
@@ -190,22 +205,9 @@
             display: none;
         }
     `);
-    if (settings.cornerButtons === 'hide') {
-        style.textContent += `
-            .cardOverlayButton-br:not(.cardIndicators) {
-                display: none !important;
-            }
-        `;
-    }
-
     // =====================================================================
     // Card actions
     // =====================================================================
-    // Item types - The option group of each Jellyfin item type.
-    const TYPE_GROUPS = {
-        Movie: 'movies', Episode: 'episodes', BoxSet: 'collections', Series: 'series',
-        Season: 'seasons', CollectionFolder: 'libraries', UserView: 'libraries', Folder: 'folders'
-    };
     const ITEM_CARDS = '.card[data-id][data-type],.listItem[data-id][data-type]';
     const IMAGE_BUTTONS =
         '.card[data-id][data-type] button.cardOverlayButton.itemAction,.listItem[data-id][data-type] button.listItemImageButton.itemAction';
@@ -217,6 +219,7 @@
     // actions are hidden, for stop().
     const cards = new Map();
     const hiddenThumbnails = new Set();
+    const hiddenCornerButtons = new Set();
     // Owned attributes - As in the main script: an attribute written on a native button is restored on
     // release unless the page wrote its own since; titles go through the main theme's tooltip.
     const ownedAttributes = new Map();
@@ -247,14 +250,24 @@
         owned.delete(name);
         if (!owned.size) ownedAttributes.delete(node);
     }
-    // Cards - "details" reuses Jellyfin's native link action rather than its router. Chapters,
-    // playlists, live TV, music and player controls stay native.
-    function thumbnailMode(card) {
+    // Cards - One eligibility check and item-group mapping feed independent thumbnail and corner settings.
+    // Chapters, playlists, live TV, music and player controls stay native.
+    function cardGroup(card) {
         if (!card || !TYPE_GROUPS[card.dataset.type] || !card.dataset.serverid ||
             card.closest('#videoOsdPage,.chapterCard,.playlistItems') ||
             card.hasAttribute('data-playlistitemid') || card.hasAttribute('data-playlistid')) {
-            return 'native';
+            return null;
         }
+        return TYPE_GROUPS[card.dataset.type];
+    }
+    function cornerButtonMode(card) {
+        const group = cardGroup(card);
+        return group ? settings.cornerButtons[group] : 'native';
+    }
+    // Cards - "details" reuses Jellyfin's native link action rather than its router.
+    function thumbnailMode(card) {
+        const group = cardGroup(card);
+        if (!group) return 'native';
         // The page-specific episode rule takes priority over started-item rules.
         if (card.dataset.type === 'Episode' && nextUp()) return settings.nextUpThumbnails;
         const position = Number(card.getAttribute('data-positionticks') || 0);
@@ -262,11 +275,11 @@
         // Resume rules apply to started items everywhere else; progress itself is left untouched.
         if (position > 0) {
             const onHome = home() && !!card.closest('#indexPage,.homePage');
-            return settings.resumeThumbnails[onHome ? 'home' : 'elsewhere'][TYPE_GROUPS[card.dataset.type]] || 'native';
+            return settings.resumeThumbnails[onHome ? 'home' : 'elsewhere'][group] || 'native';
         }
         const seasonEpisode = card.dataset.type === 'Episode' &&
             card.closest('#itemDetailPage :is(#childrenCollapsible, #listChildrenCollapsible)');
-        return seasonEpisode ? settings.seasonEpisodeThumbnails : settings.thumbnails[TYPE_GROUPS[card.dataset.type]];
+        return seasonEpisode ? settings.seasonEpisodeThumbnails : settings.thumbnails[group];
     }
     function cardContext(button) {
         const card = button.closest(ITEM_CARDS);
@@ -298,9 +311,14 @@
         card.removeAttribute('data-lg-media-hide-thumbnail');
         hiddenThumbnails.delete(card);
     }
+    function releaseCornerButtons(card) {
+        card.removeAttribute('data-lg-media-hide-corner-buttons');
+        hiddenCornerButtons.delete(card);
+    }
     function clearCards() {
         cards.forEach((saved, button) => restoreCard(button, saved));
         hiddenThumbnails.forEach(releaseThumbnail);
+        hiddenCornerButtons.forEach(releaseCornerButtons);
     }
     function syncCard(button) {
         const saved = cards.get(button);
@@ -321,10 +339,17 @@
         for (const card of hiddenThumbnails) {
             if (!card.isConnected || thumbnailMode(card) !== 'hide') releaseThumbnail(card);
         }
+        for (const card of hiddenCornerButtons) {
+            if (!card.isConnected || cornerButtonMode(card) !== 'hide') releaseCornerButtons(card);
+        }
         document.querySelectorAll(ITEM_CARDS).forEach(card => {
             if (thumbnailMode(card) === 'hide' && !hiddenThumbnails.has(card)) {
                 card.setAttribute('data-lg-media-hide-thumbnail', '');
                 hiddenThumbnails.add(card);
+            }
+            if (cornerButtonMode(card) === 'hide' && !hiddenCornerButtons.has(card)) {
+                card.setAttribute('data-lg-media-hide-corner-buttons', '');
+                hiddenCornerButtons.add(card);
             }
         });
         for (const button of cards.keys()) syncCard(button);
@@ -597,9 +622,8 @@
         });
     });
     function start() {
-        if (!CARDS_ACTIVE && !DETAILS_ACTIVE && settings.cornerButtons === 'native') return;
-        document.head.append(style);
         if (!CARDS_ACTIVE && !DETAILS_ACTIVE) return;
+        document.head.append(style);
         if (CARDS_ACTIVE) {
             listen(window, 'click', onCardClick, true);
             observer.observe(document.documentElement, {

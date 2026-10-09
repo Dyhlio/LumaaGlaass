@@ -172,7 +172,15 @@ fully reload the client; there is no need to edit the downloaded script.
             elsewhere: { movies: 'native', episodes: 'native' }
         },
         nextUpThumbnails: 'native',
-        cornerButtons: 'native',
+        cornerButtons: {
+            movies: 'native',
+            episodes: 'native',
+            series: 'native',
+            seasons: 'native',
+            collections: 'native',
+            libraries: 'native',
+            folders: 'native'
+        },
         mainButtons: {
             collections: 'native',
             series: 'native',
@@ -210,11 +218,13 @@ The information mode does not create buttons where none existed. Favorites, watc
 and menu controls stay unchanged in information mode. Thumbnail hide mode removes
 only the central Play shortcut; clicks on the image itself retain their native action.
 
-`cornerButtons` controls those three corner buttons (watched, favorite, more) on every
-thumbnail at once, independently of the Play shortcut: `native` preserves the
-server's controls even when the Play shortcut is hidden; `hide` removes them
-everywhere. Polyfin and other servers running the unmodified Jellyfin Web 12.1
-interface show them; Remux already hides them in its own stylesheet.
+`cornerButtons` controls the watched, favorite and more actions independently for
+each item group. Its seven keys match `thumbnails`; changing either setting never
+changes the other. `native` preserves the server's corner actions, while `hide`
+hides only those actions for that group. The central Play shortcut and the mobile
+corner Play action remain independent. The previous scalar form,
+`cornerButtons: 'hide'`, remains supported as shorthand for hiding the actions in
+all seven groups; `'native'` likewise means native in every group.
 
 ### Settings and priority
 
@@ -231,7 +241,7 @@ interface show them; Remux already hides them in its own stylesheet.
 | `resumeThumbnails.home.movies/episodes` | Started movie/episode thumbnails on the home page |
 | `resumeThumbnails.elsewhere.movies/episodes` | Started movie/episode thumbnails on other pages, except episodes in Next Up |
 | `nextUpThumbnails` | Episode thumbnails on the Next Up page; omitted, it inherits `thumbnails.episodes` |
-| `cornerButtons` | Watched, favorite and more buttons in every thumbnail corner (`native` or `hide`) |
+| `cornerButtons.movies/episodes/series/seasons/collections/libraries/folders` | Watched, favorite and more corner actions for that item group (`native` or `hide`) |
 | `mainButtons.collections/series/seasons` | Main button on the corresponding container details page |
 
 Types come from Jellyfin metadata, never from item names. Films inside a collection
@@ -247,7 +257,8 @@ list. No setting deletes or rewrites saved playback progress.
 details pages. Movie/episode actions and player controls remain native.
 Resumable series, seasons and collections retain their native controls.
 
-Missing options use the defaults shown above. Invalid modes fall back to native
+Missing options use the defaults shown above. A partial `cornerButtons` object
+defaults each omitted group to `native`. Invalid modes fall back to native
 behavior. For example, set `thumbnails.collections: 'native'` to preserve collection
 thumbnail controls, or `resumeThumbnails.elsewhere.episodes: 'details'` to open details
 from episode resume shortcuts on other pages outside Next Up. Set `nextUpThumbnails: 'native'`

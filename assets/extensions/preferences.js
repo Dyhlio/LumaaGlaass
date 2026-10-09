@@ -59,7 +59,7 @@
             SettingsSourceSelectionHelp: 'How versions and tracks are chosen on details pages.',
             SettingsSourceMode: 'Mode',
             SettingsMediaActions: 'Media actions',
-            SettingsMediaActionsHelp: 'Play shortcuts on thumbnails and main buttons of details pages.',
+            SettingsMediaActionsHelp: 'Play shortcuts, corner actions and main buttons of details pages.',
             SettingsThumbnailsMovies: 'Movie thumbnails',
             SettingsThumbnailsEpisodes: 'Episode thumbnails',
             SettingsThumbnailsSeries: 'Series thumbnails',
@@ -73,7 +73,13 @@
             SettingsResumeHomeEpisodes: 'Started episodes on the home page',
             SettingsResumeElsewhereMovies: 'Started movies on other pages',
             SettingsResumeElsewhereEpisodes: 'Started episodes on other pages',
-            SettingsCornerButtons: 'Thumbnail corner buttons (watched, favorite, more)',
+            SettingsCornerMovies: 'Movie corner buttons',
+            SettingsCornerEpisodes: 'Episode corner buttons',
+            SettingsCornerSeries: 'Series corner buttons',
+            SettingsCornerSeasons: 'Season corner buttons',
+            SettingsCornerCollections: 'Collection corner buttons',
+            SettingsCornerLibraries: 'Library corner buttons',
+            SettingsCornerFolders: 'Folder corner buttons',
             SettingsMainButtonCollections: 'Main button of a collection',
             SettingsMainButtonSeries: 'Main button of a series',
             SettingsMainButtonSeasons: 'Main button of a season',
@@ -189,7 +195,7 @@
             SettingsSourceSelectionHelp: 'Choix des versions et des pistes sur les pages de détails.',
             SettingsSourceMode: 'Mode',
             SettingsMediaActions: 'Actions des médias',
-            SettingsMediaActionsHelp: 'Raccourcis de lecture des vignettes et boutons principaux des pages de détails.',
+            SettingsMediaActionsHelp: 'Raccourcis de lecture, boutons d’angle et boutons principaux des pages de détails.',
             SettingsThumbnailsMovies: 'Vignettes de films',
             SettingsThumbnailsEpisodes: 'Vignettes d’épisodes',
             SettingsThumbnailsSeries: 'Vignettes de séries',
@@ -203,7 +209,13 @@
             SettingsResumeHomeEpisodes: 'Épisodes commencés sur l’accueil',
             SettingsResumeElsewhereMovies: 'Films commencés sur les autres pages',
             SettingsResumeElsewhereEpisodes: 'Épisodes commencés sur les autres pages',
-            SettingsCornerButtons: 'Boutons d’angle des vignettes (vu, favori, plus)',
+            SettingsCornerMovies: 'Boutons d’angle des films',
+            SettingsCornerEpisodes: 'Boutons d’angle des épisodes',
+            SettingsCornerSeries: 'Boutons d’angle des séries',
+            SettingsCornerSeasons: 'Boutons d’angle des saisons',
+            SettingsCornerCollections: 'Boutons d’angle des collections',
+            SettingsCornerLibraries: 'Boutons d’angle des médiathèques',
+            SettingsCornerFolders: 'Boutons d’angle des dossiers',
             SettingsMainButtonCollections: 'Bouton principal d’une collection',
             SettingsMainButtonSeries: 'Bouton principal d’une série',
             SettingsMainButtonSeasons: 'Bouton principal d’une saison',
@@ -384,7 +396,13 @@
                     ['resumeThumbnails.home.episodes', 'SettingsResumeHomeEpisodes', 'native'],
                     ['resumeThumbnails.elsewhere.movies', 'SettingsResumeElsewhereMovies', 'native'],
                     ['resumeThumbnails.elsewhere.episodes', 'SettingsResumeElsewhereEpisodes', 'native'],
-                    ['cornerButtons', 'SettingsCornerButtons', 'native', BUTTON_MODES],
+                    ['cornerButtons.movies', 'SettingsCornerMovies', 'native', BUTTON_MODES],
+                    ['cornerButtons.episodes', 'SettingsCornerEpisodes', 'native', BUTTON_MODES],
+                    ['cornerButtons.series', 'SettingsCornerSeries', 'native', BUTTON_MODES],
+                    ['cornerButtons.seasons', 'SettingsCornerSeasons', 'native', BUTTON_MODES],
+                    ['cornerButtons.collections', 'SettingsCornerCollections', 'native', BUTTON_MODES],
+                    ['cornerButtons.libraries', 'SettingsCornerLibraries', 'native', BUTTON_MODES],
+                    ['cornerButtons.folders', 'SettingsCornerFolders', 'native', BUTTON_MODES],
                     ['mainButtons.collections', 'SettingsMainButtonCollections', 'native'],
                     ['mainButtons.series', 'SettingsMainButtonSeries', 'native'],
                     ['mainButtons.seasons', 'SettingsMainButtonSeasons', 'native']
@@ -558,8 +576,13 @@
     // field existed gain it; unknown entries are dropped.
     function normalizePreferences(saved) {
         const result = {};
+        // Migration - Preserve the old single cornerButtons choice by applying it to each new group.
+        const legacyCornerButtons = saved?.mediaActions?.cornerButtons;
         for (const field of PREFERENCE_FIELDS) {
-            const value = readPath(saved, field.path);
+            const isCornerButton = field.path.startsWith('mediaActions.cornerButtons.');
+            const value = isCornerButton && typeof legacyCornerButtons === 'string'
+                ? legacyCornerButtons
+                : readPath(saved, field.path);
             const valid = field.choices ? field.choices.includes(value) : typeof value === 'boolean';
             writePath(result, field.path, valid ? value : field.fallback);
         }
