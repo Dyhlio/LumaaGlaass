@@ -173,7 +173,6 @@ fully reload the client; there is no need to edit the downloaded script.
         },
         nextUpThumbnails: 'native',
         cornerButtons: 'native',
-        resumeButtons: { movies: 'native', episodes: 'native' },
         mainButtons: {
             collections: 'native',
             series: 'native',
@@ -233,7 +232,6 @@ interface show them; Remux already hides them in its own stylesheet.
 | `resumeThumbnails.elsewhere.movies/episodes` | Started movie/episode thumbnails on other pages, except episodes in Next Up |
 | `nextUpThumbnails` | Episode thumbnails on the Next Up page; omitted, it inherits `thumbnails.episodes` |
 | `cornerButtons` | Watched, favorite and more buttons in every thumbnail corner (`native` or `hide`) |
-| `resumeButtons.movies/episodes` | Resume button on a started movie/episode details page |
 | `mainButtons.collections/series/seasons` | Main button on the corresponding container details page |
 
 Types come from Jellyfin metadata, never from item names. Films inside a collection
@@ -245,10 +243,9 @@ it takes priority over `resumeThumbnails.elsewhere.episodes` there. On other pag
 `seasonEpisodeThumbnails` overrides `thumbnails.episodes` in a details-page episode
 list. No setting deletes or rewrites saved playback progress.
 
-`resumeButtons` accepts only `native` or `hide`: opening details when already
-on the same page would be redundant. It does not hide the separate restart button.
-Unstarted movie/episode main buttons and player controls remain unchanged.
-Resumable series, seasons and collections retain native controls.
+`mainButtons` customizes only the main action on collection, series and season
+details pages. Movie/episode actions and player controls remain native.
+Resumable series, seasons and collections retain their native controls.
 
 Missing options use the defaults shown above. Invalid modes fall back to native
 behavior. For example, set `thumbnails.collections: 'native'` to preserve collection

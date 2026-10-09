@@ -6,7 +6,7 @@
     // =====================================================================
     // Configuration
     // =====================================================================
-    // Options - window.LumaaGlaassMediaActionsOptions: native, details or hide (resumeButtons, cornerButtons: native or hide).
+    // Options - window.LumaaGlaassMediaActionsOptions: native, details or hide (cornerButtons: native or hide).
     // Docs: customization.md#media-actions.
     const defaults = {
         thumbnails: {
@@ -21,7 +21,6 @@
         // Corner buttons - Played, favorite and more in a thumbnail's corner.
         // This remains independent from the central thumbnail Play shortcut.
         cornerButtons: 'native',
-        resumeButtons: { movies: 'native', episodes: 'native' },
         mainButtons: { collections: 'native', series: 'native', seasons: 'native' }
     };
     const configured = window.LumaaGlaassMediaActionsOptions || {};
@@ -40,7 +39,6 @@
             elsewhere: group(configured.resumeThumbnails?.elsewhere, defaults.resumeThumbnails.elsewhere, MODES)
         }),
         cornerButtons: choice(configured.cornerButtons, defaults.cornerButtons, BUTTON_MODES),
-        resumeButtons: group(configured.resumeButtons, defaults.resumeButtons, BUTTON_MODES),
         mainButtons: group(configured.mainButtons, defaults.mainButtons, MODES)
     });
     // Features - Card and details actions run only when one of their options is not native;
@@ -48,7 +46,7 @@
     const changed = groups => groups.flatMap(Object.values).some(mode => mode !== 'native');
     const CARDS_ACTIVE = settings.seasonEpisodeThumbnails !== 'native' || settings.nextUpThumbnails !== 'native' ||
         changed([settings.thumbnails, settings.resumeThumbnails.home, settings.resumeThumbnails.elsewhere]);
-    const DETAILS_ACTIVE = changed([settings.mainButtons, settings.resumeButtons]);
+    const DETAILS_ACTIVE = changed([settings.mainButtons]);
 
     // =====================================================================
     // Instance
@@ -161,7 +159,6 @@
     const style = element('style', '', `
         /* Hide only the central image Play shortcut. Corner actions follow cornerButtons. */
         [data-lg-media-hide-thumbnail] :is(.cardOverlayContainer > .cardOverlayButton,.listItemImageButton),
-        html body #itemDetailPage#itemDetailPage[data-lg-media-hide-resume] .mainDetailButtons .btnPlay,
         html body #itemDetailPage#itemDetailPage[data-lg-media-hide-main] .mainDetailButtons :is(.btnPlay,.btnReplay),
         html body #itemDetailPage [data-lg-media-replaced] {
             display: none !important;
@@ -506,7 +503,6 @@
     function clearDetails() {
         if (!current) return;
         current.page.removeAttribute('data-lg-media-hide-main');
-        current.page.removeAttribute('data-lg-media-hide-resume');
         current.button?.remove();
         current.status?.remove();
         for (const { node, hidden } of current.originals || []) {
@@ -547,11 +543,6 @@
             return;
         }
         const position = Number(state.item.UserData?.PlaybackPositionTicks ?? 0);
-        if (['Movie', 'Episode'].includes(state.item.Type)) {
-            state.page.toggleAttribute('data-lg-media-hide-resume', Number.isFinite(position) && position > 0 &&
-                settings.resumeButtons[TYPE_GROUPS[state.item.Type]] === 'hide');
-            return;
-        }
         if (!['Series', 'Season', 'BoxSet'].includes(state.item.Type)) return;
         if (!Number.isFinite(position) || position !== 0) return;
         const mode = settings.mainButtons[TYPE_GROUPS[state.item.Type]];
