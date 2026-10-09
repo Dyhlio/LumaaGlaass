@@ -79,6 +79,7 @@
     --lg-space-option-inset: 9px 12px;
     --lg-space-list-option: 8px;
     --lg-space-popup: 6px;
+    --lg-space-sticky-submit: 24px;
     --lg-size-action: 44px;
     --lg-size-option: 44px;
     --lg-font: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -820,12 +821,13 @@ html[data-theme="dark"] #displayPreferencesPage form button[type="submit"].MuiBu
     margin-top: 48px !important;
 }
 
-/* User preferences - Saving stays in the form flow instead of covering a setting or its menu. */
+/* User preferences - Keep saving reachable while scrolling; limit sticky positioning to preference forms.
+   The shared dropdown picker uses a higher layer and stays above this action. */
 .userPreferencesPage form > .button-submit,
 #lg-preferences form > .button-submit {
-    position: relative !important;
-    inset: auto !important;
-    z-index: auto !important;
+    position: sticky !important;
+    bottom: var(--lg-space-sticky-submit) !important;
+    z-index: 2;
 }
 
 .mdl-switch__input:checked + .mdl-switch__label + .mdl-switch__trackContainer > .mdl-switch__track {
