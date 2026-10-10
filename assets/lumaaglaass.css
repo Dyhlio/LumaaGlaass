@@ -3859,7 +3859,7 @@ html body .cardImageContainer.defaultCardBackground {
 
 .lg-hero-backdrops > div {
     background-size: cover;
-    background-position: center;
+    background-position: center 40%;
     opacity: 0;
     transition: opacity var(--lg-duration-slow) var(--lg-ease);
 }
