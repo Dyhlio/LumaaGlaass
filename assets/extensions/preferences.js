@@ -158,7 +158,7 @@
             '--lg-color-accent': 'The one accent: Play and submit actions, the active tab, checked checkboxes, switches, ' +
                 'sliders, progress bars, scrollbars and MUI tints. Every translucent variant derives from it.',
             '--lg-color-text-on-primary': 'Text on the accent; switch to white with a dark accent.',
-            '--lg-surface-primary-hover': 'Primary actions under the pointer.',
+            '--lg-surface-primary-hover': 'Hovered primary actions; keep it contrasting with the text on the accent.',
             '--lg-color-text': 'Text on glass.',
             '--lg-color-text-secondary': 'Metadata and helper text; keep it at least 65% opaque.',
             '--lg-color-focus': 'Keyboard focus ring of every control.',
@@ -327,7 +327,7 @@
                 'interrupteurs, curseurs, barres de progression, barres de défilement et teintes MUI. Toutes ses ' +
                 'variantes translucides en dérivent.',
             '--lg-color-text-on-primary': 'Texte posé sur l’accent ; passez-le en blanc avec un accent foncé.',
-            '--lg-surface-primary-hover': 'Actions principales sous le pointeur.',
+            '--lg-surface-primary-hover': 'Actions principales au survol ; gardez un contraste avec le texte sur l’accent.',
             '--lg-color-text': 'Texte sur le verre.',
             '--lg-color-text-secondary': 'Métadonnées et textes d’aide ; gardez-le opaque à au moins 65 %.',
             '--lg-color-focus': 'Anneau de focus clavier de chaque contrôle.',
@@ -597,7 +597,7 @@
     const THEME_VARIABLES = THEME_SECTIONS.flatMap(section => section.variables);
     // Recipes - customization.md#quick-recipes: each fills its variables in the form.
     const THEME_RECIPES = [
-        ['SettingsRecipeAccent', { 'color-accent': '#4f8cff', 'color-text-on-primary': '#ffffff' }],
+        ['SettingsRecipeAccent', { 'color-accent': '#4f8cff' }],
         ['SettingsRecipeSquare', { 'radius-scale': '0' }],
         ['SettingsRecipeSofter', { 'radius-scale': '0.5' }],
         ['SettingsRecipeRounder', { 'radius-scale': '1.5' }],

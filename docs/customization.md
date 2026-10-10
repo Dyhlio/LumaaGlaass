@@ -524,7 +524,7 @@ html:root {
 
 | Goal | Paste inside `html:root { … }` |
 | --- | --- |
-| Colored accent (Play, checkboxes, sliders, progress, scrollbars) | `--lg-color-accent: #4f8cff;` `--lg-color-text-on-primary: #ffffff;` |
+| Colored accent (Play, checkboxes, sliders, progress, scrollbars) | `--lg-color-accent: #4f8cff;` |
 | Square corners everywhere | `--lg-radius-scale: 0;` |
 | Softer or rounder corners | `--lg-radius-scale: 0.5;` or `--lg-radius-scale: 1.5;` |
 | More opaque glass | `--lg-surface: rgba(30, 30, 32, 0.7);` |
@@ -539,7 +539,7 @@ html:root {
 | --- | --- | --- |
 | `--lg-color-accent` | `#f5f5f7` | The one accent: Play and submit actions, the active tab, checked checkboxes, switches, sliders, progress bars, scrollbars and MUI tints. Every translucent variant derives from it |
 | `--lg-color-text-on-primary` | `#151517` | Text on the accent; switch to white with a dark accent |
-| `--lg-surface-primary-hover` | `#fff` | Primary actions under the pointer |
+| `--lg-surface-primary-hover` | `var(--lg-surface-primary)` | Primary actions under the pointer; the default preserves the accent's text contrast |
 | `--lg-color-text` / `--lg-color-text-secondary` | `#f5f5f7` / `rgba(245, 245, 247, 0.72)` | Text on glass, then metadata and helper text; keep the second at least `0.65` opaque |
 | `--lg-color-focus` | `#f5f5f7` | Keyboard focus ring of every control |
 | `--lg-color-background` | `#25272c` | Page background behind the artwork |

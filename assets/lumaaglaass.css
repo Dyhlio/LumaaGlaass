@@ -31,7 +31,7 @@
     --lg-surface-hover: color-mix(in srgb, var(--lg-surface), #fff 8%);
     --lg-surface-open: color-mix(in srgb, var(--lg-surface), #fff 14%);
     --lg-surface-primary: var(--lg-color-accent);
-    --lg-surface-primary-hover: #fff;
+    --lg-surface-primary-hover: var(--lg-surface-primary);
     --lg-surface-row-hover: rgba(255,255,255,.08);
     --lg-surface-row-selected: rgba(255,255,255,.12);
     /* Artwork veil - Darkens posters behind their actions; not a control state. */
