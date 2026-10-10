@@ -130,7 +130,24 @@
     };
     const route = () => location.hash.split('?')[0].replace(/\.html$/, '');
     const home = () => route() === '#/home';
-    const nextUp = () => route() === '#/list' && params().get('type')?.toLowerCase() === 'nextup';
+    const isNextUpLink = value => {
+        if (!value) return false;
+        try {
+            const hash = new URL(value, location.href).hash;
+            const separator = hash.indexOf('?');
+            const path = (separator < 0 ? hash : hash.slice(0, separator)).replace(/\.html$/, '').toLowerCase();
+            const query = new URLSearchParams(separator < 0 ? '' : hash.slice(separator + 1));
+            return path === '#/list' && query.get('type')?.toLowerCase() === 'nextup';
+        } catch { return false; }
+    };
+    // Next Up - Match the home shelf by its own link, not by episode type or playback progress.
+    const nextUp = card => {
+        if (route() === '#/list' && params().get('type')?.toLowerCase() === 'nextup') return true;
+        if (!home()) return false;
+        const section = card?.closest('.homeSectionsContainer .verticalSection');
+        const link = section?.querySelector('.sectionTitleContainer a[href]');
+        return isNextUpLink(link?.getAttribute('href'));
+    };
     const currentClient = () => {
         try {
             return window.ApiClient || window.ConnectionManager?.currentApiClient?.();
@@ -269,7 +286,7 @@
         const group = cardGroup(card);
         if (!group) return 'native';
         // The page-specific episode rule takes priority over started-item rules.
-        if (card.dataset.type === 'Episode' && nextUp()) return settings.nextUpThumbnails;
+        if (card.dataset.type === 'Episode' && nextUp(card)) return settings.nextUpThumbnails;
         const position = Number(card.getAttribute('data-positionticks') || 0);
         if (!Number.isFinite(position) || position < 0) return 'native';
         // Resume rules apply to started items everywhere else; progress itself is left untouched.

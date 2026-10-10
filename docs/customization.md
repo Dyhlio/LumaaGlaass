@@ -238,16 +238,17 @@ all seven groups; `'native'` likewise means native in every group.
 | `thumbnails.libraries` | CollectionFolder and UserView library thumbnails |
 | `thumbnails.folders` | Folder thumbnails |
 | `seasonEpisodeThumbnails` | Episode thumbnails in a details page's episode list |
-| `resumeThumbnails.home.movies/episodes` | Started movie/episode thumbnails on the home page |
+| `resumeThumbnails.home.movies/episodes` | Started movie/episode thumbnails on the home page, except episodes in the Next Up shelf |
 | `resumeThumbnails.elsewhere.movies/episodes` | Started movie/episode thumbnails on other pages, except episodes in Next Up |
-| `nextUpThumbnails` | Episode thumbnails on the Next Up page; omitted, it inherits `thumbnails.episodes` |
+| `nextUpThumbnails` | Episode thumbnails in the home-page Next Up shelf and on the dedicated Next Up page; omitted, it inherits `thumbnails.episodes` |
 | `cornerButtons.movies/episodes/series/seasons/collections/libraries/folders` | Watched, favorite and more corner actions for that item group (`native` or `hide`) |
 | `mainButtons.collections/series/seasons` | Main button on the corresponding container details page |
 
 Types come from Jellyfin metadata, never from item names. Films inside a collection
-follow movie rules, not collection rules. On the Next Up page, `nextUpThumbnails`
-controls every episode thumbnail, including episodes with saved playback progress;
-it takes priority over `resumeThumbnails.elsewhere.episodes` there. On other pages,
+follow movie rules, not collection rules. In the home-page Next Up shelf and on the
+dedicated Next Up page, `nextUpThumbnails` controls every episode thumbnail,
+including episodes with saved playback progress; it takes priority over the
+applicable `resumeThumbnails` rule there. On other pages,
 `resumeThumbnails` applies to saved positive playback positions and overrides
 `seasonEpisodeThumbnails` and `thumbnails`. For episodes without saved progress,
 `seasonEpisodeThumbnails` overrides `thumbnails.episodes` in a details-page episode
