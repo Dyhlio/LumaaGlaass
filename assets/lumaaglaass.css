@@ -1852,6 +1852,19 @@ html body #itemDetailPage .btnPlay:has(.polyfinSpinner) {
     justify-content: center !important;
     gap: var(--lg-space-button-group) !important;
 
+    &[data-lg-tooltip-held] {
+        position: relative !important;
+    }
+
+    &[data-lg-tooltip-held] > [data-lg-tooltip-shield] {
+        position: absolute;
+        z-index: 1;
+        inset: 0;
+        border-radius: inherit;
+        cursor: inherit;
+        pointer-events: auto;
+    }
+
     & .detailButton-content {
         display: inline-flex !important;
         flex-flow: row nowrap !important;

@@ -1921,10 +1921,34 @@
         // A script that puts a title back as soon as it moves would
         // loop with the claim forever: a title moved three times in one task stays native.
         let moves = new Map(), movesTimer = 0, rivals = new WeakMap();
-        // Non-rendered elements keep their title semantics.
-        const claimable = node => !node.matches('link,style,meta,script,template,iframe');
+        // Non-rendered titles stay native; the empty shield must keep its title attribute.
+        const claimable = node => !node.matches('link,style,meta,script,template,iframe,[data-lg-tooltip-shield]');
         const labelOf = node => node?.getAttribute('data-lg-tooltip')?.trim() || '';
         const targetOf = event => event.target instanceof Element ? event.target.closest('[data-lg-tooltip]') : null;
+        // Polyfin restores this title while searching; the empty child blocks its native bubble.
+        const heldPlay = node => node.matches('#itemDetailPage .btnPlay') && node.querySelector('.polyfinSpinner');
+        function removeShield(node) {
+            const shield = [...node.children].find(child => child.hasAttribute('data-lg-tooltip-shield'));
+            shield?.remove();
+            if (node.hasAttribute('data-lg-tooltip-held')) node.removeAttribute('data-lg-tooltip-held');
+        }
+        function keepHeldTooltip(node, label) {
+            setAttribute(node, 'data-lg-tooltip', label);
+            if (label.trim() && node.matches('button,a,[role="button"]') && mayName(node)) {
+                setOwnedAttribute(node, 'aria-label', label, 'tooltip');
+            } else {
+                releaseOwnedAttribute(node, 'aria-label', 'tooltip');
+            }
+            if (!node.querySelector(':scope > [data-lg-tooltip-shield]')) {
+                const shield = element('span');
+                shield.setAttribute('data-lg-tooltip-shield', '');
+                shield.setAttribute('title', '');
+                shield.setAttribute('aria-hidden', 'true');
+                setAttribute(node, 'data-lg-tooltip-held', '');
+                node.append(shield);
+            }
+            if (node === active && !popup.hidden) show();
+        }
         const hide = () => {
             clearTimeout(timer);
             timer = 0;
@@ -1960,7 +1984,13 @@
         // An empty title still moves: it stops a parent hint, as natively. A title also names an
         // unnamed control, as natively, until it empties or the page names the control.
         function claim(node) {
-            if (!claiming || !(node instanceof Element) || !node.hasAttribute('title') || !claimable(node)) return;
+            if (!claiming || !(node instanceof Element) || !claimable(node)) return;
+            if (heldPlay(node)) {
+                if (node.hasAttribute('title')) keepHeldTooltip(node, node.getAttribute('title'));
+                return;
+            }
+            removeShield(node);
+            if (!node.hasAttribute('title')) return;
             const fresh = node.getAttribute('title');
             if (contested(node, fresh)) {
                 if (node.hasAttribute('data-lg-tooltip')) release(node);
@@ -1992,6 +2022,8 @@
                 if (record.type === 'attributes') {
                     claim(record.target);
                 } else {
+                    const button = record.target instanceof Element && record.target.closest('#itemDetailPage .btnPlay');
+                    if (button) claim(button);
                     record.addedNodes.forEach(node => { if (node instanceof Element) claimTree(node); });
                 }
             }
@@ -2011,6 +2043,7 @@
                 claimTree(document.documentElement);
             } else {
                 titleObserver.disconnect();
+                document.querySelectorAll('[data-lg-tooltip-held]').forEach(removeShield);
                 document.querySelectorAll('[data-lg-tooltip]').forEach(release);
             }
         }
@@ -2112,6 +2145,7 @@
                 forgetMoves();
                 titleObserver.disconnect();
                 popup.remove();
+                document.querySelectorAll('[data-lg-tooltip-held]').forEach(removeShield);
                 document.querySelectorAll('[data-lg-tooltip]').forEach(release);
             }
         };
