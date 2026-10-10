@@ -3830,7 +3830,7 @@ html body .cardImageContainer.defaultCardBackground {
     overflow: hidden;
     margin: 0 var(--lg-space-gutter) 36px;
     border-radius: var(--lg-radius-panel);
-    min-height: calc(clamp(460px,42vw,680px) + 96px);
+    min-height: calc(clamp(460px,42vw,680px) + 120px);
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
