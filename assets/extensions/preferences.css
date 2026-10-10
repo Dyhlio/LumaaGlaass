@@ -18,6 +18,55 @@
         margin: 0 0 24px;
     }
 
+    & .lg-profile-actions,
+    & .lg-profile-transfer-actions {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: var(--lg-space-button-group);
+        min-width: 0;
+    }
+
+    & .lg-profile-actions > .emby-button,
+    & .lg-profile-transfer-actions > .emby-button,
+    & .lg-profile-url > .emby-button {
+        flex: 0 0 auto;
+        margin: 0;
+    }
+
+    & .lg-profile-transfer {
+        display: grid;
+        gap: var(--lg-space-button-group);
+        min-width: 0;
+    }
+
+    & .lg-profile-url {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: end;
+        gap: var(--lg-space-button-group);
+        min-width: 0;
+    }
+
+    & .lg-profile-url-label {
+        grid-column: 1 / -1;
+        margin: 0;
+    }
+
+    & .lg-profile-url-input {
+        box-sizing: border-box;
+        width: 100%;
+        min-width: 0;
+        min-height: 40px;
+        margin: 0;
+        border-radius: var(--lg-radius);
+        font: inherit;
+    }
+
+    & .lg-profile-status {
+        margin: 8px 0 0;
+    }
+
     & :is(.lg-preferences-description,.lg-preferences-note) {
         margin: 0 0 12px;
     }
@@ -175,6 +224,31 @@
 
     /* Narrow screens - A select or a variable's control takes the whole row, under its label. */
     @media (max-width: 640px) {
+        & .lg-profile-row {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        & .lg-profile-transfer-row {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 8px;
+        }
+
+        & .lg-profile-actions {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+        }
+
+        & .lg-profile-actions > .lg-preference-select {
+            width: 100%;
+            max-width: none;
+        }
+
+        & .lg-profile-transfer-actions > .emby-button {
+            flex: 1 1 auto;
+        }
+
         & .lg-preference:has(> :is(.lg-preference-select,.lg-theme-control)) {
             flex-direction: column;
             align-items: stretch;

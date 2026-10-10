@@ -48,9 +48,9 @@ work with any of these modes.
 display preferences, so they follow the account on every device. The browser
 cache only applies the last saved choice while the server answer is loading.
 
-Its initial values match the extension defaults: carousel and collection filter
-on, library-only recent titles off, count indicators shown, both player controls
-on, version-and-track mode set to native, and every media action native.
+An account with no saved choices starts with the built-in **Recommended** profile.
+Existing saved settings are preserved. **Reset to defaults** restores the Recommended
+feature settings and clears custom theme-variable overrides.
 
 The page controls the home carousel, home library titles, collection filter,
 count indicators, player controls, version and track selection, media actions
@@ -61,6 +61,55 @@ defaults** restores the whole form; use **Save** to keep those defaults for the 
 
 The settings page offers all three modes for version and track selection:
 **Native**, **Panel** and **Dialog**.
+
+### Profiles
+
+The built-in **Recommended** profile matches the suggested choices shown here:
+
+| Area | Recommended settings |
+| --- | --- |
+| Theme | Home carousel, library-only recent titles, mixed-collection filter and hidden count indicators on |
+| Player controls | Version and episode switchers on |
+| Versions and tracks | Native |
+| Thumbnails | Movies, series, seasons, collections, libraries and folders hidden; episodes use Information |
+| Episode lists | Season lists and **À suivre** use Information |
+| Resume thumbnails | Home movies and episodes native; both types hidden elsewhere |
+| Corner buttons | Movies, episodes, series and seasons native; collections, libraries and folders hidden |
+| Main buttons | Collections hidden; series and seasons use Information |
+
+**Apply profile** only fills the form; **Save** is still required to store it on
+the account. Applying Recommended leaves theme variables as they are. Importing a
+profile stages supported values in the form; unknown keys and invalid values are
+ignored, and profile data never executes scripts or loads embedded remote resources.
+Import a local JSON file or paste a direct HTTP(S) JSON URL; URL imports use a
+browser GET without cookies or browser authentication, require the server to allow
+browser access (CORS), and enforce the same 256 KB size limit and profile validation
+as file imports.
+Export downloads a versioned JSON file of the complete current form, including
+theme-variable overrides. An import may contain only some supported fields; omitted
+fields are left as they are. Profiles can be shared as files or direct JSON URLs.
+
+The JSON format identifier is `lumaaglaass-profile`, with version `1`. In an imported
+JSON, the author can choose any `name` display label (up to 64 characters); the
+format and version must remain exact. For example, an import can override just a
+few supported values:
+
+```json
+{
+  "format": "lumaaglaass-profile",
+  "version": 1,
+  "name": "My profile",
+  "settings": {
+    "homeCarousel": true,
+    "mediaActions": {
+      "nextUpThumbnails": "details"
+    }
+  }
+}
+```
+
+An unknown format or version is rejected. Within a supported version, unknown
+fields and values invalid for their setting are skipped and reported before Save.
 
 Use this page instead of individual extension loaders. Player controls activate
 when **Version** or **Episodes** is enabled; media actions activate automatically

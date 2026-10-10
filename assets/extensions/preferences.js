@@ -42,6 +42,35 @@
         en: {
             SettingsIntro: 'Choose the LumaaGlaass features for this account. They are saved on the server and follow ' +
                 'the account on every device.',
+            SettingsProfiles: 'Profiles',
+            SettingsProfilesHelp: 'Apply the recommended settings, import a JSON profile from a file or URL, or export the current settings. ' +
+                'URL imports need a CORS-enabled HTTP(S) endpoint. Save writes changes to the account; Recommended leaves theme variables unchanged.',
+            SettingsProfile: 'Profile',
+            SettingsProfileFileActions: 'JSON file',
+            SettingsProfileRecommended: 'Recommended',
+            SettingsProfileApply: 'Apply profile',
+            SettingsProfileImport: 'Import JSON file',
+            SettingsProfileUrlLabel: 'Profile JSON URL',
+            SettingsProfileUrlPlaceholder: 'https://example.com/profile.json',
+            SettingsProfileImportUrl: 'Import URL',
+            SettingsProfileUrlRequired: 'Enter a profile URL.',
+            SettingsProfileUrlInvalid: 'Enter a valid HTTP or HTTPS URL without embedded credentials.',
+            SettingsProfileUrlLoading: 'Loading profile from URL…',
+            SettingsProfileUrlReadError: 'Could not load the URL. Check that it serves JSON and allows browser access (CORS).',
+            SettingsProfileExport: 'Export JSON',
+            SettingsProfileActive: 'Current settings: ',
+            SettingsProfileCustom: 'Custom',
+            SettingsProfileImportedName: 'Imported profile',
+            SettingsProfileApplied: 'Recommended settings loaded. Save to apply them to this account.',
+            SettingsProfileAppliedPartial: 'Recommended settings loaded. Some options are controlled by the server and were left unchanged.',
+            SettingsProfileImported: 'Profile loaded into the form. Review it, then save to apply it.',
+            SettingsProfileImportedPartial: 'Profile loaded. Unsupported or invalid entries were ignored; review it before saving.',
+            SettingsProfileExported: 'Profile downloaded.',
+            SettingsProfileInvalid: 'This is not a supported LumaaGlaass profile.',
+            SettingsProfileTooLarge: 'The profile exceeds the 256 KB size limit.',
+            SettingsProfileNoSettings: 'The profile contains no supported settings.',
+            SettingsProfileReadError: 'Could not read the profile. Check that it is a valid JSON file.',
+            SettingsProfileExportError: 'The profile could not be exported.',
             SettingsTheme: 'Theme',
             SettingsHomeCarousel: 'Home carousel',
             SettingsHomeCarouselHelp: 'Rotating artwork on the home page. Off, a still media background remains.',
@@ -95,7 +124,7 @@
             SettingsLoadError: 'The settings could not be loaded. Check the connection, then try again.',
             SettingsRetry: 'Try again',
             SettingsResetDefaults: 'Reset to defaults',
-            SettingsDefaultsRestored: 'Default settings restored. Save to keep them.',
+            SettingsDefaultsRestored: 'Recommended settings restored. Save to keep them.',
             SettingsSaving: 'Saving…',
             SettingsSaved: 'Settings saved.',
             SettingsSavedOther: 'Settings saved. They apply the next time this user opens the web client.',
@@ -179,6 +208,35 @@
         fr: {
             SettingsIntro: 'Choisissez les fonctions LumaaGlaass de ce compte. Elles sont enregistrées sur le serveur et ' +
                 'suivent le compte sur tous les appareils.',
+            SettingsProfiles: 'Profils',
+            SettingsProfilesHelp: 'Appliquez les réglages recommandés, importez un profil JSON depuis un fichier ou une URL, ou exportez les réglages actuels. ' +
+                'Une URL doit autoriser l’accès du navigateur (CORS) en HTTP(S). Enregistrer applique les changements au compte ; Recommandé conserve les variables du thème.',
+            SettingsProfile: 'Profil',
+            SettingsProfileFileActions: 'Fichier JSON',
+            SettingsProfileRecommended: 'Recommandé',
+            SettingsProfileApply: 'Appliquer le profil',
+            SettingsProfileImport: 'Importer un fichier JSON',
+            SettingsProfileUrlLabel: 'URL du profil JSON',
+            SettingsProfileUrlPlaceholder: 'https://exemple.com/profil.json',
+            SettingsProfileImportUrl: 'Importer l’URL',
+            SettingsProfileUrlRequired: 'Saisissez l’URL d’un profil.',
+            SettingsProfileUrlInvalid: 'Saisissez une URL HTTP ou HTTPS valide, sans identifiants intégrés.',
+            SettingsProfileUrlLoading: 'Chargement du profil depuis l’URL…',
+            SettingsProfileUrlReadError: 'Impossible de charger cette URL. Vérifiez qu’elle fournit du JSON et autorise l’accès du navigateur (CORS).',
+            SettingsProfileExport: 'Exporter JSON',
+            SettingsProfileActive: 'Réglages actuels : ',
+            SettingsProfileCustom: 'Personnalisé',
+            SettingsProfileImportedName: 'Profil importé',
+            SettingsProfileApplied: 'Réglages recommandés chargés. Enregistrez pour les appliquer à ce compte.',
+            SettingsProfileAppliedPartial: 'Réglages recommandés chargés. Certaines options gérées par le serveur sont restées inchangées.',
+            SettingsProfileImported: 'Profil chargé dans le formulaire. Vérifiez-le, puis enregistrez pour l’appliquer.',
+            SettingsProfileImportedPartial: 'Profil chargé. Les champs invalides ou non pris en charge ont été ignorés ; vérifiez avant d’enregistrer.',
+            SettingsProfileExported: 'Profil téléchargé.',
+            SettingsProfileInvalid: 'Ce fichier n’est pas un profil LumaaGlaass pris en charge.',
+            SettingsProfileTooLarge: 'Le profil dépasse la taille maximale de 256 Ko.',
+            SettingsProfileNoSettings: 'Le profil ne contient aucun réglage pris en charge.',
+            SettingsProfileReadError: 'Impossible de lire le profil. Vérifiez qu’il s’agit d’un fichier JSON valide.',
+            SettingsProfileExportError: 'Le profil n’a pas pu être exporté.',
             SettingsTheme: 'Thème',
             SettingsHomeCarousel: 'Carrousel d’accueil',
             SettingsHomeCarouselHelp: 'Images défilantes sur l’accueil. Désactivé, un fond fixe reste affiché.',
@@ -232,7 +290,7 @@
             SettingsLoadError: 'Les paramètres n’ont pas pu être chargés. Vérifiez la connexion, puis réessayez.',
             SettingsRetry: 'Réessayer',
             SettingsResetDefaults: 'Réinitialiser par défaut',
-            SettingsDefaultsRestored: 'Paramètres par défaut rétablis. Sauvegardez pour les conserver.',
+            SettingsDefaultsRestored: 'Réglages recommandés rétablis. Enregistrez pour les conserver.',
             SettingsSaving: 'Enregistrement…',
             SettingsSaved: 'Paramètres enregistrés.',
             SettingsSavedOther: 'Paramètres enregistrés. Ils s’appliqueront à la prochaine ouverture du client web par cet ' +
@@ -346,68 +404,105 @@
     const PREFERENCES_ROUTE = '#/mypreferenceslumaaglaass', PREFERENCES_TITLE = 'LumaaGlaass';
     const PREFERENCES_CACHE = 'lumaaglaass-settings:';
     const ACTION_MODES = ['native', 'details', 'hide'], BUTTON_MODES = ['native', 'hide'];
+    // Recommended - Explicit per-account starting choices; it does not set public theme variables.
+    const RECOMMENDED_VALUES = Object.freeze({
+        homeCarousel: true,
+        homeLibraryNamesOnly: true,
+        collectionFilter: true,
+        hideCountIndicators: true,
+        'playerControls.versions': true,
+        'playerControls.episodes': true,
+        'sourceSelection.mode': 'native',
+        'mediaActions.thumbnails.movies': 'hide',
+        'mediaActions.thumbnails.episodes': 'details',
+        'mediaActions.thumbnails.series': 'hide',
+        'mediaActions.thumbnails.seasons': 'hide',
+        'mediaActions.thumbnails.collections': 'hide',
+        'mediaActions.thumbnails.libraries': 'hide',
+        'mediaActions.thumbnails.folders': 'hide',
+        'mediaActions.seasonEpisodeThumbnails': 'details',
+        'mediaActions.nextUpThumbnails': 'details',
+        'mediaActions.resumeThumbnails.home.movies': 'native',
+        'mediaActions.resumeThumbnails.home.episodes': 'native',
+        'mediaActions.resumeThumbnails.elsewhere.movies': 'hide',
+        'mediaActions.resumeThumbnails.elsewhere.episodes': 'hide',
+        'mediaActions.cornerButtons.movies': 'native',
+        'mediaActions.cornerButtons.episodes': 'native',
+        'mediaActions.cornerButtons.series': 'native',
+        'mediaActions.cornerButtons.seasons': 'native',
+        'mediaActions.cornerButtons.collections': 'hide',
+        'mediaActions.cornerButtons.libraries': 'hide',
+        'mediaActions.cornerButtons.folders': 'hide',
+        'mediaActions.mainButtons.collections': 'hide',
+        'mediaActions.mainButtons.series': 'details',
+        'mediaActions.mainButtons.seasons': 'details'
+    });
+    const recommendedMedia = path => RECOMMENDED_VALUES['mediaActions.' + path];
     const MODE_LABELS = {
         native: 'SettingsModeNative', details: 'SettingsModeDetails', hide: 'SettingsModeHide',
         panel: 'SettingsModePanel', dialog: 'SettingsModeDialog'
     };
     // Fields - One control each, by its path in the saved object: choices make a select, no choices a
     // switch. requires names the switch that enables a field; asset, the file it loads (Assets).
-    // Defaults are the documented ones; the main loader's options stand for the theme's two.
+    // Defaults here are the per-account Recommended profile; the main loader's global options remain separate.
     const PREFERENCE_SECTIONS = [
         {
             title: 'SettingsTheme', fields: [
-                { path: 'homeCarousel', label: 'SettingsHomeCarousel', help: 'SettingsHomeCarouselHelp', fallback: host.defaults.homeCarousel },
+                { path: 'homeCarousel', label: 'SettingsHomeCarousel', help: 'SettingsHomeCarouselHelp', fallback: RECOMMENDED_VALUES.homeCarousel },
                 {
                     path: 'homeLibraryNamesOnly', label: 'SettingsHomeLibraryNamesOnly',
-                    help: 'SettingsHomeLibraryNamesOnlyHelp', fallback: host.defaults.homeLibraryNamesOnly
+                    help: 'SettingsHomeLibraryNamesOnlyHelp', fallback: RECOMMENDED_VALUES.homeLibraryNamesOnly
                 },
                 {
                     path: 'collectionFilter', label: 'SettingsCollectionFilter', help: 'SettingsCollectionFilterHelp',
-                    fallback: host.defaults.collectionFilter
+                    fallback: RECOMMENDED_VALUES.collectionFilter
                 },
                 {
                     path: 'hideCountIndicators', label: 'SettingsCountIndicators', help: 'SettingsCountIndicatorsHelp',
-                    fallback: false, asset: 'countIndicators'
+                    fallback: RECOMMENDED_VALUES.hideCountIndicators, asset: 'countIndicators'
                 }
             ]
         },
         {
             title: 'SettingsPlayerControls', help: 'SettingsPlayerControlsHelp', asset: 'playerControls', fields: [
-                { path: 'playerControls.versions', label: 'SettingsVersions', fallback: true },
-                { path: 'playerControls.episodes', label: 'SettingsEpisodes', fallback: true }
+                { path: 'playerControls.versions', label: 'SettingsVersions', fallback: RECOMMENDED_VALUES['playerControls.versions'] },
+                { path: 'playerControls.episodes', label: 'SettingsEpisodes', fallback: RECOMMENDED_VALUES['playerControls.episodes'] }
             ]
         },
         {
             title: 'SettingsSourceSelection', help: 'SettingsSourceSelectionHelp', asset: 'sourceSelection', fields: [
-                { path: 'sourceSelection.mode', label: 'SettingsSourceMode', choices: ['native', 'panel', 'dialog'], fallback: 'native' }
+                {
+                    path: 'sourceSelection.mode', label: 'SettingsSourceMode', choices: ['native', 'panel', 'dialog'],
+                    fallback: RECOMMENDED_VALUES['sourceSelection.mode']
+                }
             ]
         },
         {
             title: 'SettingsMediaActions', help: 'SettingsMediaActionsHelp', asset: 'mediaActions', fields: [
                 ...[
-                    ['thumbnails.movies', 'SettingsThumbnailsMovies', 'native'],
-                    ['thumbnails.episodes', 'SettingsThumbnailsEpisodes', 'native'],
-                    ['thumbnails.series', 'SettingsThumbnailsSeries', 'native'],
-                    ['thumbnails.seasons', 'SettingsThumbnailsSeasons', 'native'],
-                    ['thumbnails.collections', 'SettingsThumbnailsCollections', 'native'],
-                    ['thumbnails.libraries', 'SettingsThumbnailsLibraries', 'native'],
-                    ['thumbnails.folders', 'SettingsThumbnailsFolders', 'native'],
-                    ['seasonEpisodeThumbnails', 'SettingsSeasonEpisodes', 'native'],
-                    ['nextUpThumbnails', 'SettingsNextUpEpisodes', 'native'],
-                    ['resumeThumbnails.home.movies', 'SettingsResumeHomeMovies', 'native'],
-                    ['resumeThumbnails.home.episodes', 'SettingsResumeHomeEpisodes', 'native'],
-                    ['resumeThumbnails.elsewhere.movies', 'SettingsResumeElsewhereMovies', 'native'],
-                    ['resumeThumbnails.elsewhere.episodes', 'SettingsResumeElsewhereEpisodes', 'native'],
-                    ['cornerButtons.movies', 'SettingsCornerMovies', 'native', BUTTON_MODES],
-                    ['cornerButtons.episodes', 'SettingsCornerEpisodes', 'native', BUTTON_MODES],
-                    ['cornerButtons.series', 'SettingsCornerSeries', 'native', BUTTON_MODES],
-                    ['cornerButtons.seasons', 'SettingsCornerSeasons', 'native', BUTTON_MODES],
-                    ['cornerButtons.collections', 'SettingsCornerCollections', 'native', BUTTON_MODES],
-                    ['cornerButtons.libraries', 'SettingsCornerLibraries', 'native', BUTTON_MODES],
-                    ['cornerButtons.folders', 'SettingsCornerFolders', 'native', BUTTON_MODES],
-                    ['mainButtons.collections', 'SettingsMainButtonCollections', 'native'],
-                    ['mainButtons.series', 'SettingsMainButtonSeries', 'native'],
-                    ['mainButtons.seasons', 'SettingsMainButtonSeasons', 'native']
+                    ['thumbnails.movies', 'SettingsThumbnailsMovies', recommendedMedia('thumbnails.movies')],
+                    ['thumbnails.episodes', 'SettingsThumbnailsEpisodes', recommendedMedia('thumbnails.episodes')],
+                    ['thumbnails.series', 'SettingsThumbnailsSeries', recommendedMedia('thumbnails.series')],
+                    ['thumbnails.seasons', 'SettingsThumbnailsSeasons', recommendedMedia('thumbnails.seasons')],
+                    ['thumbnails.collections', 'SettingsThumbnailsCollections', recommendedMedia('thumbnails.collections')],
+                    ['thumbnails.libraries', 'SettingsThumbnailsLibraries', recommendedMedia('thumbnails.libraries')],
+                    ['thumbnails.folders', 'SettingsThumbnailsFolders', recommendedMedia('thumbnails.folders')],
+                    ['seasonEpisodeThumbnails', 'SettingsSeasonEpisodes', recommendedMedia('seasonEpisodeThumbnails')],
+                    ['nextUpThumbnails', 'SettingsNextUpEpisodes', recommendedMedia('nextUpThumbnails')],
+                    ['resumeThumbnails.home.movies', 'SettingsResumeHomeMovies', recommendedMedia('resumeThumbnails.home.movies')],
+                    ['resumeThumbnails.home.episodes', 'SettingsResumeHomeEpisodes', recommendedMedia('resumeThumbnails.home.episodes')],
+                    ['resumeThumbnails.elsewhere.movies', 'SettingsResumeElsewhereMovies', recommendedMedia('resumeThumbnails.elsewhere.movies')],
+                    ['resumeThumbnails.elsewhere.episodes', 'SettingsResumeElsewhereEpisodes', recommendedMedia('resumeThumbnails.elsewhere.episodes')],
+                    ['cornerButtons.movies', 'SettingsCornerMovies', recommendedMedia('cornerButtons.movies'), BUTTON_MODES],
+                    ['cornerButtons.episodes', 'SettingsCornerEpisodes', recommendedMedia('cornerButtons.episodes'), BUTTON_MODES],
+                    ['cornerButtons.series', 'SettingsCornerSeries', recommendedMedia('cornerButtons.series'), BUTTON_MODES],
+                    ['cornerButtons.seasons', 'SettingsCornerSeasons', recommendedMedia('cornerButtons.seasons'), BUTTON_MODES],
+                    ['cornerButtons.collections', 'SettingsCornerCollections', recommendedMedia('cornerButtons.collections'), BUTTON_MODES],
+                    ['cornerButtons.libraries', 'SettingsCornerLibraries', recommendedMedia('cornerButtons.libraries'), BUTTON_MODES],
+                    ['cornerButtons.folders', 'SettingsCornerFolders', recommendedMedia('cornerButtons.folders'), BUTTON_MODES],
+                    ['mainButtons.collections', 'SettingsMainButtonCollections', recommendedMedia('mainButtons.collections')],
+                    ['mainButtons.series', 'SettingsMainButtonSeries', recommendedMedia('mainButtons.series')],
+                    ['mainButtons.seasons', 'SettingsMainButtonSeasons', recommendedMedia('mainButtons.seasons')]
                 ].map(([path, label, fallback, choices = ACTION_MODES]) =>
                     ({ path: 'mediaActions.' + path, label, choices, fallback }))
             ]
@@ -570,10 +665,20 @@
     }
     const hex = ({ r, g, b }) => '#' + [r, g, b].map(channel => channel.toString(16).padStart(2, '0')).join('');
     const readPath = (object, path) => path.split('.').reduce((value, part) => value?.[part], object);
+    const hasOwn = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
     function writePath(object, path, value) {
         const parts = path.split('.'), last = parts.pop();
         parts.reduce((node, part) => node[part] ||= {}, object)[last] = value;
     }
+    const PROFILE_FORMAT = 'lumaaglaass-profile', PROFILE_VERSION = 1, PROFILE_MAX_BYTES = 256 * 1024;
+    const PROFILE_FIELD_PATHS = new Set(PREFERENCE_FIELDS.map(field => field.path));
+    const PROFILE_FIELD_PREFIXES = new Set(PREFERENCE_FIELDS.flatMap(field => {
+        const parts = field.path.split('.');
+        return parts.slice(1).map((_, index) => parts.slice(0, index + 1).join('.'));
+    }));
+    const THEME_VARIABLES_BY_NAME = new Map(THEME_VARIABLES.map(variable => [variable.name, variable]));
+    const RECOMMENDED_PROFILE_SETTINGS = {};
+    for (const [path, value] of Object.entries(RECOMMENDED_VALUES)) writePath(RECOMMENDED_PROFILE_SETTINGS, path, value);
     // Normalize - Every field once: its saved value when valid, else its default. Saves made before a
     // field existed gain it; unknown entries are dropped.
     function normalizePreferences(saved) {
@@ -770,6 +875,86 @@
             else document.title = PREFERENCES_TITLE;
         }
     }
+    function createProfileSection(state) {
+        const block = element('div', 'verticalSection verticalSection-extrabottompadding lg-preferences-section lg-profile-section');
+        block.append(element('h2', 'sectionTitle', translate('SettingsProfiles')),
+            element('p', 'fieldDescription lg-preferences-description', translate('SettingsProfilesHelp')));
+
+        const row = element('div', 'lg-preference lg-profile-row');
+        const label = element('label', 'lg-preference-label', translate('SettingsProfile'));
+        const picker = preferenceSelect();
+        picker.control.id = 'lg-profile-picker';
+        picker.trigger.id = 'lg-profile-picker-trigger';
+        picker.trigger.setAttribute('aria-labelledby', 'lg-profile-picker-label');
+        label.id = 'lg-profile-picker-label';
+        label.htmlFor = picker.trigger.id;
+        const recommended = element('option', '', translate('SettingsProfileRecommended'));
+        recommended.value = 'recommended';
+        picker.control.append(recommended);
+        picker.control.value = 'recommended';
+        picker.sync();
+
+        const actions = element('div', 'lg-profile-actions');
+        const apply = element('button', 'raised emby-button', translate('SettingsProfileApply'));
+        apply.type = 'button';
+        actions.append(picker.shell, apply);
+        row.append(label, actions);
+
+        const transfer = element('div', 'lg-profile-transfer');
+        const transferRow = element('div', 'lg-preference lg-profile-transfer-row');
+        const transferLabel = element('div', 'lg-preference-label', translate('SettingsProfileFileActions'));
+        const transferActions = element('div', 'lg-profile-transfer-actions');
+        const importButton = element('button', 'raised emby-button', translate('SettingsProfileImport'));
+        importButton.type = 'button';
+        const exportButton = element('button', 'raised emby-button', translate('SettingsProfileExport'));
+        exportButton.type = 'button';
+        transferActions.append(importButton, exportButton);
+        transferRow.append(transferLabel, transferActions);
+
+        const urlGroup = element('div', 'lg-profile-url');
+        const urlLabel = element('label', 'fieldDescription lg-profile-url-label', translate('SettingsProfileUrlLabel'));
+        const urlInput = element('input', 'emby-input lg-profile-url-input');
+        urlInput.id = 'lg-profile-url';
+        urlInput.type = 'url';
+        urlInput.placeholder = translate('SettingsProfileUrlPlaceholder');
+        urlInput.autocomplete = 'url';
+        urlInput.spellcheck = false;
+        urlLabel.htmlFor = urlInput.id;
+        const urlButton = element('button', 'raised emby-button', translate('SettingsProfileImportUrl'));
+        urlButton.type = 'button';
+        urlGroup.append(urlLabel, urlInput, urlButton);
+        transfer.append(transferRow, urlGroup);
+
+        const input = element('input', 'lg-profile-file');
+        input.type = 'file';
+        input.accept = '.json,application/json';
+        input.hidden = true;
+        const status = element('p', 'fieldDescription lg-profile-status');
+        status.setAttribute('role', 'status');
+        status.setAttribute('aria-live', 'polite');
+        status.setAttribute('aria-atomic', 'true');
+
+        Object.assign(state, { profileSelect: picker, profileApply: apply, profileImportButton: importButton,
+            profileImport: input, profileExport: exportButton, profileUrlInput: urlInput, profileUrlImport: urlButton,
+            profileStatus: status, importedProfile: null, profileBusy: false });
+        apply.addEventListener('click', () => applySelectedProfile(state));
+        importButton.addEventListener('click', () => input.click());
+        input.addEventListener('change', () => {
+            const file = input.files?.[0];
+            input.value = '';
+            if (file) void importProfile(state, file);
+        });
+        urlButton.addEventListener('click', () => void importProfileUrl(state));
+        urlInput.addEventListener('keydown', event => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                urlButton.click();
+            }
+        });
+        exportButton.addEventListener('click', () => exportProfile(state));
+        block.append(row, transfer, status, input);
+        return block;
+    }
     function openPreferencesPage(page, api, key, userId) {
         const container = element('div', 'lg-preferences padded-left padded-right padded-bottom-page padded-top');
         container.id = 'lg-preferences';
@@ -792,7 +977,8 @@
             state.notes.set(asset, node);
             return node;
         };
-        fields.append(element('p', 'fieldDescription lg-preferences-intro', translate('SettingsIntro')));
+        fields.append(element('p', 'fieldDescription lg-preferences-intro', translate('SettingsIntro')),
+            createProfileSection(state));
         for (const section of PREFERENCE_SECTIONS) {
             const block = element('div', 'verticalSection verticalSection-extrabottompadding lg-preferences-section');
             block.append(element('h2', 'sectionTitle', translate(section.title)));
@@ -849,14 +1035,17 @@
         form.addEventListener('change', () => {
             setText(state.status, '');
             syncPreferenceControls(state);
+            updateProfileStatus(state);
         });
         // Theme - Every edit previews at once; Save keeps it, leaving the page restores the saved values.
         form.addEventListener('input', event => {
             const entry = state.theme.get(event.target.dataset?.lgVariable);
-            if (!entry) return;
-            if (entry.variable.type.control === 'color') entry.set = true;
+            if (entry) {
+                if (entry.variable.type.control === 'color') entry.set = true;
+                previewTheme(state);
+            }
             setText(state.status, '');
-            previewTheme(state);
+            updateProfileStatus(state);
         });
         form.addEventListener('submit', event => {
             event.preventDefault();
@@ -898,6 +1087,293 @@
         }
         for (const entry of state.theme.values()) setThemeEntry(entry, values.theme[entry.variable.name] || '');
         syncPreferenceControls(state);
+        updateProfileStatus(state);
+    }
+    function profileMatchesForm(state, profileSettings) {
+        for (const [path, { field, control }] of state.controls) {
+            const expected = readPath(profileSettings, path);
+            if (expected === undefined) continue;
+            const actual = field.choices ? control.value : control.checked;
+            if (actual !== expected) return false;
+        }
+        for (const [name, entry] of state.theme) {
+            if (hasOwn(profileSettings.theme || {}, name) && themeEntryValue(entry) !== profileSettings.theme[name]) {
+                return false;
+            }
+        }
+        return true;
+    }
+    function currentProfileName(state) {
+        if (profileMatchesForm(state, RECOMMENDED_PROFILE_SETTINGS)) return translate('SettingsProfileRecommended');
+        if (state.importedProfile && profileMatchesForm(state, state.importedProfile.settings)) return state.importedProfile.name;
+        return translate('SettingsProfileCustom');
+    }
+    function updateProfileStatus(state) {
+        if (state.profileStatus) setText(state.profileStatus, translate('SettingsProfileActive') + currentProfileName(state));
+    }
+    function applyProfileSettings(state, settings) {
+        let skipped = 0;
+        for (const [path, { field, control }] of state.controls) {
+            const value = readPath(settings, path);
+            if (value === undefined) continue;
+            const valid = field.choices ? field.choices.includes(value) : typeof value === 'boolean';
+            if (!valid) continue;
+            if (control.disabled) {
+                skipped++;
+                continue;
+            }
+            if (field.choices) control.value = value;
+            else control.checked = value;
+        }
+        let themeChanged = false;
+        for (const [name, entry] of state.theme) {
+            if (!hasOwn(settings.theme || {}, name)) continue;
+            setThemeEntry(entry, settings.theme[name]);
+            themeChanged = true;
+        }
+        syncPreferenceControls(state);
+        if (themeChanged) previewTheme(state);
+        updateProfileStatus(state);
+        return skipped;
+    }
+    function applySelectedProfile(state) {
+        if (state.fields.disabled || state.profileBusy) return;
+        if (state.profileSelect.control.value === 'recommended') {
+            const skipped = applyProfileSettings(state, RECOMMENDED_PROFILE_SETTINGS);
+            setText(state.profileStatus, translate(skipped ? 'SettingsProfileAppliedPartial' : 'SettingsProfileApplied'));
+        } else if (state.profileSelect.control.value === 'imported' && state.importedProfile) {
+            const skipped = applyProfileSettings(state, state.importedProfile.settings);
+            setText(state.profileStatus, translate(state.importedProfile.skipped || skipped
+                ? 'SettingsProfileImportedPartial' : 'SettingsProfileImported'));
+        }
+    }
+    function decodeProfile(payload) {
+        if (!payload || typeof payload !== 'object' || Array.isArray(payload) ||
+            payload.format !== PROFILE_FORMAT || payload.version !== PROFILE_VERSION ||
+            !payload.settings || typeof payload.settings !== 'object' || Array.isArray(payload.settings)) return null;
+
+        const settings = {}, raw = payload.settings;
+        let accepted = 0, skipped = false;
+        for (const field of PREFERENCE_FIELDS) {
+            const value = readPath(raw, field.path);
+            if (value === undefined) continue;
+            const valid = field.choices ? field.choices.includes(value) : typeof value === 'boolean';
+            if (valid) {
+                writePath(settings, field.path, value);
+                accepted++;
+            } else skipped = true;
+        }
+        if (raw.theme !== undefined) {
+            if (!raw.theme || typeof raw.theme !== 'object' || Array.isArray(raw.theme)) skipped = true;
+            else for (const [name, value] of Object.entries(raw.theme)) {
+                const variable = THEME_VARIABLES_BY_NAME.get(name);
+                if (!variable) {
+                    skipped = true;
+                    continue;
+                }
+                if (value === '') {
+                    settings.theme ||= {};
+                    settings.theme[name] = '';
+                    accepted++;
+                } else if (typeof value === 'string' && variable.type.valid(value.trim(), variable)) {
+                    settings.theme ||= {};
+                    settings.theme[name] = value.trim();
+                    accepted++;
+                } else skipped = true;
+            }
+        }
+
+        const pending = [['', raw]];
+        while (pending.length) {
+            const [path, value] = pending.pop();
+            if (PROFILE_FIELD_PATHS.has(path)) continue;
+            if (path === 'theme') {
+                if (value && typeof value === 'object' && !Array.isArray(value)) {
+                    for (const name of Object.keys(value)) if (!THEME_VARIABLES_BY_NAME.has(name)) skipped = true;
+                } else skipped = true;
+            } else if ((path === '' || PROFILE_FIELD_PREFIXES.has(path)) && value &&
+                typeof value === 'object' && !Array.isArray(value)) {
+                for (const [key, child] of Object.entries(value)) pending.push([path ? path + '.' + key : key, child]);
+            } else if (path) skipped = true;
+        }
+        if (!accepted) return { error: 'noSettings' };
+
+        const safeName = typeof payload.name === 'string'
+            ? payload.name.replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 64)
+            : '';
+        return {
+            name: safeName || translate('SettingsProfileImportedName'),
+            settings, skipped, accepted
+        };
+    }
+    function loadImportedProfile(state, payload) {
+        if (preferencesPage !== state || state.fields.disabled) return;
+        const profile = decodeProfile(payload);
+        if (!profile) {
+            setText(state.profileStatus, translate('SettingsProfileInvalid'));
+            return;
+        }
+        if (profile.error === 'noSettings') {
+            setText(state.profileStatus, translate('SettingsProfileNoSettings'));
+            return;
+        }
+        state.importedProfile = profile;
+        let option = state.profileSelect.control.querySelector('option[value="imported"]');
+        if (!option) {
+            option = element('option');
+            option.value = 'imported';
+            state.profileSelect.control.append(option);
+        }
+        setText(option, profile.name);
+        state.profileSelect.control.value = 'imported';
+        state.profileSelect.sync();
+        const skipped = applyProfileSettings(state, profile.settings);
+        setText(state.profileStatus, translate(profile.skipped || skipped ? 'SettingsProfileImportedPartial' : 'SettingsProfileImported'));
+    }
+    async function importProfile(state, file) {
+        if (state.fields.disabled || state.profileBusy) return;
+        if (file.size > PROFILE_MAX_BYTES) {
+            setText(state.profileStatus, translate('SettingsProfileTooLarge'));
+            return;
+        }
+        let payload;
+        try {
+            payload = JSON.parse(await file.text());
+        } catch {
+            setText(state.profileStatus, translate('SettingsProfileReadError'));
+            return;
+        }
+        loadImportedProfile(state, payload);
+    }
+    function profileImportError(code) {
+        const error = new Error(code);
+        error.code = code;
+        return error;
+    }
+    async function readProfileResponse(response) {
+        const contentLength = response.headers.get('content-length');
+        if (contentLength && Number(contentLength) > PROFILE_MAX_BYTES) throw profileImportError('tooLarge');
+
+        const reader = response.body?.getReader?.();
+        if (!reader) {
+            const text = await response.text();
+            if (new TextEncoder().encode(text).byteLength > PROFILE_MAX_BYTES) throw profileImportError('tooLarge');
+            return text;
+        }
+
+        const chunks = [];
+        let size = 0;
+        try {
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                size += value.byteLength;
+                if (size > PROFILE_MAX_BYTES) {
+                    void reader.cancel().catch(() => {});
+                    throw profileImportError('tooLarge');
+                }
+                chunks.push(value);
+            }
+        } finally {
+            reader.releaseLock();
+        }
+        const bytes = new Uint8Array(size);
+        let offset = 0;
+        for (const chunk of chunks) {
+            bytes.set(chunk, offset);
+            offset += chunk.byteLength;
+        }
+        return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+    }
+    async function importProfileUrl(state) {
+        if (state.fields.disabled || state.profileBusy) return;
+        const value = state.profileUrlInput.value.trim();
+        if (!value) {
+            setText(state.profileStatus, translate('SettingsProfileUrlRequired'));
+            state.profileUrlInput.focus();
+            return;
+        }
+
+        let url;
+        try {
+            url = new URL(value);
+        } catch {
+            setText(state.profileStatus, translate('SettingsProfileUrlInvalid'));
+            state.profileUrlInput.focus();
+            return;
+        }
+        if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) {
+            setText(state.profileStatus, translate('SettingsProfileUrlInvalid'));
+            state.profileUrlInput.focus();
+            return;
+        }
+        url.hash = '';
+
+        state.profileBusy = true;
+        const busyControls = [state.profileApply, state.profileImportButton, state.profileImport,
+            state.profileExport, state.profileUrlInput, state.profileUrlImport, state.submit].filter(Boolean);
+        const priorDisabled = busyControls.map(control => control.disabled);
+        busyControls.forEach(control => { control.disabled = true; });
+        setText(state.profileStatus, translate('SettingsProfileUrlLoading'));
+
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 15000);
+        try {
+            const response = await fetch(url.href, {
+                method: 'GET', mode: 'cors', credentials: 'omit', redirect: 'follow',
+                cache: 'no-store', referrerPolicy: 'no-referrer', headers: { Accept: 'application/json' },
+                signal: controller.signal
+            });
+            if (!response.ok) throw new Error('request-failed');
+            const finalUrl = new URL(response.url || url.href, url.href);
+            if (!['http:', 'https:'].includes(finalUrl.protocol)) throw new Error('invalid-redirect');
+            const payload = JSON.parse(await readProfileResponse(response));
+            loadImportedProfile(state, payload);
+        } catch (error) {
+            setText(state.profileStatus, translate(error?.code === 'tooLarge'
+                ? 'SettingsProfileTooLarge' : 'SettingsProfileUrlReadError'));
+        } finally {
+            clearTimeout(timeout);
+            state.profileBusy = false;
+            busyControls.forEach((control, index) => { control.disabled = priorDisabled[index]; });
+        }
+    }
+    function collectPreferences(state) {
+        const theme = collectTheme(state), saved = { theme: theme.values };
+        for (const [path, { field, control }] of state.controls) {
+            writePath(saved, path, field.choices ? control.value : control.checked);
+        }
+        return { values: normalizePreferences(saved), invalid: theme.invalid };
+    }
+    function exportProfile(state) {
+        if (state.fields.disabled || state.profileBusy) return;
+        const { values, invalid } = collectPreferences(state);
+        if (invalid.length) {
+            setText(state.profileStatus, translate('SettingsInvalid'));
+            invalid[0].focus();
+            return;
+        }
+        values.theme = Object.fromEntries(THEME_VARIABLES.map(({ name }) => [name, values.theme[name] || '']));
+        const name = currentProfileName(state);
+        const profile = { format: PROFILE_FORMAT, version: PROFILE_VERSION, name, settings: values };
+        let url = '';
+        try {
+            const blob = new Blob([JSON.stringify(profile, null, 2)], { type: 'application/json' });
+            url = URL.createObjectURL(blob);
+            const anchor = element('a');
+            const slug = name.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'profile';
+            anchor.href = url;
+            anchor.download = 'lumaaglaass-' + slug + '.json';
+            document.body.append(anchor);
+            anchor.click();
+            anchor.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 0);
+            setText(state.profileStatus, translate('SettingsProfileExported'));
+        } catch {
+            if (url) URL.revokeObjectURL(url);
+            setText(state.profileStatus, translate('SettingsProfileExportError'));
+        }
     }
     // Theme - The variables section: recipes, then one table of the documentation per section. Each
     // row names its variable, says what it does and holds its control and a reset to the theme's value.
@@ -916,6 +1392,7 @@
                 }
                 setText(state.status, '');
                 previewTheme(state);
+                updateProfileStatus(state);
             });
             return button;
         };
@@ -982,6 +1459,7 @@
         entry.reset.addEventListener('click', () => {
             setThemeEntry(entry, '');
             previewTheme(state);
+            updateProfileStatus(state);
             (entry.select?.trigger || entry.input).focus();
         });
         control.append(entry.reset);
@@ -1090,16 +1568,13 @@
         });
     }
     async function submitPreferences(state, api) {
-        if (state.fields.disabled || !state.dto) return;
-        const theme = collectTheme(state);
-        if (theme.invalid.length) {
+        if (state.fields.disabled || !state.dto || state.profileBusy) return;
+        const { values, invalid } = collectPreferences(state);
+        if (invalid.length) {
             setText(state.status, translate('SettingsInvalid'));
-            theme.invalid[0].focus();
+            invalid[0].focus();
             return;
         }
-        const saved = { theme: theme.values };
-        for (const [path, { field, control }] of state.controls) writePath(saved, path, field.choices ? control.value : control.checked);
-        const values = normalizePreferences(saved);
         state.fields.disabled = true;
         state.submit.disabled = true;
         state.secondary.disabled = true;
