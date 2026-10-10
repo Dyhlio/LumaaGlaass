@@ -1,4 +1,4 @@
-/* LumaaGlaass - Source selection extension. */
+/* LumaaGlaass - Version and track selection extension. */
 ;
 (() => {
     'use strict';

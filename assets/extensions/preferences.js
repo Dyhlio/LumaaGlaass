@@ -55,8 +55,9 @@
             SettingsPlayerControlsHelp: 'Buttons added to the integrated player.',
             SettingsVersions: 'Version switcher',
             SettingsEpisodes: 'Episode switcher',
-            SettingsSourceSelection: 'Source selection',
-            SettingsSourceSelectionHelp: 'How versions and tracks are chosen on details pages.',
+            SettingsSourceSelection: 'Versions and tracks',
+            SettingsSourceSelectionHelp: 'Choose how versions, audio tracks and subtitles are selected on ' +
+                'item detail pages.',
             SettingsSourceMode: 'Mode',
             SettingsMediaActions: 'Media actions',
             SettingsMediaActionsHelp: 'Play shortcuts, corner actions and main buttons of details pages.',
@@ -191,8 +192,9 @@
             SettingsPlayerControlsHelp: 'Boutons ajoutés au lecteur intégré.',
             SettingsVersions: 'Changement de version',
             SettingsEpisodes: 'Changement d’épisode',
-            SettingsSourceSelection: 'Sélection de la source',
-            SettingsSourceSelectionHelp: 'Choix des versions et des pistes sur les pages de détails.',
+            SettingsSourceSelection: 'Version et pistes',
+            SettingsSourceSelectionHelp: 'Choix de l’interface pour sélectionner les versions, les pistes audio et les ' +
+                'sous-titres sur les pages de détails.',
             SettingsSourceMode: 'Mode',
             SettingsMediaActions: 'Actions des médias',
             SettingsMediaActionsHelp: 'Raccourcis de lecture, boutons d’angle et boutons principaux des pages de détails.',

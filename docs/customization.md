@@ -32,13 +32,13 @@ go after the main theme import.
 | [Collection filter](#collection-filter) | Show all items, movies only, or series only; enabled by default | Main Custom JavaScript options |
 | [Media actions](#media-actions) | Configure native, information or hidden shortcuts by media type and context | Custom JavaScript |
 | [Player controls](#player-controls) | Enable version switching, episode browsing, or both | Custom JavaScript |
-| [Source selection](#source-selection) | Choose native controls, an inline panel or a playback dialog | Custom JavaScript |
+| [Versions and tracks](#source-selection) | Choose native controls, an inline panel or a playback dialog | Custom JavaScript |
 | [Hide count indicators](#hide-count-indicators) | Hide numeric badges on cards and lists | Custom CSS |
 | [Theme variables](#theme-variables) | Adjust the accent, glass, corners, spacing, text and timing | Custom CSS |
 
-**Source selection provides one mode at a time: native, panel or dialog.**
+**This feature offers one mode at a time: native, panel or dialog.**
 The collection filter, hidden count badges, media actions and player controls
-can be used with any source-selection mode.
+work with any of these modes.
 
 ## Settings page
 
@@ -50,17 +50,17 @@ cache only applies the last saved choice while the server answer is loading.
 
 Its initial values match the extension defaults: carousel and collection filter
 on, library-only recent titles off, count indicators shown, both player controls
-on, source selection native, and every media action native.
+on, version-and-track mode set to native, and every media action native.
 
 The page controls the home carousel, home library titles, collection filter,
-count indicators, player controls, source selection, media actions (including
-**À suivre**) and the public theme variables. Theme variables preview immediately; **Save** applies and
-stores every setting for the account. The reset beside one theme variable clears
-only that variable's saved value. **Reset to defaults** restores the whole form;
-use **Save** to keep those defaults for the account.
+count indicators, player controls, version and track selection, media actions
+(including **À suivre**) and the public theme variables. Theme variables preview
+immediately; **Save** applies and stores every setting for the account. The reset
+beside one theme variable clears only that variable's saved value. **Reset to
+defaults** restores the whole form; use **Save** to keep those defaults for the account.
 
-The settings page offers all three source modes: **Native**, **Panel** and
-**Dialog**.
+The settings page offers all three modes for version and track selection:
+**Native**, **Panel** and **Dialog**.
 
 Use this page instead of individual extension loaders. Player controls activate
 when **Version** or **Episodes** is enabled; media actions activate automatically
@@ -146,7 +146,7 @@ window.LumaaGlaassOptions = {
 ## Media actions
 
 One optional script controls thumbnail shortcuts and selected details-page buttons.
-Source selection and player controls remain independent.
+The version-and-track interface and player controls can be configured independently.
 
 ### Install and configure
 
@@ -345,7 +345,9 @@ not cancel a playback request already submitted. It supports seekable episodes i
 local integrated player, not casting or external players, and relies on internal
 Jellyfin modules; future client changes may require an update.
 
-## Source selection
+<a id="source-selection"></a>
+
+## Versions and tracks
 
 One optional extension provides three mutually exclusive modes. The main theme
 remains required; the selected mode adapts to desktop, tablet and mobile.
@@ -373,7 +375,7 @@ Add this loader to **Custom JavaScript**, keeping the main theme:
     script.src = 'https://cdn.jsdelivr.net/gh/Dyhlio/LumaaGlaass@main/assets/extensions/source-selection.js';
     script.onerror = () => {
         script.remove();
-        console.error('LumaaGlaass source selection could not be loaded.');
+        console.error('LumaaGlaass version and track controls could not be loaded.');
     };
     document.head.appendChild(script);
 })();
@@ -594,8 +596,9 @@ the CDN files or replace the whole theme just to change these values.
 
 - **An option does not appear:** save and fully reload first. Confirm that its code
   is in the correct field and that the base theme is still installed.
-- **No source panel:** set source selection to `panel` and reload. The panel appears
-  only when the native details page offers multiple versions.
+- **No version panel:** set **Mode** to `panel` under **Versions and tracks**, then
+  reload. The panel appears only when the native details page offers multiple
+  versions.
 - **No collection filter:** it appears only in collections containing both movies
   and series.
 - **No audio or subtitle choices:** the dialog mirrors the options the server
