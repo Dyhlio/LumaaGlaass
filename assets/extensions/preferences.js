@@ -125,6 +125,14 @@
             SettingsRetry: 'Try again',
             SettingsResetDefaults: 'Reset to defaults',
             SettingsDefaultsRestored: 'Recommended settings restored. Save to keep them.',
+            SettingsDeleteSaved: 'Delete saved settings',
+            SettingsDeleteConfirm: 'Delete the saved LumaaGlaass settings for this account now? This is immediate; no Save ' +
+                'click is needed. It discards unsaved edits on this page and cannot be undone. Other Jellyfin preferences are kept.',
+            SettingsDeleting: 'Deleting…',
+            SettingsDeleted: 'Saved LumaaGlaass settings deleted. Recommended settings are now active.',
+            SettingsDeletedOther: 'Saved LumaaGlaass settings deleted. They apply the next time this account opens the web client.',
+            SettingsDeleteError: 'Could not confirm deletion. Reload the page and check this account’s settings before ' +
+                'trying again.',
             SettingsSaving: 'Saving…',
             SettingsSaved: 'Settings saved.',
             SettingsSavedOther: 'Settings saved. They apply the next time this user opens the web client.',
@@ -291,6 +299,16 @@
             SettingsRetry: 'Réessayer',
             SettingsResetDefaults: 'Réinitialiser par défaut',
             SettingsDefaultsRestored: 'Réglages recommandés rétablis. Enregistrez pour les conserver.',
+            SettingsDeleteSaved: 'Supprimer les réglages enregistrés',
+            SettingsDeleteConfirm: 'Supprimer immédiatement les réglages LumaaGlaass enregistrés pour ce compte ? Aucun clic sur ' +
+                'Enregistrer n’est nécessaire. Cette action annule les modifications non enregistrées de cette page, ne peut ' +
+                'pas être annulée et conserve les autres préférences Jellyfin.',
+            SettingsDeleting: 'Suppression…',
+            SettingsDeleted: 'Réglages LumaaGlaass supprimés. Les réglages recommandés sont maintenant actifs.',
+            SettingsDeletedOther: 'Réglages LumaaGlaass supprimés. Ils s’appliqueront à la prochaine ouverture du client ' +
+                'web par ce compte.',
+            SettingsDeleteError: 'Impossible de confirmer la suppression. Rechargez la page et vérifiez les réglages de ce ' +
+                'compte avant de réessayer.',
             SettingsSaving: 'Enregistrement…',
             SettingsSaved: 'Paramètres enregistrés.',
             SettingsSavedOther: 'Paramètres enregistrés. Ils s’appliqueront à la prochaine ouverture du client web par cet ' +
@@ -709,6 +727,17 @@
         const body = { ...dto, CustomPrefs: { ...dto?.CustomPrefs, [PREFERENCES_ENTRY]: JSON.stringify(saved) } };
         return api.updateDisplayPreferences(PREFERENCES_ID, body, userId, PREFERENCES_CLIENT);
     }
+    // Delete - Jellyfin replaces this custom-preference set, so reload it and omit only our own entry.
+    async function removeSavedPreferences(api, userId) {
+        const dto = await api.getDisplayPreferences(PREFERENCES_ID, userId, PREFERENCES_CLIENT);
+        const customPrefs = { ...(dto?.CustomPrefs || {}) };
+        const existed = hasOwn(customPrefs, PREFERENCES_ENTRY);
+        if (existed) {
+            delete customPrefs[PREFERENCES_ENTRY];
+            await api.updateDisplayPreferences(PREFERENCES_ID, { ...dto, CustomPrefs: customPrefs }, userId, PREFERENCES_CLIENT);
+        }
+        return { dto: { ...dto, CustomPrefs: customPrefs } };
+    }
     const cachedPreferences = key => {
         try {
             return JSON.parse(localStorage.getItem(PREFERENCES_CACHE + key) || 'null');
@@ -718,6 +747,11 @@
         try {
             localStorage.setItem(PREFERENCES_CACHE + key, JSON.stringify(saved));
         } catch { /* Private modes may refuse storage: the server's answer still applies. */ }
+    };
+    const forgetCachedPreferences = key => {
+        try {
+            localStorage.removeItem(PREFERENCES_CACHE + key);
+        } catch { /* The server copy is still removed when local storage is unavailable. */ }
     };
     // External - A file the theme did not add came from the server's Custom JavaScript or CSS, which
     // decides for every account: the settings leave it alone. Stylesheets are found by their import.
@@ -875,7 +909,7 @@
             else document.title = PREFERENCES_TITLE;
         }
     }
-    function createProfileSection(state) {
+    function createProfileSection(state, api) {
         const block = element('div', 'verticalSection verticalSection-extrabottompadding lg-preferences-section lg-profile-section');
         block.append(element('h2', 'sectionTitle', translate('SettingsProfiles')),
             element('p', 'fieldDescription lg-preferences-description', translate('SettingsProfilesHelp')));
@@ -923,6 +957,12 @@
         const urlButton = element('button', 'raised emby-button', translate('SettingsProfileImportUrl'));
         urlButton.type = 'button';
         urlGroup.append(urlLabel, urlInput, urlButton);
+
+        const deleteAction = element('div', 'lg-profile-delete');
+        const deleteButton = element('button', 'raised emby-button lg-profile-delete-button', translate('SettingsDeleteSaved'));
+        deleteButton.type = 'button';
+        deleteButton.hidden = true;
+        deleteAction.append(deleteButton);
         transfer.append(transferRow, urlGroup);
 
         const input = element('input', 'lg-profile-file');
@@ -936,7 +976,8 @@
 
         Object.assign(state, { profileSelect: picker, profileApply: apply, profileImportButton: importButton,
             profileImport: input, profileExport: exportButton, profileUrlInput: urlInput, profileUrlImport: urlButton,
-            profileStatus: status, importedProfile: null, profileBusy: false });
+            profileStatus: status, profileDelete: deleteButton, hasSavedSettings: false, importedProfile: null,
+            profileBusy: false });
         apply.addEventListener('click', () => applySelectedProfile(state));
         importButton.addEventListener('click', () => input.click());
         input.addEventListener('change', () => {
@@ -952,7 +993,8 @@
             }
         });
         exportButton.addEventListener('click', () => exportProfile(state));
-        block.append(row, transfer, status, input);
+        deleteButton.addEventListener('click', () => void deleteSavedSettings(state, api));
+        block.append(row, transfer, deleteAction, status, input);
         return block;
     }
     function openPreferencesPage(page, api, key, userId) {
@@ -978,7 +1020,7 @@
             return node;
         };
         fields.append(element('p', 'fieldDescription lg-preferences-intro', translate('SettingsIntro')),
-            createProfileSection(state));
+            createProfileSection(state, api));
         for (const section of PREFERENCE_SECTIONS) {
             const block = element('div', 'verticalSection verticalSection-extrabottompadding lg-preferences-section');
             block.append(element('h2', 'sectionTitle', translate(section.title)));
@@ -1554,6 +1596,8 @@
             if (preferencesPage !== state || state.load !== run) return;
             if (own) adoptPreferences(state.key, saved);
             state.dto = dto;
+            state.hasSavedSettings = hasOwn(dto?.CustomPrefs || {}, PREFERENCES_ENTRY);
+            state.profileDelete.hidden = !state.hasSavedSettings;
             fillPreferences(state, normalizePreferences(saved));
             previewTheme(state);
             state.fields.disabled = false;
@@ -1585,6 +1629,8 @@
         let message = 'SettingsSaveError';
         try {
             await savePreferences(api, state.userId, state.dto, values);
+            state.hasSavedSettings = true;
+            state.profileDelete.hidden = false;
             if (own) adoptPreferences(state.key, values);
             message = own ? 'SettingsSaved' : 'SettingsSavedOther';
         } catch { /* The form keeps the choices for another try. */ }
@@ -1596,6 +1642,51 @@
         state.submit.removeAttribute('aria-busy');
         setText(state.submitText, translate('Save'));
         setText(state.status, translate(message));
+    }
+    async function deleteSavedSettings(state, api) {
+        if (state.fields.disabled || !state.dto || !state.hasSavedSettings || state.profileBusy) return;
+        if (!window.confirm(translate('SettingsDeleteConfirm'))) return;
+        state.profileBusy = true;
+        state.fields.disabled = true;
+        state.submit.disabled = true;
+        state.secondary.disabled = true;
+        state.profileDelete.disabled = true;
+        state.profileDelete.setAttribute('aria-busy', 'true');
+        setText(state.profileDelete, translate('SettingsDeleting'));
+        setText(state.profileStatus, '');
+        try {
+            const { dto } = await removeSavedPreferences(api, state.userId);
+            state.dto = dto;
+            state.hasSavedSettings = false;
+            state.profileDelete.hidden = true;
+            const own = sameId(state.userId, api.getCurrentUserId());
+            if (own) {
+                forgetCachedPreferences(state.key);
+                if (state.key === preferencesSession) {
+                    preferencesRun++;
+                    preferencesState = 'loaded';
+                    applyPreferences(null);
+                }
+            }
+            if (preferencesPage === state) {
+                fillPreferences(state, normalizePreferences(null));
+                previewTheme(state);
+                setText(state.profileStatus, translate(own ? 'SettingsDeleted' : 'SettingsDeletedOther'));
+            }
+        } catch {
+            if (preferencesPage === state) setText(state.profileStatus, translate('SettingsDeleteError'));
+        } finally {
+            state.profileBusy = false;
+            if (preferencesPage === state) {
+                state.fields.disabled = false;
+                state.submit.disabled = false;
+                state.secondary.disabled = false;
+                state.profileDelete.disabled = false;
+                state.profileDelete.removeAttribute('aria-busy');
+                setText(state.profileDelete, translate('SettingsDeleteSaved'));
+                syncPreferenceControls(state);
+            }
+        }
     }
     // Stop - The page, the menu entry and the files the settings loaded go; the server's own stay.
     function clearPreferences() {

@@ -150,6 +150,8 @@ commit SHA or release tag. Do not use a tag before it exists in the repository.
 If you installed by copying the full files, replace both together when updating.
 
 To remove LumaaGlaass, restore your backed-up CSS and JavaScript configuration.
+This does not erase saved per-account settings. To remove those too, open
+**Settings → LumaaGlaass** first and use **Delete saved settings**.
 
 ## Repository
 

@@ -58,6 +58,10 @@ count indicators, player controls, version and track selection, media actions
 immediately; **Save** applies and stores every setting for the account. The reset
 beside one theme variable clears only that variable's saved value. **Reset to
 defaults** restores the whole form; use **Save** to keep those defaults for the account.
+When saved settings exist, **Delete saved settings** removes only LumaaGlaass's
+stored entry after confirmation; it applies immediately, with no extra Save click,
+and preserves other Jellyfin preferences. Removing the theme's CSS and JavaScript
+alone leaves the account's saved entry in place.
 
 The settings page offers all three modes for version and track selection:
 **Native**, **Panel** and **Dialog**.

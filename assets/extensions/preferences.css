@@ -67,6 +67,16 @@
         margin: 8px 0 0;
     }
 
+    & .lg-profile-delete {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: var(--lg-space-button-group);
+    }
+
+    & .lg-profile-delete-button {
+        margin: 0;
+    }
+
     & :is(.lg-preferences-description,.lg-preferences-note) {
         margin: 0 0 12px;
     }
@@ -247,6 +257,10 @@
 
         & .lg-profile-transfer-actions > .emby-button {
             flex: 1 1 auto;
+        }
+
+        & .lg-profile-delete-button {
+            width: 100%;
         }
 
         & .lg-preference:has(> :is(.lg-preference-select,.lg-theme-control)) {
