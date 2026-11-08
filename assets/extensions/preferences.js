@@ -155,6 +155,7 @@
             SettingsResetAll: 'Reset every variable',
             SettingsReset: 'Reset',
             SettingsDefault: 'Default',
+            SettingsAuto: 'Auto',
             SettingsOpacity: 'Opacity of',
             SettingsInvalid: 'A value is not valid for its variable: correct the highlighted field.',
             SettingsColors: 'Colors',
@@ -205,6 +206,7 @@
             '--lg-size-option': 'Menu rows; keep at least 44px for touch.',
             '--lg-page-card-height': 'Height of the library and collection page card.',
             '--lg-cast-width': 'Width of cast cards on details pages.',
+            '--lg-poster-min-width': 'Minimum poster width in grids; Auto keeps the usual columns.',
             '--lg-font': 'Font of the whole interface; load the font itself with an @import in Custom CSS.',
             '--lg-font-section-title': 'Row titles on home, libraries and details.',
             '--lg-page-card-title-size': 'Title size of the library and collection page card.',
@@ -333,6 +335,7 @@
             SettingsResetAll: 'Réinitialiser toutes les variables',
             SettingsReset: 'Réinitialiser',
             SettingsDefault: 'Par défaut',
+            SettingsAuto: 'Auto',
             SettingsOpacity: 'Opacité de',
             SettingsInvalid: 'Une valeur n’est pas valide pour sa variable : corrigez le champ signalé.',
             SettingsColors: 'Couleurs',
@@ -385,6 +388,7 @@
             '--lg-size-option': 'Lignes de menu ; gardez au moins 44 px pour le tactile.',
             '--lg-page-card-height': 'Hauteur de la carte de page des médiathèques et collections.',
             '--lg-cast-width': 'Largeur des cartes de distribution sur les pages de détails.',
+            '--lg-poster-min-width': 'Largeur minimale des affiches dans les grilles ; Auto garde les colonnes habituelles.',
             '--lg-font': 'Police de toute l’interface ; chargez la police elle-même par un @import dans le CSS personnalisé.',
             '--lg-font-section-title': 'Titres des rangées sur l’accueil, les médiathèques et les détails.',
             '--lg-page-card-title-size': 'Taille du titre de la carte de page des médiathèques et collections.',
@@ -558,9 +562,9 @@
     };
     // Theme variables - Every public variable of customization.md#theme-variables, by its table. type
     // picks the control and unit; css variables name the property a value must be valid for, and
-    // fallback is the documented default shown while the theme's own value applies.
-    const number = unit => ({
-        control: 'number', unit,
+    // fallback is the documented default shown while the theme's own value applies, else Auto.
+    const number = (unit, step, min = 0) => ({
+        control: 'number', unit, step, min,
         valid: value => new RegExp('^\\d+(?:\\.\\d+)?' + unit + '$').test(value),
         toCss: input => input.trim() === '' ? '' : Number(input) + unit,
         fromCss: value => String(parseFloat(value))
@@ -568,9 +572,12 @@
     const plain = value => !/[;{}<>\\]/.test(value);
     const THEME_TYPES = {
         color: { control: 'color', valid: value => plain(value) && CSS.supports('color', value) },
-        px: { ...number('px'), step: 1 },
-        scale: { ...number(''), step: 0.05 },
-        seconds: { ...number('s'), step: 0.01 },
+        px: number('px', 1),
+        // Columns - 10px steps reach every usual posters-per-row count (20px skip some, such as ten
+        // on a 1920px screen), from the stylesheet's 80px floor.
+        column: number('px', 10, 80),
+        scale: number('', 0.05),
+        seconds: number('s', 0.01),
         weight: { control: 'weight', valid: value => /^[1-9]00$/.test(value) },
         css: {
             control: 'text', valid: (value, variable) => plain(value) && CSS.supports(variable.check, value),
@@ -600,7 +607,8 @@
             ['space-gutter', 'css', 'clamp(16px, 3.4vw, 64px)', 'width'], ['space-header-gap', 'px', '32px'],
             ['space-button-group', 'px', '8px'], ['space-option', 'px', '2px'], ['space-popup', 'px', '6px'],
             ['space-list-option', 'px', '8px'], ['size-action', 'px', '44px'], ['size-option', 'px', '44px'],
-            ['page-card-height', 'px', '304px'], ['cast-width', 'css', 'clamp(112px, 10vw, 180px)', 'width']
+            ['page-card-height', 'px', '304px'], ['cast-width', 'css', 'clamp(112px, 10vw, 180px)', 'width'],
+            ['poster-min-width', 'column']
         ]],
         ['SettingsText', [
             ['font', 'css', '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', 'font-family'],
@@ -832,13 +840,14 @@
     // theme variables apply unless the open page previews its own.
     function applyPreferences(saved) {
         activePreferences = preferencesSession ? normalizePreferences(saved) : null;
+        // Variables first: applyCore runs a theme pass, which reads them (the poster grid mark).
+        if (!preferencesPage) applyThemeVariables(activePreferences?.theme);
         host.applyCore(activePreferences ? {
             homeCarousel: activePreferences.homeCarousel,
             homeLibraryNamesOnly: activePreferences.homeLibraryNamesOnly,
             collectionFilter: activePreferences.collectionFilter
         } : null);
         Object.keys(PREFERENCE_ASSETS).forEach(syncAsset);
-        if (!preferencesPage) applyThemeVariables(activePreferences?.theme);
     }
     // Session - A new account applies its cached settings at once, then the server's.
     function syncPreferences(api, key) {
@@ -1489,8 +1498,8 @@
         } else {
             entry.input = element('input', 'emby-input lg-theme-input');
             if (type.control === 'number') {
-                Object.assign(entry.input, { type: 'number', min: '0', step: String(type.step), inputMode: 'decimal' });
-                entry.input.placeholder = type.fromCss(variable.fallback);
+                Object.assign(entry.input, { type: 'number', min: String(type.min), step: String(type.step), inputMode: 'decimal' });
+                entry.input.placeholder = variable.fallback ? type.fromCss(variable.fallback) : translate('SettingsAuto');
             } else {
                 Object.assign(entry.input, { type: 'text', spellcheck: false, autocomplete: 'off' });
                 entry.input.placeholder = variable.fallback;

@@ -34,7 +34,7 @@
 - **Refined controls** - Version, audio, and subtitle selectors with clear favorite and watched states.
 - **Accessibility preferences** - Reduced-motion, reduced-transparency, more-contrast and forced-colors styles.
 - **Per-account settings** - An optional settings page for theme appearance and features, saved with each Jellyfin account.
-- **Easy customization** - One line each for the accent color, the roundness of every corner, the glass, spacing, font and animation speed; see [Theme variables](docs/customization.md#theme-variables).
+- **Easy customization** - One line each for the accent color, the roundness of every corner, the glass, spacing, poster size, font and animation speed; see [Theme variables](docs/customization.md#theme-variables).
 - **Localized labels** - Follow Jellyfin's selected language, with English as a fallback for missing translations.
 
 ## Compatibility

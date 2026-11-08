@@ -1157,6 +1157,12 @@
     // library's cards before Jellyfin shows the details page.
     const routeItems = new Map(), itemTypes = new Map();
     let routeItemsKey = '';
+    // Posters - --lg-poster-min-width (Custom CSS, or the settings page on <html>) turns Jellyfin's poster
+    // grids into columns: the stylesheet needs this mark, an unset variable keeps Jellyfin's widths.
+    function syncPosterWidth(on) {
+        const set = on && getComputedStyle(document.documentElement).getPropertyValue('--lg-poster-min-width').trim() !== '';
+        document.documentElement.classList.toggle('lg-has-poster-min-width', set);
+    }
     // Session - Both caches belong to one user on one server; returns the id's cache key.
     function routeItemName(key, id) {
         if (key !== routeItemsKey) {
@@ -2216,6 +2222,7 @@
         const moved = syncHeaderInset(on);
         syncPageMarks(on);
         syncPlaybackPage(on);
+        syncPosterWidth(on);
         if (on) {
             syncDetails(key, context);
         } else {
@@ -2318,6 +2325,7 @@
             clearHomeLibraryTitles();
             clearHeaderInset();
             syncPlaybackPage(false);
+            syncPosterWidth(false);
             clearPageMarks();
             clearPendingControls();
             clearPageCard();

@@ -104,6 +104,9 @@
     --lg-artwork-action-size: 64px;
     /* Cast width - Phones override it in Part 2 Tokens. */
     --lg-cast-width: clamp(112px,10vw,180px);
+    /* Posters - The grid column for --lg-poster-min-width (unset by default), never under 80px; read
+       only under lg-has-poster-min-width, which the script sets once the variable resolves. */
+    --lg-poster-track: max(var(--lg-poster-min-width), 80px);
     --lg-select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15.5' fill='white' fill-opacity='.08' stroke='white' stroke-opacity='.12'/%3E%3Cpath d='M11.417 14.167 16 18.75 20.583 14.167z' fill='%23f5f5f7'/%3E%3C/svg%3E");
 }
 
@@ -4255,6 +4258,19 @@ body .lg-library-page .padded-right {
     padding-inline-end: var(--lg-space-gutter);
 }
 
+/* Libraries - With --lg-poster-min-width, Jellyfin's poster grids hold as many columns of that width
+   as fit, three at least; wide cards (Thumb, Banner) keep Jellyfin's widths. */
+html.lg-has-poster-min-width .itemsContainer.vertical-wrap {
+    &:has(> .card:is(.portraitCard,.squareCard)) {
+        display: grid;
+        grid-template-columns: repeat(auto-fill,minmax(min(var(--lg-poster-track),calc(100% / 3 - 1px)),1fr));
+    }
+
+    & > .card:is(.portraitCard,.squareCard) {
+        width: auto;
+    }
+}
+
 /* Libraries - Rows hold the gutters themselves, like home rows, so cards clip at the card's
    edges instead of scrolling into the gutters; their titles and scrollers add none. */
 body .lg-library-page > .verticalSection {
@@ -4891,6 +4907,11 @@ body #itemDetailPage.itemDetailPage.lg-collection-page {
         grid-template-columns: repeat(auto-fill,minmax(180px,1fr));
         gap: 24px 18px;
         margin: 0 !important;
+
+        /* Collections - --lg-poster-min-width sizes the columns, two at least. */
+        html.lg-has-poster-min-width & {
+            grid-template-columns: repeat(auto-fill,minmax(min(var(--lg-poster-track),calc((100% - 18px) / 2 - 1px)),1fr));
+        }
     }
 
     & .collectionItemsContainer > .card {
@@ -5220,6 +5241,11 @@ body #itemDetailPage.itemDetailPage[data-lg-detail-poster] {
         grid-template-columns: repeat(auto-fill,minmax(160px,1fr));
         gap: 20px 16px;
         padding: 0 !important;
+
+        /* Details - --lg-poster-min-width sizes a series' seasons, two at least. */
+        html.lg-has-poster-min-width & {
+            grid-template-columns: repeat(auto-fill,minmax(min(var(--lg-poster-track),calc((100% - 16px) / 2 - 1px)),1fr));
+        }
     }
 
     & :is(#childrenContent,#childrenCollapsible) .itemsContainer > .portraitCard {
