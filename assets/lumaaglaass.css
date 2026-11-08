@@ -96,9 +96,9 @@
        less (Part 2 Tokens). */
     --lg-legacy-header-bottom: calc(88px + env(safe-area-inset-top,0px));
     /* Home banner - Its base height, and the limit it grows to (16:9 backdrops): by default the base
-       height, or 80% of a taller window. */
+       height, or 75% of a taller window. */
     --lg-hero-base-height: calc(clamp(460px, 42vw, 680px) + 120px + clamp(0px, 1vw, 20px));
-    --lg-hero-max-height: max(var(--lg-hero-base-height), 80vh);
+    --lg-hero-max-height: max(var(--lg-hero-base-height), 75vh);
     --lg-page-card-height: 304px;
     --lg-page-card-inset: clamp(24px, 4vw, 64px);
     --lg-page-card-title-size: clamp(30px, 3.5vw, 56px);
