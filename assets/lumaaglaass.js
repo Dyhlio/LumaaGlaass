@@ -1027,8 +1027,10 @@
     }
     function tick(now) {
         frame = 0;
+        // Keyboard focus inside the banner pauses it; a dot or arrow clicked with the pointer does not.
+        const focused = document.documentElement.dataset.lgInput === 'keyboard' && !!hero?.contains(document.activeElement);
         const running = !!(hero?.isConnected && items.length > 1 && home() && !document.hidden && !motion.matches &&
-            !hovered && !touching && !hero.contains(document.activeElement) && !hero.querySelector('[aria-busy="true"]'));
+            !hovered && !touching && !focused && !hero.querySelector('[aria-busy="true"]'));
         if (running && wasRunning && lastTick) {
             const delta = now - lastTick;
             // A gap over 250 ms means the tab or device was suspended: do not count it.
