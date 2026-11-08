@@ -152,6 +152,10 @@
             SettingsRecipeSnappy: 'Snappier motion',
             SettingsRecipeCalm: 'Calmer motion',
             SettingsRecipeTight: 'Tighter page layout',
+            SettingsRecipeTallerBanner: 'Taller home banner',
+            SettingsRecipeShorterBanner: 'Shorter home banner',
+            SettingsRecipeBiggerPosters: 'Bigger posters',
+            SettingsRecipeSmallerPosters: 'Smaller posters',
             SettingsResetAll: 'Reset every variable',
             SettingsReset: 'Reset',
             SettingsDefault: 'Default',
@@ -333,6 +337,10 @@
             SettingsRecipeSnappy: 'Animations plus vives',
             SettingsRecipeCalm: 'Animations plus calmes',
             SettingsRecipeTight: 'Mise en page plus serrée',
+            SettingsRecipeTallerBanner: 'Bannière d’accueil plus haute',
+            SettingsRecipeShorterBanner: 'Bannière d’accueil plus basse',
+            SettingsRecipeBiggerPosters: 'Affiches plus grandes',
+            SettingsRecipeSmallerPosters: 'Affiches plus petites',
             SettingsResetAll: 'Réinitialiser toutes les variables',
             SettingsReset: 'Réinitialiser',
             SettingsDefault: 'Par défaut',
@@ -639,7 +647,11 @@
         ['SettingsRecipeNoBlur', { 'blur-control': '0px', 'blur-panel': '0px' }],
         ['SettingsRecipeSnappy', { duration: '0.12s', 'duration-slow': '0.3s' }],
         ['SettingsRecipeCalm', { duration: '0.4s', 'duration-slow': '1s' }],
-        ['SettingsRecipeTight', { 'space-gutter': '16px', 'space-header-gap': '20px' }]
+        ['SettingsRecipeTight', { 'space-gutter': '16px', 'space-header-gap': '20px' }],
+        ['SettingsRecipeTallerBanner', { 'hero-max-height': '90vh' }],
+        ['SettingsRecipeShorterBanner', { 'hero-max-height': '70vh' }],
+        ['SettingsRecipeBiggerPosters', { 'poster-min-width': '240px' }],
+        ['SettingsRecipeSmallerPosters', { 'poster-min-width': '150px' }]
     ];
     // Accessibility - The variables each system preference sets in the stylesheet keep its values
     // there, as the documentation's no-preference wrapper would: a choice never undoes them.
