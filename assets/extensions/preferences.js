@@ -139,6 +139,13 @@
             SettingsDeletedOther: 'Saved LumaaGlaass settings deleted. They apply the next time this account opens the web client.',
             SettingsDeleteError: 'Could not confirm deletion. Reload the page and check this account’s settings before ' +
                 'trying again.',
+            SettingsDeleteAll: 'Delete for every user',
+            SettingsDeleteAllConfirm: 'Delete the saved LumaaGlaass settings of every user on this server now? Each account ' +
+                'returns to its starting settings the next time it opens the web client. This cannot be undone; other ' +
+                'Jellyfin preferences are kept.',
+            SettingsDeletedAll: 'Saved LumaaGlaass settings deleted: {deleted} account(s); {untouched} account(s) had none.',
+            SettingsDeletedAllFailed: '{failed} account(s) could not be changed: try again.',
+            SettingsDeleteAllError: 'The user list could not be read: nothing was deleted.',
             SettingsSaving: 'Saving…',
             SettingsSaved: 'Settings saved.',
             SettingsSavedOther: 'Settings saved. They apply the next time this user opens the web client.',
@@ -322,6 +329,14 @@
                 'web par ce compte.',
             SettingsDeleteError: 'Impossible de confirmer la suppression. Rechargez la page et vérifiez les réglages de ce ' +
                 'compte avant de réessayer.',
+            SettingsDeleteAll: 'Supprimer pour tous les utilisateurs',
+            SettingsDeleteAllConfirm: 'Supprimer immédiatement les réglages LumaaGlaass enregistrés de tous les utilisateurs ' +
+                'de ce serveur ? Chaque compte retrouvera ses réglages de départ à la prochaine ouverture du client web. ' +
+                'Cette action ne peut pas être annulée et conserve les autres préférences Jellyfin.',
+            SettingsDeletedAll: 'Réglages LumaaGlaass supprimés : {deleted} compte(s) ; {untouched} compte(s) sans réglages ' +
+                'enregistrés.',
+            SettingsDeletedAllFailed: '{failed} compte(s) n’ont pas pu être modifiés : réessayez.',
+            SettingsDeleteAllError: 'La liste des utilisateurs n’a pas pu être lue : rien n’a été supprimé.',
             SettingsSaving: 'Enregistrement…',
             SettingsSaved: 'Paramètres enregistrés.',
             SettingsSavedOther: 'Paramètres enregistrés. Ils s’appliqueront à la prochaine ouverture du client web par cet ' +
@@ -775,7 +790,7 @@
             delete customPrefs[PREFERENCES_ENTRY];
             await api.updateDisplayPreferences(PREFERENCES_ID, { ...dto, CustomPrefs: customPrefs }, userId, PREFERENCES_CLIENT);
         }
-        return { dto: { ...dto, CustomPrefs: customPrefs } };
+        return { dto: { ...dto, CustomPrefs: customPrefs }, existed };
     }
     const cachedPreferences = key => {
         try {
@@ -1002,7 +1017,19 @@
         const deleteButton = element('button', 'raised emby-button lg-profile-delete-button', translate('SettingsDeleteSaved'));
         deleteButton.type = 'button';
         deleteButton.hidden = true;
+        const deleteAllButton = element('button', 'raised emby-button lg-profile-delete-button lg-profile-delete-all',
+            translate('SettingsDeleteAll'));
+        deleteAllButton.type = 'button';
         deleteAction.append(deleteButton);
+        // Every user - Added for an administrator on their own page only, never merely hidden, so no
+        // stylesheet can show it to anyone else.
+        if (sameId(state.userId, api.getCurrentUserId())) {
+            Promise.resolve(api.getCurrentUser?.()).then(user => {
+                if (user?.Policy?.IsAdministrator !== true || preferencesPage !== state) return;
+                state.admin = true;
+                deleteAction.append(deleteAllButton);
+            }, () => {});
+        }
         transfer.append(transferRow, urlGroup);
 
         const input = element('input', 'lg-profile-file');
@@ -1016,8 +1043,8 @@
 
         Object.assign(state, { profileSelect: picker, profileApply: apply, profileImportButton: importButton,
             profileImport: input, profileExport: exportButton, profileUrlInput: urlInput, profileUrlImport: urlButton,
-            profileStatus: status, profileDelete: deleteButton, hasSavedSettings: false, importedProfile: null,
-            profileBusy: false });
+            profileStatus: status, profileDelete: deleteButton, profileDeleteAll: deleteAllButton, hasSavedSettings: false,
+            importedProfile: null, profileBusy: false });
         apply.addEventListener('click', () => applySelectedProfile(state));
         importButton.addEventListener('click', () => input.click());
         input.addEventListener('change', () => {
@@ -1034,6 +1061,7 @@
         });
         exportButton.addEventListener('click', () => exportProfile(state));
         deleteButton.addEventListener('click', () => void deleteSavedSettings(state, api));
+        deleteAllButton.addEventListener('click', () => void deleteAllSavedSettings(state, api));
         block.append(row, transfer, deleteAction, status, input);
         return block;
     }
@@ -1691,49 +1719,84 @@
         setText(state.submitText, translate('Save'));
         setText(state.status, translate(message));
     }
+    // Delete - While one runs, the form and its buttons are locked and the running button says so.
+    function setDeleting(state, button, label, busy) {
+        state.profileBusy = busy;
+        if (!busy && preferencesPage !== state) return;
+        for (const control of [state.fields, state.submit, state.secondary, state.profileDelete, state.profileDeleteAll]) {
+            control.disabled = busy;
+        }
+        if (busy) button.setAttribute('aria-busy', 'true');
+        else button.removeAttribute('aria-busy');
+        setText(button, translate(busy ? 'SettingsDeleting' : label));
+        if (!busy) syncPreferenceControls(state);
+    }
+    // Deleted - The page's account has no entry left: its own session forgets the cached copy and
+    // applies its starting settings, and the open page shows them. Returns whether it is the viewer's.
+    function showDeleted(state, api, dto) {
+        state.dto = dto;
+        state.hasSavedSettings = false;
+        state.profileDelete.hidden = true;
+        const own = sameId(state.userId, api.getCurrentUserId());
+        if (own) {
+            forgetCachedPreferences(state.key);
+            if (state.key === preferencesSession) {
+                preferencesRun++;
+                preferencesState = 'loaded';
+                applyPreferences(null);
+            }
+        }
+        if (preferencesPage === state) {
+            fillPreferences(state, normalizePreferences(null));
+            previewTheme(state);
+        }
+        return own;
+    }
     async function deleteSavedSettings(state, api) {
         if (state.fields.disabled || !state.dto || !state.hasSavedSettings || state.profileBusy) return;
         if (!window.confirm(translate('SettingsDeleteConfirm'))) return;
-        state.profileBusy = true;
-        state.fields.disabled = true;
-        state.submit.disabled = true;
-        state.secondary.disabled = true;
-        state.profileDelete.disabled = true;
-        state.profileDelete.setAttribute('aria-busy', 'true');
-        setText(state.profileDelete, translate('SettingsDeleting'));
+        setDeleting(state, state.profileDelete, 'SettingsDeleteSaved', true);
         setText(state.profileStatus, '');
         try {
             const { dto } = await removeSavedPreferences(api, state.userId);
-            state.dto = dto;
-            state.hasSavedSettings = false;
-            state.profileDelete.hidden = true;
-            const own = sameId(state.userId, api.getCurrentUserId());
-            if (own) {
-                forgetCachedPreferences(state.key);
-                if (state.key === preferencesSession) {
-                    preferencesRun++;
-                    preferencesState = 'loaded';
-                    applyPreferences(null);
-                }
-            }
-            if (preferencesPage === state) {
-                fillPreferences(state, normalizePreferences(null));
-                previewTheme(state);
-                setText(state.profileStatus, translate(own ? 'SettingsDeleted' : 'SettingsDeletedOther'));
-            }
+            const own = showDeleted(state, api, dto);
+            if (preferencesPage === state) setText(state.profileStatus, translate(own ? 'SettingsDeleted' : 'SettingsDeletedOther'));
         } catch {
             if (preferencesPage === state) setText(state.profileStatus, translate('SettingsDeleteError'));
         } finally {
-            state.profileBusy = false;
-            if (preferencesPage === state) {
-                state.fields.disabled = false;
-                state.submit.disabled = false;
-                state.secondary.disabled = false;
-                state.profileDelete.disabled = false;
-                state.profileDelete.removeAttribute('aria-busy');
-                setText(state.profileDelete, translate('SettingsDeleteSaved'));
-                syncPreferenceControls(state);
+            setDeleting(state, state.profileDelete, 'SettingsDeleteSaved', false);
+        }
+    }
+    // Every user - Each account loses its entry exactly as one account's delete does: an account with
+    // nothing saved gets no write, and one that fails is counted and skipped. One account at a time.
+    async function deleteAllSavedSettings(state, api) {
+        if (!state.admin || state.fields.disabled || state.profileBusy) return;
+        if (!window.confirm(translate('SettingsDeleteAllConfirm'))) return;
+        setDeleting(state, state.profileDeleteAll, 'SettingsDeleteAll', true);
+        setText(state.profileStatus, '');
+        try {
+            const answer = await api.getUsers();
+            const users = Array.isArray(answer) ? answer : answer?.Items;
+            if (!Array.isArray(users)) throw new Error('No user list');
+            const counts = { deleted: 0, untouched: 0, failed: 0 };
+            for (const user of users) {
+                if (stopped) return;
+                try {
+                    const { dto, existed } = await removeSavedPreferences(api, user.Id);
+                    counts[existed ? 'deleted' : 'untouched']++;
+                    if (existed && sameId(user.Id, state.userId)) showDeleted(state, api, dto);
+                } catch {
+                    counts.failed++;
+                }
             }
+            if (preferencesPage === state) {
+                const message = translate('SettingsDeletedAll') + (counts.failed ? ' ' + translate('SettingsDeletedAllFailed') : '');
+                setText(state.profileStatus, message.replace(/\{(\w+)\}/g, (_, name) => String(counts[name])));
+            }
+        } catch {
+            if (preferencesPage === state) setText(state.profileStatus, translate('SettingsDeleteAllError'));
+        } finally {
+            setDeleting(state, state.profileDeleteAll, 'SettingsDeleteAll', false);
         }
     }
     // Stop - The page, the menu entry and the files the settings loaded go; the server's own stay.

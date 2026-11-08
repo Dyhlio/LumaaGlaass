@@ -67,6 +67,12 @@ stored entry after confirmation; it applies immediately, with no extra Save clic
 and preserves other Jellyfin preferences. Removing the theme's CSS and JavaScript
 alone leaves the account's saved entry in place.
 
+On their own page, an administrator also gets **Delete for every user**. After one
+confirmation it does the same for every account on the server, one at a time:
+accounts with nothing saved are not written, and the result counts the accounts
+deleted, those without settings and any that failed, which a second run retries.
+Each account returns to its starting settings the next time it opens the web client.
+
 The settings page offers all three modes for version and track selection:
 **Native**, **Panel** and **Dialog**.
 
