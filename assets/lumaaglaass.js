@@ -1204,8 +1204,9 @@
     }
     // Playback - The app navigation belongs to browsing, never to the player or its startup spinner:
     // the player mounts before Jellyfin opens #/video, and this pass lands before that frame paints.
+    // Only fullscreen playback is -onTop; a theme video plays behind a details page without it.
     function syncPlaybackPage(on) {
-        const playing = route() === '#/video' || document.querySelector('.videoPlayerContainer') !== null;
+        const playing = route() === '#/video' || document.querySelector('.videoPlayerContainer-onTop') !== null;
         document.documentElement.classList.toggle('lg-is-playback-page', on && playing);
     }
     // Page marks - Set on <html> while their selector matches, for rules a page-wide :has() would
