@@ -170,6 +170,13 @@
         let generatedId = 0;
         const states = new Set();
         const stateByControl = new WeakMap();
+        // Native lists - Without customizable selects (Firefox, Safari) the browser draws its own list,
+        // one line per option and as wide as the longest: with a mouse or the keyboard, the picker opens
+        // instead and the select keeps showing its value. Touch keeps the system list.
+        const ownLists = !CSS.supports('appearance', 'base-select');
+        const NATIVE_LISTS = 'select:is(.emby-select,.emby-select-withcolor,.detailTrackSelect)';
+        const nativeStates = new WeakMap();
+        const coarsePointer = matchMedia('(pointer: coarse)');
         const picker = element('div', 'lg-select-picker');
         picker.id = 'lg-select-picker';
         picker.setAttribute('role', 'listbox');
@@ -180,13 +187,20 @@
                 [...state.control.options].findIndex(option => !option.disabled);
         };
         const choices = () => [...picker.querySelectorAll('.lg-select-option:not(:disabled)')];
+        const focusChoice = (index, direction) => {
+            const options = choices();
+            (options.find(node => Number(node.dataset.lgSelectIndex) === index) ||
+                options[direction === 'up' ? options.length - 1 : 0])?.focus();
+        };
         const close = focus => {
             const state = active;
             if (!state) return;
             active = null;
+            optionsObserver.disconnect();
             picker.hidden = true;
             picker.replaceChildren();
-            state.trigger.setAttribute('aria-expanded', 'false');
+            if (state.native) state.trigger.removeAttribute('data-lg-menu-open');
+            else state.trigger.setAttribute('aria-expanded', 'false');
             if (focus && state.trigger.isConnected) state.trigger.focus();
         };
         const sync = state => {
@@ -230,23 +244,17 @@
             if (!option || option.disabled) return;
             if (state.control.selectedIndex !== index) {
                 state.control.selectedIndex = index;
+                state.control.dispatchEvent(new Event('input', { bubbles: true }));
                 state.control.dispatchEvent(new Event('change', { bubbles: true }));
             }
             sync(state);
             close(true);
         };
-        const open = (state, direction) => {
-            if (!states.has(state) || state.control.disabled || !state.control.options.length) return;
-            if (active === state) {
-                close(true);
-                return;
-            }
-            close(false);
-            active = state;
-            if (picker.parentElement !== state.portal) state.portal.append(picker);
-            state.trigger.setAttribute('aria-expanded', 'true');
-            [...state.control.options].forEach((option, index) => {
-                const choice = element('button', 'lg-select-option', option.textContent);
+        // The list mirrors the options as the browser shows them (label, hidden ones left out).
+        const render = state => {
+            picker.replaceChildren(...[...state.control.options].flatMap((option, index) => {
+                if (option.hidden) return [];
+                const choice = element('button', 'lg-select-option', option.label);
                 choice.type = 'button';
                 choice.dataset.lgSelectIndex = String(index);
                 choice.setAttribute('role', 'option');
@@ -254,16 +262,58 @@
                 choice.tabIndex = option.selected ? 0 : -1;
                 choice.disabled = option.disabled;
                 choice.addEventListener('click', () => choose(state, index));
-                picker.append(choice);
+                return [choice];
+            }));
+        };
+        // Options that change while the list is open (Polyfin adds sources as it finds them) show at
+        // once, as in a customizable picker; the focused option keeps the focus.
+        const optionsObserver = new MutationObserver(() => {
+            const state = active;
+            if (!state) return;
+            if (state.control.disabled || !state.control.options.length) {
+                close(true);
+                return;
+            }
+            const focused = picker.contains(document.activeElement) ? Number(document.activeElement.dataset.lgSelectIndex) : -1;
+            render(state);
+            position();
+            if (focused >= 0) focusChoice(focused);
+        });
+        const open = (state, direction) => {
+            if (!(states.has(state) || state.native) || state.control.disabled || !state.control.options.length) return;
+            if (active === state) {
+                close(true);
+                return;
+            }
+            close(false);
+            active = state;
+            if (picker.parentElement !== state.portal) state.portal.append(picker);
+            if (state.native) state.trigger.setAttribute('data-lg-menu-open', '');
+            else state.trigger.setAttribute('aria-expanded', 'true');
+            // A native list takes its options' text size (the track fields' is smaller).
+            picker.style.fontSize = state.native ? getComputedStyle(state.control.options[0]).fontSize : '';
+            render(state);
+            optionsObserver.observe(state.control, {
+                childList: true, subtree: true, characterData: true, attributes: true,
+                attributeFilter: ['disabled', 'hidden', 'label', 'selected']
             });
             picker.hidden = false;
             position();
-            const current = selectedIndex(state);
-            const options = choices();
-            const choice = options.find(node => Number(node.dataset.lgSelectIndex) === current) || options[
-                direction === 'up' ? options.length - 1 : 0
-            ];
-            choice?.focus();
+            focusChoice(selectedIndex(state), direction);
+        };
+        // A native list's state is kept per select, so a second press closes it; the picker joins the
+        // select's dialog, whose focus trap would otherwise take the focus back.
+        const nativeState = target => {
+            const control = target instanceof Element ? target.closest(NATIVE_LISTS) : null;
+            if (!ownLists || !control || control.multiple || control.size > 1 || control.disabled || stateByControl.has(control) ||
+                control.querySelector('optgroup') || !enabled()) return null;
+            let state = nativeStates.get(control);
+            if (!state) {
+                state = { control, shell: control, trigger: control, portal: document.body, native: true };
+                nativeStates.set(control, state);
+            }
+            state.portal = control.closest('.dialog,dialog') || document.body;
+            return state;
         };
         const triggerElement = triggerClass => {
             const trigger = element('button', 'emby-button lg-select-trigger' + (triggerClass ? ' ' + triggerClass : ''));
@@ -386,6 +436,23 @@
                 event.preventDefault();
                 choose(active, Number(document.activeElement.dataset.lgSelectIndex));
             }
+        });
+        // Native lists - Jellyfin's own sheet (TV layouts) prevents these events first and stays.
+        listen(document, 'mousedown', event => {
+            if (event.button !== 0 || event.defaultPrevented || coarsePointer.matches) return;
+            const state = nativeState(event.target);
+            if (!state) return;
+            event.preventDefault();
+            state.control.focus({ preventScroll: true });
+            open(state);
+        });
+        listen(document, 'keydown', event => {
+            if (active || event.defaultPrevented || event.ctrlKey || event.metaKey ||
+                !['ArrowDown', 'ArrowUp', 'Enter', ' ', 'F4'].includes(event.key)) return;
+            const state = nativeState(event.target);
+            if (!state) return;
+            event.preventDefault();
+            open(state, event.key === 'ArrowUp' ? 'up' : 'down');
         });
         listen(document, 'focusin', event => {
             if (active && !picker.contains(event.target) && !active.shell.contains(event.target)) close(false);

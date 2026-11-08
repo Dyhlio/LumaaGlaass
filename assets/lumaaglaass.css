@@ -3320,6 +3320,7 @@ html body select:is(.emby-select,.emby-select-withcolor):not([multiple]):not([si
     font: inherit;
     line-height: 1.5;
     text-align: start;
+    overflow-wrap: anywhere;
     background: transparent;
     cursor: pointer;
 
@@ -5425,14 +5426,19 @@ body #itemDetailPage.itemDetailPage[data-lg-detail-poster] {
         }
     }
 
-    /* Selects - Without customizable selects the track field draws its own arrow; with them the
-       shared dropdown applies. */
+    /* Selects - Without customizable selects the track field draws its own arrow, its text at the
+       size of the label drawn over customizable ones; with them the shared dropdown applies. */
     @supports not (appearance: base-select) {
         & .trackSelections .detailTrackSelect {
             appearance: auto !important;
 
             &:not(:disabled) {
                 appearance: none !important;
+
+                /* Phones keep 16px, under which iOS zooms into a focused field. */
+                @media not all and (max-width: 640px) {
+                    font-size: 14px !important;
+                }
             }
         }
     }
