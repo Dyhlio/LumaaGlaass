@@ -42,7 +42,6 @@
     --lg-state-row-hover: var(--lg-surface-row-hover);
     --lg-state-selected: var(--lg-surface-row-selected);
     --lg-state-selected-text: var(--lg-color-text);
-    --lg-state-selected-edge: rgba(255,255,255,.45);
     /* Menus - Selected choices draw no edge (Highlight in forced colors). */
     --lg-state-menu-selected-edge: transparent;
     /* Focus - The one keyboard ring; components only move it (outline-offset). */
@@ -6342,10 +6341,6 @@ html.lg-has-now-playing-bar .backgroundContainer.withBackdrop {
             font-weight: 600 !important;
         }
 
-        &.navMenuOption {
-            box-shadow: inset 0 0 0 1px var(--lg-state-selected-edge) !important;
-        }
-
         &.MuiMenuItem-root {
             border-color: var(--lg-state-menu-selected-edge) !important;
         }
@@ -6606,7 +6601,6 @@ html.lg-has-now-playing-bar .backgroundContainer.withBackdrop {
         --lg-state-hover: Canvas;
         --lg-state-selected: Highlight;
         --lg-state-selected-text: HighlightText;
-        --lg-state-selected-edge: Highlight;
         --lg-state-menu-selected-edge: Highlight;
         /* Edges - SVG keeps its author colors in forced colors; an open control gets Highlight. */
         --lg-edge: CanvasText;
