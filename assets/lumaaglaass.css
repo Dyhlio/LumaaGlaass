@@ -3227,6 +3227,12 @@ html body select:is(.emby-select,.emby-select-withcolor):not([multiple]):not([si
 .lg-host-select {
     inline-size: 100%;
     max-inline-size: 100%;
+
+    /* Selects - Jellyfin appends its arrow after the select it wraps (outside Firefox), so the arrow
+       follows the shell; the trigger draws its own. */
+    & ~ .selectArrowContainer {
+        display: none !important;
+    }
 }
 
 .lg-select-trigger {
@@ -3258,11 +3264,6 @@ html body select:is(.emby-select,.emby-select-withcolor):not([multiple]):not([si
         background-position: left 10px center;
     }
 
-    &:not(:disabled):is(:hover,:focus-visible,[aria-expanded="true"]) {
-        border-color: var(--lg-edge-open);
-        background-color: var(--lg-surface-open);
-    }
-
     &:disabled {
         opacity: .5;
         cursor: default;
@@ -3287,9 +3288,14 @@ html body select:is(.emby-select,.emby-select-withcolor):not([multiple]):not([si
     backdrop-filter: blur(var(--lg-blur-panel));
     -webkit-backdrop-filter: blur(var(--lg-blur-panel));
     box-shadow: var(--lg-shadow-panel);
+    font-size: 15px;
 
     &[hidden] {
         display: none;
+    }
+
+    @media (max-width: 640px) {
+        font-size: 16px;
     }
 }
 
@@ -3314,14 +3320,9 @@ html body select:is(.emby-select,.emby-select-withcolor):not([multiple]):not([si
         margin-block-start: var(--lg-space-option);
     }
 
-    &:not(:disabled):is(:hover,:focus-visible) {
-        border-color: var(--lg-edge-open);
-        background: var(--lg-surface-row-hover);
-        outline: none;
-    }
-
-    &[aria-selected="true"] {
-        background: var(--lg-surface-row-selected);
+    &:disabled {
+        opacity: .5;
+        cursor: default;
     }
 }
 
@@ -6137,21 +6138,21 @@ html.lg-has-now-playing-bar .backgroundContainer.withBackdrop {
 
     /* Menus - One open state: library popovers (aria-describedby), MUI menus (aria-expanded,
        script), action sheets (data-lg-menu-open) and native selects (:open). */
-    html body :is(header.MuiAppBar-root > .MuiToolbar-root:nth-child(2) button:is([aria-expanded="true"], [aria-describedby="filter-popover"],[aria-describedby="sort-popover"],[aria-describedby="selectview-popover"]), button[aria-haspopup="true"][aria-expanded="true"],[data-lg-menu-open],:is(.detailTrackSelect,select:is(.emby-select,.emby-select-withcolor):not([multiple]):not([size]:not([size="0"]):not([size="1"]))):open):not(:disabled) {
+    html body :is(header.MuiAppBar-root > .MuiToolbar-root:nth-child(2) button:is([aria-expanded="true"], [aria-describedby="filter-popover"],[aria-describedby="sort-popover"],[aria-describedby="selectview-popover"]), button[aria-haspopup="true"][aria-expanded="true"],[data-lg-menu-open],.lg-select-trigger[aria-expanded="true"],:is(.detailTrackSelect,select:is(.emby-select,.emby-select-withcolor):not([multiple]):not([size]:not([size="0"]):not([size="1"]))):open):not(:disabled) {
         border-color: var(--lg-edge-open) !important;
 
-        &:not(select) {
+        &:not(select,.lg-select-trigger) {
             background: var(--lg-surface-open) !important;
         }
 
         /* Selects - Only the color: the shorthand would drop their arrow. */
-        &:is(select) {
+        &:is(select,.lg-select-trigger) {
             background-color: var(--lg-surface-open) !important;
         }
     }
 
     /* Selects - Hover and keyboard focus light the field, an open list uses the open state. */
-    html body :is(.detailTrackSelect,select:is(.emby-select,.emby-select-withcolor):not([multiple]):not([size]:not([size="0"]):not([size="1"]))) {
+    html body :is(.detailTrackSelect,.lg-select-trigger,select:is(.emby-select,.emby-select-withcolor):not([multiple]):not([size]:not([size="0"]):not([size="1"]))) {
         &:not(:disabled):hover,
         html:not([data-lg-input="pointer"]) &:not(:disabled):focus-visible {
             background-color: var(--lg-state-hover) !important;
@@ -6322,7 +6323,7 @@ html.lg-has-now-playing-bar .backgroundContainer.withBackdrop {
 
     /* Selection - The selected surface for every row and option; MUI select popups use menu
        items, not native option elements. */
-    html body :is(.lg-source-panel-option,.lg-source-dialog-option,.lg-player-dialog-option,.navMenuOption,.actionSheetMenuItem,.listItem,.MuiListItemButton-root,:is(.MuiMenu-paper,:where(:is(#sort-popover,[data-lg-library-popover="sort"]) > .MuiPopover-paper,:is(#selectview-popover,[data-lg-library-popover="selectview"]) > .MuiPopover-paper)) .MuiMenuItem-root):is([aria-pressed="true"],[aria-selected="true"],[aria-current="page"],[aria-current="true"],.selected,.navMenuOption-selected,.Mui-selected),
+    html body :is(.lg-select-option,.lg-source-panel-option,.lg-source-dialog-option,.lg-player-dialog-option,.navMenuOption,.actionSheetMenuItem,.listItem,.MuiListItemButton-root,:is(.MuiMenu-paper,:where(:is(#sort-popover,[data-lg-library-popover="sort"]) > .MuiPopover-paper,:is(#selectview-popover,[data-lg-library-popover="selectview"]) > .MuiPopover-paper)) .MuiMenuItem-root):is([aria-pressed="true"],[aria-selected="true"],[aria-current="page"],[aria-current="true"],.selected,.navMenuOption-selected,.Mui-selected),
     html body :is(#sort-popover,[data-lg-library-popover="sort"]) > .MuiPopover-paper .MuiMenuItem-root:has(.MuiListItemIcon-root svg),
     html body :is(#selectview-popover,[data-lg-library-popover="selectview"]) > .MuiPopover-paper .MuiMenuItem-root:has(svg[data-testid="CheckIcon"]) {
         background-color: var(--lg-state-selected) !important;
@@ -6334,7 +6335,7 @@ html.lg-has-now-playing-bar .backgroundContainer.withBackdrop {
 
         /* Selection - Rows take the selected weight; other list rows keep theirs, and MUI drawer
            rows give it to their label. */
-        &:is(.navMenuOption,.actionSheetMenuItem,.MuiMenuItem-root,.lg-source-panel-option,.lg-source-dialog-option,.lg-player-dialog-option) {
+        &:is(.navMenuOption,.actionSheetMenuItem,.MuiMenuItem-root,.lg-select-option,.lg-source-panel-option,.lg-source-dialog-option,.lg-player-dialog-option) {
             font-weight: 600 !important;
         }
 
@@ -6362,7 +6363,7 @@ html.lg-has-now-playing-bar .backgroundContainer.withBackdrop {
 
     /* Hover - Rows and flat buttons share the hover surface; keyboard focus gets it too, never
        the selected one. MUI's accent hover darkens labels and icons, so they stay light. */
-    html body :is(:where(:is(#sort-popover,[data-lg-library-popover="sort"]) > .MuiPopover-paper,:is(#selectview-popover,[data-lg-library-popover="selectview"]) > .MuiPopover-paper) .MuiMenuItem-root,.navMenuOption,.actionSheetMenuItem,.listItem, .raised,.fab,a[data-role="button"],.paper-icon-button-light,.button-flat, .emby-tab-button,.lg-hero-button, .MuiToolbar-root .MuiButton-root,.MuiToolbar-root .MuiIconButton-root, .MuiListItemButton-root,.MuiMenu-paper .MuiButtonBase-root, .lg-source-panel-option, .lg-source-dialog-option,.lg-player-dialog-option):not(:is(:disabled,[aria-disabled="true"],[aria-pressed="true"],[aria-selected="true"], [aria-current="page"],[aria-current="true"],.selected,.navMenuOption-selected,.Mui-selected, .emby-tab-button-active,.btnPlay,.button-submit, .lg-hero-play,.MuiButton-colorPrimary,.cardOverlayButton,.listItemImageButton,.listItemButton, :where(button):has(.playstatebutton-icon-played,:where(svg.MuiSvgIcon-colorError[data-testid="CheckIcon"])))):is(:hover,:focus-visible,.show-focus:focus) {
+    html body :is(:where(:is(#sort-popover,[data-lg-library-popover="sort"]) > .MuiPopover-paper,:is(#selectview-popover,[data-lg-library-popover="selectview"]) > .MuiPopover-paper) .MuiMenuItem-root,.navMenuOption,.actionSheetMenuItem,.listItem, .raised,.fab,a[data-role="button"],.paper-icon-button-light,.button-flat, .emby-tab-button,.lg-hero-button, .MuiToolbar-root .MuiButton-root,.MuiToolbar-root .MuiIconButton-root, .MuiListItemButton-root,.MuiMenu-paper .MuiButtonBase-root, .lg-select-option,.lg-source-panel-option, .lg-source-dialog-option,.lg-player-dialog-option):not(:is(:disabled,[aria-disabled="true"],[aria-pressed="true"],[aria-selected="true"], [aria-current="page"],[aria-current="true"],.selected,.navMenuOption-selected,.Mui-selected, .emby-tab-button-active,.btnPlay,.button-submit, .lg-hero-play,.MuiButton-colorPrimary,.cardOverlayButton,.listItemImageButton,.listItemButton, :where(button):has(.playstatebutton-icon-played,:where(svg.MuiSvgIcon-colorError[data-testid="CheckIcon"])))):is(:hover,:focus-visible,.show-focus:focus) {
         background-color: var(--lg-state-hover) !important;
         color: var(--lg-color-text) !important;
 
@@ -6388,7 +6389,7 @@ html.lg-has-now-playing-bar .backgroundContainer.withBackdrop {
     }
 
     /* Focus - Rows and pill tabs sit in clipping containers, so their ring is drawn inside; MUI
-       menu rows draw it on their edge. */
+       menu rows draw it on their edge, picker options at the native options' inset. */
     html {
         & body :is(.navMenuOption,.actionSheetMenuItem,.emby-tab-button,.lg-collection-filter-button,.lg-source-panel-option,.lg-source-dialog-option,.lg-player-dialog-option):is(:focus-visible,.show-focus:focus) {
             outline-offset: -3px !important;
@@ -6396,6 +6397,10 @@ html.lg-has-now-playing-bar .backgroundContainer.withBackdrop {
 
         &[data-theme="dark"] :is(.MuiMenu-paper,:where(:is(#sort-popover,[data-lg-library-popover="sort"]) > .MuiPopover-paper,:is(#selectview-popover,[data-lg-library-popover="selectview"]) > .MuiPopover-paper)) .MuiMenuItem-root:focus-visible {
             outline-offset: -1px !important;
+        }
+
+        & body .lg-select-option:focus-visible {
+            outline-offset: -2px !important;
         }
     }
 
