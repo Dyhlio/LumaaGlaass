@@ -198,7 +198,7 @@
         const sync = state => {
             if (!states.has(state)) return;
             setText(state.trigger, state.control.selectedOptions[0]?.textContent || '');
-            state.trigger.disabled = state.control.disabled;
+            if (state.trigger.disabled !== state.control.disabled) state.trigger.disabled = state.control.disabled;
         };
         const position = () => {
             const state = active;
@@ -294,6 +294,7 @@
             state.destroy = () => {
                 if (!states.delete(state)) return;
                 if (active === state) close(false);
+                control.removeEventListener('change', state.sync);
                 observer.disconnect();
                 stateByControl.delete(control);
                 restore?.();
@@ -363,10 +364,18 @@
         listen(document, 'pointerdown', event => {
             if (active && !active.shell.contains(event.target) && !picker.contains(event.target)) close(false);
         }, true);
+        // Keys - Only while focus is in the open picker (Escape also on its trigger); Tab closes it and
+        // moves on from the trigger, and focus that lands anywhere else closes it.
         listen(document, 'keydown', event => {
             if (!active) return;
-            if (event.key === 'Escape') {
+            const focused = document.activeElement;
+            if (event.key === 'Escape' && (picker.contains(focused) || focused === active.trigger)) {
                 event.preventDefault();
+                close(true);
+                return;
+            }
+            if (!picker.contains(focused)) return;
+            if (event.key === 'Tab') {
                 close(true);
                 return;
             }
@@ -384,8 +393,15 @@
                 choose(active, Number(document.activeElement.dataset.lgSelectIndex));
             }
         });
+        listen(document, 'focusin', event => {
+            if (active && !picker.contains(event.target) && !active.shell.contains(event.target)) close(false);
+        });
         listen(window, 'resize', position);
-        listen(window, 'scroll', position, true);
+        // Scrolling - Placement from a scroll handler lags the compositor by a frame: a scrolling view
+        // closes the picker, as it hides the tooltip; the picker's own list scrolls freely.
+        listen(window, 'scroll', event => {
+            if (active && !(event.target instanceof Node && picker.contains(event.target))) close(false);
+        }, true);
         listen(document, 'visibilitychange', () => { if (document.hidden) close(false); });
         return {
             create,
