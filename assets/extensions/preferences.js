@@ -776,11 +776,13 @@
     };
     // External - A file the theme did not add came from the server's Custom JavaScript or CSS, which
     // decides for every account: the settings leave it alone. A pasted script has no element, only its
-    // running instance; a stylesheet is its import (any query) or its pasted rule.
+    // running instance, with options the settings did not write (a script still loading when they
+    // stopped runs anyway); a stylesheet is its import (any query) or its pasted rule.
+    const MANAGED = Symbol.for('lumaaGlaass.managed');
     function externalAsset(asset) {
         const node = document.getElementById(asset.id);
         if (node) return !node.hasAttribute('data-lg-managed');
-        if (asset.key) return Boolean(window[asset.key]);
+        if (asset.key) return Boolean(window[asset.key]) && !window[asset.global]?.[MANAGED];
         for (const sheet of document.styleSheets) {
             if (sheet.ownerNode instanceof Element && sheet.ownerNode.hasAttribute('data-lg-managed')) continue;
             let rules;
@@ -817,7 +819,7 @@
         node.id = asset.id;
         node.setAttribute('data-lg-managed', '');
         if (asset.key) {
-            window[asset.global] = options;
+            window[asset.global] = { ...options, [MANAGED]: true };
             node.src = assetUrl(asset.file);
         } else {
             node.rel = 'stylesheet';

@@ -121,11 +121,12 @@ fields and values invalid for their setting are skipped and reported before Save
 
 Use this page instead of individual extension loaders. Player controls activate
 when **Version** or **Episodes** is enabled; media actions activate automatically
-when one of their menus changes from **Native**. If an old loader or count
-indicator import remains in the server configuration, the matching control is
-locked so two copies can never manage the same feature. Remove that legacy loader
-to make the choice available per account. Leaving `preferences` out preserves
-the existing manual configuration exactly.
+when one of their menus changes from **Native**. If the server configuration still
+loads an extension itself (its old loader, or the extension script pasted into
+Custom JavaScript) or hides count indicators (their import, or the rule pasted into
+Custom CSS), the matching control is locked so two copies can never manage the same
+feature. Remove it from the server configuration to make the choice available per
+account. Leaving `preferences` out preserves the existing manual configuration exactly.
 
 Administrators can open another user's preferences from that user's settings.
 Jellyfin remains responsible for enforcing who may update each account.
