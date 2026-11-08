@@ -1176,9 +1176,11 @@
         root.style.setProperty('--lg-scrollbar-width', `${scrollbar}px`);
         return true;
     }
-    // Playback - The app navigation belongs to browsing, never to the player or its startup spinner.
+    // Playback - The app navigation belongs to browsing, never to the player or its startup spinner:
+    // the player mounts before Jellyfin opens #/video, and this pass lands before that frame paints.
     function syncPlaybackPage(on) {
-        document.documentElement.classList.toggle('lg-is-playback-page', on && route() === '#/video');
+        const playing = route() === '#/video' || document.querySelector('.videoPlayerContainer') !== null;
+        document.documentElement.classList.toggle('lg-is-playback-page', on && playing);
     }
     // Page marks - Set on <html> while their selector matches, for rules a page-wide :has() would
     // slow down: the legacy header (rendered, hidden, in every layout), home, the now playing bar.

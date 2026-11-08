@@ -375,9 +375,8 @@ html[data-theme="dark"] header.MuiAppBar-root.MuiAppBar-positionFixed {
     --Paper-shadow: none !important;
 }
 
-/* Playback - Hide browsing navigation as soon as the real player is mounted, before the route
-   observer runs. The class remains a fallback; the player OSD keeps its own controls. */
-html:has(.videoPlayerContainer) header.MuiAppBar-root,
+/* Playback - The script marks the player from its mount, before Jellyfin opens #/video; the
+   player OSD keeps its own controls. */
 html.lg-is-playback-page header.MuiAppBar-root {
     visibility: hidden;
     pointer-events: none;
