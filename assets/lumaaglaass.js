@@ -113,7 +113,14 @@
     // Localization - The theme's own strings, by language. Jellyfin does not have them, and asking
     // it for a missing key logs an error.
     const THEME_STRINGS = {
-        en: {}
+        en: {
+            SlideshowPause: 'Pause the slideshow',
+            SlideshowPlay: 'Play the slideshow'
+        },
+        fr: {
+            SlideshowPause: 'Mettre le diaporama en pause',
+            SlideshowPlay: 'Relancer le diaporama'
+        }
     };
     const language = () => (document.documentElement.lang || navigator.language).slice(0, 2).toLowerCase();
     // Localization - Theme strings never go through Jellyfin; other keys use Jellyfin's string, else English.
@@ -749,6 +756,8 @@
     let elapsed = 0, lastTick = 0, frame = 0, wasRunning = false, hovered = false, touching = false;
     let action = 0;
     const SLIDE_COUNT = 8, SLIDE_DURATION = 9000, COLLECTION_BUDGET = 60;
+    // Pause - The viewer's choice outlives rebuilds of the banner, until the page reloads.
+    let viewerPaused = false;
     // Sharpness - The sizes slides are asked in: few, so the server resizes and caches each once.
     const SLIDE_WIDTHS = [1920, 2560, 3840];
     let slideWidth = SLIDE_WIDTHS[0];
@@ -1022,7 +1031,7 @@
             slides: [...backdrops.children], kicker: element('div', 'lg-hero-kicker'), title: element('a'),
             meta: element('div', 'lg-hero-meta'), overview: element('p', 'lg-hero-overview'),
             play: element('button', 'lg-hero-button lg-hero-play'), info: element('a', 'lg-hero-button lg-hero-info'),
-            dots: [], status: element('p', 'lg-hero-status')
+            dots: [], status: element('p', 'lg-hero-status'), pause: element('button', 'lg-hero-pause')
         };
         const inner = element('div', 'lg-hero-content'), title = element('h1', 'lg-hero-title');
         title.append(parts.title);
@@ -1044,7 +1053,15 @@
             parts.dots.push(button);
             dots.append(button);
         });
-        controls.append(dots);
+        // Pause - A visible way to stop the slideshow, beyond hover and focus; one slide never moves.
+        parts.pause.type = 'button';
+        parts.pause.hidden = items.length < 2;
+        parts.pause.addEventListener('click', () => {
+            viewerPaused = !viewerPaused;
+            syncHeroLabels();
+            resumeClock();
+        });
+        controls.append(parts.pause, dots);
         parts.status.setAttribute('role', 'status');
         parts.status.hidden = true;
         hero.append(backdrops, element('div', 'lg-hero-scrim'), inner, controls, parts.status);
@@ -1060,6 +1077,10 @@
         setAttribute(parts.info, 'aria-label', translate('ItemDetails'));
         // The tooltip controller moves title to data-lg-tooltip.
         setAttribute(parts.info, parts.info.hasAttribute('data-lg-tooltip') ? 'data-lg-tooltip' : 'title', translate('ItemDetails'));
+        const pauseLabel = translate(viewerPaused ? 'SlideshowPlay' : 'SlideshowPause');
+        parts.pause.classList.toggle('lg-is-paused', viewerPaused);
+        setAttribute(parts.pause, 'aria-label', pauseLabel);
+        setAttribute(parts.pause, parts.pause.hasAttribute('data-lg-tooltip') ? 'data-lg-tooltip' : 'title', pauseLabel);
         setText(parts.status, parts.status.dataset.lgHeroStatus ? translate(parts.status.dataset.lgHeroStatus) : '');
     }
     function render(next) {
@@ -1090,7 +1111,7 @@
         resumeClock();
     }
     // Carousel - The clock runs on animation frames only while the banner can advance; whatever
-    // paused it (hover, touch, focus, a Play request, a hidden tab) resumes it.
+    // paused it (the pause button, hover, touch, focus, a Play request, a hidden tab) resumes it.
     function resumeClock() {
         if (!frame && hero) frame = requestAnimationFrame(tick);
     }
@@ -1099,7 +1120,7 @@
         // Keyboard focus inside the banner pauses it; a dot or arrow clicked with the pointer does not.
         const focused = document.documentElement.dataset.lgInput === 'keyboard' && !!hero?.contains(document.activeElement);
         const running = !!(hero?.isConnected && items.length > 1 && home() && !document.hidden && !motion.matches &&
-            !hovered && !touching && !focused && !hero.querySelector('[aria-busy="true"]'));
+            !viewerPaused && !hovered && !touching && !focused && !hero.querySelector('[aria-busy="true"]'));
         if (running && wasRunning && lastTick) {
             const delta = now - lastTick;
             // A gap over 250 ms means the tab or device was suspended: do not count it.
@@ -2379,7 +2400,9 @@
     // =====================================================================
     window[KEY] = {
         get status() {
-            return { active: Boolean(heroParts && hero?.isConnected), items: items.length, loading, error: lastError };
+            return {
+                active: Boolean(heroParts && hero?.isConnected), items: items.length, loading, error: lastError, running: wasRunning
+            };
         },
         selects: selectController,
         preferences: {

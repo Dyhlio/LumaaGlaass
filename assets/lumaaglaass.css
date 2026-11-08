@@ -3909,7 +3909,8 @@ html body .cardImageContainer.defaultCardBackground {
 
 /* Home - Text over artwork keeps its own lighter grey, with a shadow. */
 .lg-hero-kicker,
-.lg-hero-meta {
+.lg-hero-meta,
+.lg-hero-pause {
     font-size: 14px;
     color: #e0e0e5;
 }
@@ -4053,7 +4054,8 @@ html body .cardImageContainer.defaultCardBackground {
     }
 }
 
-.lg-hero-dot {
+.lg-hero-dot,
+.lg-hero-pause {
     position: relative;
     width: var(--lg-size-action);
     height: var(--lg-size-action);
@@ -4063,6 +4065,33 @@ html body .cardImageContainer.defaultCardBackground {
     border-radius: var(--lg-radius-pill);
     padding: 0;
     transition: background-color var(--lg-duration) var(--lg-ease);
+}
+
+/* Home - The pause control is the dots' twin; its glyph, drawn like the Play triangle, takes the
+   grey of the text over artwork: two bars, then the triangle once paused. */
+.lg-hero-pause {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+
+    &::before {
+        content: "";
+        box-sizing: border-box;
+        width: 12px;
+        height: 14px;
+        border-inline: 4px solid currentColor;
+    }
+
+    &.lg-is-paused::before {
+        width: 0;
+        height: 0;
+        border-inline: 0;
+        border-left: 11px solid currentColor;
+        border-top: 7px solid transparent;
+        border-bottom: 7px solid transparent;
+        margin-inline-start: 3px;
+    }
 }
 
 .lg-hero-dot::after {
@@ -6561,23 +6590,24 @@ html.lg-has-now-playing-bar .backgroundContainer.withBackdrop {
         background: var(--lg-state-hover) !important;
     }
 
-    /* Home - The current hero dot is a filled pill; the others light up and grow on hover and
-       keyboard focus. */
+    /* Home - The current hero dot is a filled pill; the other dots and the pause control light up
+       on hover and keyboard focus, and the dots grow. */
+    :is(.lg-hero-dot:not(.lg-is-active),.lg-hero-pause):is(:hover,:focus-visible) {
+        background: var(--lg-state-hover) !important;
+        -webkit-backdrop-filter: blur(var(--lg-blur-control)) !important;
+        backdrop-filter: blur(var(--lg-blur-control)) !important;
+        color: var(--lg-color-text) !important;
+    }
+
     .lg-hero-dot {
         &.lg-is-active::after {
             background: var(--lg-surface-primary) !important;
             width: 24px !important;
         }
 
-        &:not(.lg-is-active):is(:hover,:focus-visible) {
-            background: var(--lg-state-hover) !important;
-            -webkit-backdrop-filter: blur(var(--lg-blur-control)) !important;
-            backdrop-filter: blur(var(--lg-blur-control)) !important;
-
-            &::after {
-                background: var(--lg-color-text) !important;
-                transform: scale(calc(1 + .35 * var(--lg-motion))) !important;
-            }
+        &:not(.lg-is-active):is(:hover,:focus-visible)::after {
+            background: var(--lg-color-text) !important;
+            transform: scale(calc(1 + .35 * var(--lg-motion))) !important;
         }
     }
 
@@ -6696,6 +6726,11 @@ html.lg-has-now-playing-bar .backgroundContainer.withBackdrop {
             animation-duration: 0.01ms !important;
             animation-iteration-count: 1 !important;
             transition-duration: 0.01ms !important;
+        }
+
+        /* Home - The banner never advances on its own here, so it has nothing to pause. */
+        .lg-hero-pause {
+            display: none !important;
         }
     }
 }

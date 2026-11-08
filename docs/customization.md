@@ -161,6 +161,12 @@ The carousel and the still background pick up to eight movies and series at
 random across your libraries, each library getting a share. A title found in
 several libraries, or in both HD and 4K, appears once.
 
+The carousel changes slides every 9 seconds. It waits while the pointer is over
+it, while a finger touches it and while keyboard focus is inside it. The pause
+button before the dots stops it until pressed again or until the page reloads.
+When the system asks for reduced motion, the carousel never advances on its own
+and the pause button is hidden.
+
 Home keeps a successfully loaded backdrop from the same movie/series selection,
 without rotation. A full reload requests a new random selection. Up to four
 images are tried; if none loads, the last valid background from the same
