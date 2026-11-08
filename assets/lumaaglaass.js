@@ -1355,7 +1355,7 @@
     // Controls - The AppBar row (node) currently drawn inside the library card.
     let libraryControlFrame = 0, libraryControlNode = null, libraryControlCard = null;
     let libraryRangeLabel = null, libraryRangeResizeObserver = null;
-    // Image - The cards whose library image was asked for, once each.
+    // Image - The cards whose library image was asked for, once per visit.
     const libraryImageCards = new WeakSet();
     // Rebuild hold - Jellyfin replaces the grid (and our card) after a view, sort or filter
     // change; the controls keep their place until the card is back on the same route.
@@ -1404,7 +1404,11 @@
     function clearLibraryCard() {
         clearLibraryControls();
         document.querySelectorAll('.lg-library-section,.lg-library-title,.lg-library-image').forEach(node => node.remove());
-        document.querySelectorAll('.lg-library-card').forEach(node => node.classList.remove('lg-library-card', 'lg-has-image'));
+        // Legacy layouts keep their toolbar (the card) in the cached page: a return asks for its image again.
+        document.querySelectorAll('.lg-library-card').forEach(node => {
+            libraryImageCards.delete(node);
+            node.classList.remove('lg-library-card', 'lg-has-image');
+        });
     }
     // Card - Built in the pass that recognizes the page, at its final size: the title holds its line
     // until the name arrives, the image its half once the library has one, so loads move nothing.
