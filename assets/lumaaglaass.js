@@ -737,6 +737,7 @@
     const homeSections = page => page && [...page.querySelectorAll('.homeSectionsContainer')].find(visible);
     // Recent titles - A home row links to tab=1 of one library. Its matching navigation link provides
     // the library label already chosen by Jellyfin, so simplification never needs translated title text.
+    const RECENT_TITLES = '.verticalSection .sectionTitleContainer > a.more.sectionTitleTextButton[href] > .sectionTitle';
     function clearHomeLibraryTitles() {
         document.querySelectorAll('[data-lg-home-recent-title]').forEach(heading => {
             if (heading.textContent === heading.dataset.lgHomeRecentLabel) {
@@ -759,14 +760,14 @@
             const id = idKey(query.get('topParentId')), label = link.textContent.trim();
             if (id && label && !labels.has(id)) labels.set(id, label);
         }
-        for (const heading of page.querySelectorAll('.verticalSection .sectionTitleContainer > a.more.sectionTitleTextButton[href] > .sectionTitle')) {
+        for (const heading of page.querySelectorAll(RECENT_TITLES)) {
             const query = new URLSearchParams(heading.parentElement.getAttribute('href').split('?')[1] || '');
             const label = labels.get(idKey(query.get('topParentId')));
             if (query.get('tab') !== '1' || !label) continue;
             if (heading.textContent !== heading.dataset.lgHomeRecentLabel) {
                 heading.dataset.lgHomeRecentTitle = heading.textContent;
             }
-            heading.dataset.lgHomeRecentLabel = label;
+            setAttribute(heading, 'data-lg-home-recent-label', label);
             setText(heading, label);
         }
     }
@@ -795,6 +796,10 @@
             clearHome();
             return;
         }
+        // A failure notice leaves with its page: Jellyfin keeps details pages cached, hidden.
+        document.querySelectorAll('.lg-playback-notice').forEach(notice => {
+            if (!visible(notice)) notice.remove();
+        });
         consumePlay();
         const api = currentClient(), key = sessionKey(api);
         syncHomeSession(api, key);
@@ -2357,6 +2362,7 @@
             listeners.forEach(fn => fn());
             clearLastBackdrop();
             clearHome();
+            clearHomeLibraryTitles();
             clearHeaderInset();
             syncPlaybackPage(false);
             clearPageMarks();
