@@ -1376,7 +1376,7 @@ body .dialog.formDialog .dialogContentInner {
 
 .cardTextCentered,
 .cardTextCentered > .textActionButton {
-    text-align: left !important;
+    text-align: start !important;
 }
 
 .blurhash-canvas {
@@ -1773,7 +1773,7 @@ header.MuiAppBar-root .MuiButtonGroup-root:empty {
 }
 
 #itemDetailPage .button-link {
-    text-align: left;
+    text-align: start;
 }
 
 .trackSelections .selectContainer .detailTrackSelect {
@@ -1795,7 +1795,7 @@ header.MuiAppBar-root .MuiButtonGroup-root:empty {
 
 #itemDetailPage .detailButton {
     padding: 8px !important;
-    margin-right: var(--lg-space-button-group) !important;
+    margin-inline-end: var(--lg-space-button-group) !important;
 }
 
 #itemDetailPage .btnPlay {
@@ -1813,13 +1813,13 @@ header.MuiAppBar-root .MuiButtonGroup-root:empty {
 .layout-mobile #itemDetailPage .parentName,
 .layout-mobile #itemDetailPage .parentNameLast,
 .layout-mobile #itemDetailPage .itemName.subtitle {
-    text-align: left;
-    justify-content: left;
+    text-align: start;
+    justify-content: flex-start;
 }
 
 .layout-mobile #itemDetailPage .mainDetailButtons,
 .layout-mobile #itemDetailPage .itemMiscInfo {
-    justify-content: left;
+    justify-content: flex-start;
 }
 
 .layout-mobile .itemBackdrop {
@@ -1837,7 +1837,7 @@ header.MuiAppBar-root .MuiButtonGroup-root:empty {
 
 .layout-desktop #itemDetailPage .btnPlay,
 .layout-tv #itemDetailPage .btnPlay {
-    margin-right: 12px !important;
+    margin-inline-end: 12px !important;
     padding: .4em 1.4em .4em 1em !important;
 }
 
@@ -2171,7 +2171,7 @@ html[data-theme="dark"] .settingsContainer .MuiFormHelperText-root.MuiFormHelper
 
 #userProfilePage .readOnlyContent div {
     align-items: baseline !important;
-    margin-right: 12px !important;
+    margin-inline-end: 12px !important;
 }
 
 #dashboardPage .cardContent,
@@ -3667,7 +3667,8 @@ body .listItem:hover .itemProgressBar {
 /* ---------------------------------------------------------------------- */
 
 .cardText {
-    padding: .06em .5em 0 .06em;
+    padding-block: .06em 0;
+    padding-inline: .06em .5em;
     font-size: medium;
     font-weight: 500;
     opacity: 1;
@@ -3680,8 +3681,8 @@ body .listItem:hover .itemProgressBar {
 }
 
 .itemsContainer > .card > .cardBox {
-    margin-left: 0 !important;
-    margin-right: 12px;
+    margin-inline-start: 0 !important;
+    margin-inline-end: 12px;
 }
 
 html body .cardOverlayContainer {
@@ -3986,7 +3987,7 @@ html body .cardImageContainer.defaultCardBackground {
     border-left: 9px solid currentColor;
     border-top: 6px solid transparent;
     border-bottom: 6px solid transparent;
-    margin-right: 10px;
+    margin-inline-end: 10px;
 }
 
 .lg-hero-button:disabled {
@@ -4720,7 +4721,7 @@ body #itemDetailPage.itemDetailPage:is(.lg-collection-page,[data-lg-detail-poste
 
     & .itemName {
         line-height: 1.12;
-        text-align: left !important;
+        text-align: start !important;
         margin: 0 !important;
         overflow-wrap: anywhere;
     }
@@ -5189,7 +5190,7 @@ body #itemDetailPage.itemDetailPage[data-lg-detail-poster] {
     & .itemMiscInfo {
         line-height: 1.8;
         justify-content: flex-start !important;
-        text-align: left !important;
+        text-align: start !important;
     }
 
     & .mainDetailButtons {
@@ -5267,7 +5268,7 @@ body #itemDetailPage.itemDetailPage[data-lg-detail-poster] {
         position: static !important;
         display: flex;
         justify-content: flex-start !important;
-        text-align: left !important;
+        text-align: start !important;
         width: auto !important;
         margin: 8px 0 0 !important;
         padding: 0 !important;
@@ -5280,7 +5281,7 @@ body #itemDetailPage.itemDetailPage[data-lg-detail-poster] {
         display: inline-flex;
         align-items: center;
         padding: 0 8px !important;
-        margin-left: -8px;
+        margin-inline-start: -8px;
         color: var(--lg-color-text) !important;
         text-decoration: underline;
         text-underline-offset: 3px;
@@ -5378,7 +5379,8 @@ body #itemDetailPage.itemDetailPage[data-lg-detail-poster] {
         width: 100% !important;
         max-width: 100% !important;
         min-height: 48px;
-        padding: 12px 36px 12px 14px !important;
+        padding-block: 12px !important;
+        padding-inline: 14px 36px !important;
         margin: 0 !important;
         border: 1px solid var(--lg-edge) !important;
         border-radius: var(--lg-radius) !important;
