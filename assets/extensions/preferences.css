@@ -138,7 +138,7 @@
 
     /* Theme variables - The variable's name, then a control row: the field, its unit and a reset. */
     & code.lg-preference-label {
-        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+        font-family: var(--lg-font);
         font-size: .9em;
         overflow-wrap: anywhere;
     }
