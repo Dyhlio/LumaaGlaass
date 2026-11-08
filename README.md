@@ -28,7 +28,7 @@
 
 - **Glass interface** - Smoked-glass panels, rounded controls, and subtle hover effects.
 - **Responsive layouts** - Readable titles, balanced spacing, and neatly arranged mobile actions.
-- **Home banner** - Rotating artwork, touch gestures, and playback shortcuts; optionally hide the banner while keeping a still media background.
+- **Home banner** - Rotating artwork, touch gestures, and quick links to each title (a series opens its next episode); optionally hide the banner while keeping a still media background.
 - **Dynamic backgrounds** - Media artwork for home and libraries; search and settings reuse the last successfully loaded background.
 - **Focused search** - A simplified search page without visible suggestions.
 - **Refined controls** - Version, audio, and subtitle selectors with clear favorite and watched states.

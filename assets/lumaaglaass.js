@@ -112,13 +112,7 @@
     // Localization - The theme's own strings, by language. Jellyfin does not have them, and asking
     // it for a missing key logs an error.
     const THEME_STRINGS = {
-        en: {
-            PlaybackUnavailable: 'Automatic playback did not start. Check the available sources, then use Play to retry.',
-        },
-        fr: {
-            PlaybackUnavailable:
-                'La lecture automatique n’a pas démarré. Vérifiez les sources disponibles, puis utilisez Lire pour réessayer.',
-        }
+        en: {}
     };
     const language = () => (document.documentElement.lang || navigator.language).slice(0, 2).toLowerCase();
     // Localization - Theme strings never go through Jellyfin; other keys use Jellyfin's string, else English.
@@ -676,16 +670,16 @@
     // =====================================================================
     // Home
     // =====================================================================
-    // State - generation and action drop stale loads and Play requests; pending is a Play awaiting its
-    // page; heroParts holds the banner's nodes (null for the empty shell); heroEmpty: nothing to show.
+    // State - generation and action drop stale loads and Play requests; heroParts holds the banner's
+    // nodes (null for the empty shell); heroEmpty: nothing to show.
     let hero = null, heroParts = null, homeScene = null, items = [], client = null, identity = '', index = 0;
     let loading = false, retryAt = 0, generation = 0, lastError = '', heroEmpty = false;
     let elapsed = 0, lastTick = 0, frame = 0, wasRunning = false, hovered = false, touching = false;
-    let pending = null, action = 0;
+    let action = 0;
     const SLIDE_COUNT = 8, SLIDE_DURATION = 9000, COLLECTION_BUDGET = 60;
     const motion = matchMedia('(prefers-reduced-motion: reduce)');
     // Details pages - The item id each page last showed (viewbeforeshow, in the task that shows the page;
-    // viewshow comes frames later): a Play and the collection mark wait for the page of their item.
+    // viewshow comes frames later): the collection mark waits for the page of its item.
     const viewIds = new WeakMap();
     const rememberViewId = e => {
         if (e.target instanceof Element && e.target.matches('.itemDetailPage') && e.detail?.params?.id) {
@@ -712,17 +706,12 @@
         document.documentElement.style.removeProperty('--lg-backdrop');
         hovered = touching = false;
     }
-    function removePlayNotices() {
-        document.querySelectorAll('.lg-playback-notice').forEach(node => node.remove());
-    }
     // Reset - Drops in-flight loads and Play requests: the next mount loads again.
     function clearHome() {
         generation++;
         action++;
-        pending = null;
         loading = false;
         removeHero();
-        removePlayNotices();
     }
     // Session - Another user or server drops the items and whatever is in flight for the last one.
     function syncHomeSession(api, key) {
@@ -796,11 +785,6 @@
             clearHome();
             return;
         }
-        // A failure notice leaves with its page: Jellyfin keeps details pages cached, hidden.
-        document.querySelectorAll('.lg-playback-notice').forEach(notice => {
-            if (!visible(notice)) notice.remove();
-        });
-        consumePlay();
         const api = currentClient(), key = sessionKey(api);
         syncHomeSession(api, key);
         if (!home() || !key) {
@@ -1041,7 +1025,7 @@
         lastTick = now;
         if (running) resumeClock();
     }
-    // Playback - Open the details page (a series' next episode) for consumePlay() to start.
+    // Playback - Open the details page (a series' next episode); playback stays the user's choice there.
     async function play(item, button) {
         const attempt = ++action, key = identity, api = client, user = api.getCurrentUserId();
         const initialRoute = location.hash;
@@ -1061,8 +1045,6 @@
                 }
             }
             if (!current()) return;
-            removePlayNotices();
-            pending = { id: target.Id, key, until: Date.now() + 45000 };
             location.hash = details(target);
         } catch {
             status = 'ErrorDefault';
@@ -1072,42 +1054,6 @@
             if (attempt === action) setStatus(status);
             resumeClock();
         }
-    }
-    // Playback - Press the native Play once streams are ready, within 45 s; past that,
-    // explain on the page why playback did not start.
-    function consumePlay() {
-        if (!pending) return;
-        const sameDetails = route() === '#/details' && sameId(params().get('id'), pending.id);
-        const page = sameDetails &&
-            [...document.querySelectorAll('.itemDetailPage')].find(n => visible(n) && sameId(viewIds.get(n), pending.id));
-        const expired = Date.now() > pending.until;
-        if (expired || !enabled() || sessionKey(currentClient()) !== pending.key || !sameDetails) {
-            if (expired && sameDetails) announcePlayFailure(page);
-            pending = null;
-            return;
-        }
-        if (!page) return;
-        if (page.querySelector('.remux-no-streams')) {
-            announcePlayFailure(page);
-            pending = null;
-            return;
-        }
-        const button = page.querySelector('.mainDetailButtons .btnPlay, .detailPagePrimaryContainer .btnPlay');
-        const ready = page.querySelector('.remux-streams-ready') || button?.closest('.remux-streams-ready');
-        if (!ready || !visible(button) || button.disabled || button.getAttribute('aria-disabled') === 'true') return;
-        pending = null;
-        button.click();
-    }
-    function announcePlayFailure(page) {
-        const actions = page?.querySelector('.mainDetailButtons');
-        if (!actions) return;
-        let notice = page.querySelector('.lg-playback-notice');
-        if (!notice) {
-            notice = element('p', 'lg-playback-notice');
-            notice.setAttribute('role', 'status');
-            actions.after(notice);
-        }
-        notice.textContent = translate('PlaybackUnavailable');
     }
     // Status - The key is stored so the language pass retranslates the line.
     function setStatus(key) {
@@ -1896,7 +1842,6 @@
     function syncLanguage() {
         syncHeroLabels();
         document.querySelectorAll('.lg-detail-metadata > summary').forEach(node => setText(node, translate('ItemDetails')));
-        document.querySelectorAll('.lg-playback-notice').forEach(node => setText(node, translate('PlaybackUnavailable')));
     }
 
     // =====================================================================
@@ -2332,8 +2277,8 @@
     listen(document, 'viewshow', schedule, true);
     // Images - Posters and the library image change the layout when they load, without a mutation.
     listen(document, 'load', schedule, true);
-    // Clock - Once a second for what nothing reports: the 30 s and 60 s retries, the 45 s Play
-    // expiry, a paused carousel, layout changes the layout observer does not watch.
+    // Clock - Once a second for what nothing reports: the 30 s and 60 s retries, a paused carousel,
+    // layout changes the layout observer does not watch.
     const poll = setInterval(schedule, 1000);
 
     // =====================================================================

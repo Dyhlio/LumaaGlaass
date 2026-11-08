@@ -5003,21 +5003,6 @@ body #itemDetailPage.itemDetailPage .mainDetailButtons .btnPlay .detailButton-co
     content: attr(data-lg-play-label);
 }
 
-.lg-playback-notice {
-    box-sizing: border-box;
-    max-width: 60ch;
-    margin: 12px 0;
-    padding: 10px 12px;
-    border: 1px solid var(--lg-edge);
-    border-radius: var(--lg-radius-option);
-    background: var(--lg-surface);
-    -webkit-backdrop-filter: blur(var(--lg-blur-panel));
-    backdrop-filter: blur(var(--lg-blur-panel));
-    color: var(--lg-color-text);
-    font-size: 14px;
-    line-height: 1.5;
-}
-
 /* Details - Labels never break mid-word (the native 6.25em basis split "Réalisateur");
    each React root div and its .detailsGroupItem join the grid. */
 body .itemDetailsGroup:has(.detailsGroupItem) {
