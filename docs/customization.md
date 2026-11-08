@@ -56,7 +56,7 @@ restores these starting settings and clears custom theme-variable overrides.
 
 The page controls the home carousel, home library titles, collection filter,
 count indicators, player controls, version and track selection, media actions
-(including **À suivre**) and the public theme variables. Theme variables preview
+(including **Next Up**) and the public theme variables. Theme variables preview
 immediately; **Save** applies and stores every setting for the account. The reset
 beside one theme variable clears only that variable's saved value. **Reset to
 defaults** restores the whole form; use **Save** to keep those defaults for the account.
@@ -78,7 +78,7 @@ The built-in **Recommended** profile matches the suggested choices shown here:
 | Player controls | Version and episode switchers on |
 | Versions and tracks | Native |
 | Thumbnails | Movies, series, seasons, collections, libraries and folders hidden; episodes use Information |
-| Episode lists | Season lists and **À suivre** use Information |
+| Episode lists | Season lists and **Next Up** use Information |
 | Resume thumbnails | Home movies and episodes native; both types hidden elsewhere |
 | Corner buttons | Movies, episodes, series and seasons native; collections, libraries and folders hidden |
 | Main buttons | Collections hidden; series and seasons use Information |
