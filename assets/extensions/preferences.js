@@ -124,12 +124,12 @@
             SettingsLoadError: 'The settings could not be loaded. Check the connection, then try again.',
             SettingsRetry: 'Try again',
             SettingsResetDefaults: 'Reset to defaults',
-            SettingsDefaultsRestored: 'Recommended settings restored. Save to keep them.',
+            SettingsDefaultsRestored: 'Default settings restored. Save to keep them.',
             SettingsDeleteSaved: 'Delete saved settings',
             SettingsDeleteConfirm: 'Delete the saved LumaaGlaass settings for this account now? This is immediate; no Save ' +
                 'click is needed. It discards unsaved edits on this page and cannot be undone. Other Jellyfin preferences are kept.',
             SettingsDeleting: 'Deleting…',
-            SettingsDeleted: 'Saved LumaaGlaass settings deleted. Recommended settings are now active.',
+            SettingsDeleted: 'Saved LumaaGlaass settings deleted. Default settings are now active.',
             SettingsDeletedOther: 'Saved LumaaGlaass settings deleted. They apply the next time this account opens the web client.',
             SettingsDeleteError: 'Could not confirm deletion. Reload the page and check this account’s settings before ' +
                 'trying again.',
@@ -298,13 +298,13 @@
             SettingsLoadError: 'Les paramètres n’ont pas pu être chargés. Vérifiez la connexion, puis réessayez.',
             SettingsRetry: 'Réessayer',
             SettingsResetDefaults: 'Réinitialiser par défaut',
-            SettingsDefaultsRestored: 'Réglages recommandés rétablis. Enregistrez pour les conserver.',
+            SettingsDefaultsRestored: 'Réglages par défaut rétablis. Enregistrez pour les conserver.',
             SettingsDeleteSaved: 'Supprimer les réglages enregistrés',
             SettingsDeleteConfirm: 'Supprimer immédiatement les réglages LumaaGlaass enregistrés pour ce compte ? Aucun clic sur ' +
                 'Enregistrer n’est nécessaire. Cette action annule les modifications non enregistrées de cette page, ne peut ' +
                 'pas être annulée et conserve les autres préférences Jellyfin.',
             SettingsDeleting: 'Suppression…',
-            SettingsDeleted: 'Réglages LumaaGlaass supprimés. Les réglages recommandés sont maintenant actifs.',
+            SettingsDeleted: 'Réglages LumaaGlaass supprimés. Les réglages par défaut sont maintenant actifs.',
             SettingsDeletedOther: 'Réglages LumaaGlaass supprimés. Ils s’appliqueront à la prochaine ouverture du client ' +
                 'web par ce compte.',
             SettingsDeleteError: 'Impossible de confirmer la suppression. Rechargez la page et vérifiez les réglages de ce ' +
@@ -462,18 +462,22 @@
     };
     // Fields - One control each, by its path in the saved object: choices make a select, no choices a
     // switch. requires names the switch that enables a field; asset, the file it loads (Assets).
-    // Defaults here are the per-account Recommended profile; the main loader's global options remain separate.
+    // Defaults are the Recommended profile, except the main options the loader sets itself (loaderChoices).
+    const startingValue = path => typeof host.loaderChoices?.[path] === 'boolean' ? host.loaderChoices[path] : RECOMMENDED_VALUES[path];
     const PREFERENCE_SECTIONS = [
         {
             title: 'SettingsTheme', fields: [
-                { path: 'homeCarousel', label: 'SettingsHomeCarousel', help: 'SettingsHomeCarouselHelp', fallback: RECOMMENDED_VALUES.homeCarousel },
+                {
+                    path: 'homeCarousel', label: 'SettingsHomeCarousel', help: 'SettingsHomeCarouselHelp',
+                    fallback: startingValue('homeCarousel')
+                },
                 {
                     path: 'homeLibraryNamesOnly', label: 'SettingsHomeLibraryNamesOnly',
-                    help: 'SettingsHomeLibraryNamesOnlyHelp', fallback: RECOMMENDED_VALUES.homeLibraryNamesOnly
+                    help: 'SettingsHomeLibraryNamesOnlyHelp', fallback: startingValue('homeLibraryNamesOnly')
                 },
                 {
                     path: 'collectionFilter', label: 'SettingsCollectionFilter', help: 'SettingsCollectionFilterHelp',
-                    fallback: RECOMMENDED_VALUES.collectionFilter
+                    fallback: startingValue('collectionFilter')
                 },
                 {
                     path: 'hideCountIndicators', label: 'SettingsCountIndicators', help: 'SettingsCountIndicatorsHelp',

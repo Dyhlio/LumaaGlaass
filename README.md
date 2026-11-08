@@ -117,14 +117,16 @@ Alternatively, open [lumaaglaass.js](assets/lumaaglaass.js), copy the full file,
 it into **Custom JavaScript** instead of the loader. Use only one method, not both.
 For a pasted copy, place the configuration before the script, for example
 `window.LumaaGlaassOptions = { preferences: true, homeCarousel: false };` to
-enable the settings page and disable the carousel.
+enable the settings page with the carousel off until an account turns it on.
 The CSS import does not load JavaScript; both installation steps are required.
 
 Change `preferences` to `true` to add **Settings → LumaaGlaass** in the web client. There,
 each account can choose the theme appearance and optional features. No separate
-extension loaders or CSS imports are needed when using this settings page. Its
-default is `false` so omitting it keeps the existing fixed Custom JavaScript and
-Custom CSS configuration unchanged.
+extension loaders or CSS imports are needed when using this settings page. An
+account that has saved nothing uses the page's
+[Recommended profile](docs/customization.md#profiles), except for the main options
+set in the loader. Its default is `false` so omitting it keeps the existing fixed
+Custom JavaScript and Custom CSS configuration unchanged.
 
 **3. Save and reload**
 

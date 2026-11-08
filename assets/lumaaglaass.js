@@ -18,6 +18,10 @@
         collectionFilter: flag(configured.collectionFilter, defaults.collectionFilter)
     });
     const preferencesEnabled = flag(configured.preferences, defaults.preferences);
+    // Loader choices - The options the loader sets itself: the settings page starts accounts that saved
+    // nothing from them rather than from its Recommended profile.
+    const loaderChoices = Object.freeze(Object.fromEntries(
+        Object.entries(loaderSettings).filter(([name]) => typeof configured[name] === 'boolean')));
     let settings = loaderSettings;
     // Assets - Extensions load from this script's folder when it comes from the repository, so a pinned
     // revision stays pinned. A query suffix also follows every extension, which makes a cache-busted
@@ -2313,7 +2317,7 @@
         preferences: {
             assets: ASSETS,
             assetUrl,
-            defaults: loaderSettings,
+            loaderChoices,
             api: currentClient,
             sessionKey,
             element,

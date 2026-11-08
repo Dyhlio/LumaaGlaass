@@ -48,9 +48,11 @@ work with any of these modes.
 display preferences, so they follow the account on every device. The browser
 cache only applies the last saved choice while the server answer is loading.
 
-An account with no saved choices starts with the built-in **Recommended** profile.
-Existing saved settings are preserved. **Reset to defaults** restores the Recommended
-feature settings and clears custom theme-variable overrides.
+An account with no saved choices starts with the built-in **Recommended** profile,
+except for `homeCarousel`, `homeLibraryNamesOnly` and `collectionFilter` when the
+main loader sets them: those start from the loader's value, and each account can
+still change them. Existing saved settings are preserved. **Reset to defaults**
+restores these starting settings and clears custom theme-variable overrides.
 
 The page controls the home carousel, home library titles, collection filter,
 count indicators, player controls, version and track selection, media actions
