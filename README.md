@@ -125,8 +125,8 @@ each account can choose the theme appearance and optional features. No separate
 extension loaders or CSS imports are needed when using this settings page. An
 account that has saved nothing uses the page's
 [Recommended profile](docs/customization.md#profiles), except for the main options
-set in the loader. Its default is `false` so omitting it keeps the existing fixed
-Custom JavaScript and Custom CSS configuration unchanged.
+the loader changes from their defaults. Its default is `false` so omitting it
+keeps the existing fixed Custom JavaScript and Custom CSS configuration unchanged.
 
 **3. Save and reload**
 
