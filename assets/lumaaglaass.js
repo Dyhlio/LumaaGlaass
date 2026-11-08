@@ -173,7 +173,7 @@
         const stateByControl = new WeakMap();
         // Native lists - Without customizable selects (Firefox, Safari) the browser draws its own list,
         // one line per option and as wide as the longest: with a mouse or the keyboard, the picker opens
-        // instead and the select keeps showing its value. Touch keeps the system list.
+        // instead and the select keeps showing its value. Phones and tablets keep the system list.
         const ownLists = !CSS.supports('appearance', 'base-select');
         const NATIVE_LISTS = 'select:is(.emby-select,.emby-select-withcolor,.detailTrackSelect)';
         const nativeStates = new WeakMap();
@@ -307,7 +307,9 @@
         const nativeState = target => {
             const control = target instanceof Element ? target.closest(NATIVE_LISTS) : null;
             if (!ownLists || !control || control.multiple || control.size > 1 || control.disabled || stateByControl.has(control) ||
-                control.querySelector('optgroup') || !enabled()) return null;
+                control.querySelector('optgroup') || !enabled()) {
+                return null;
+            }
             let state = nativeStates.get(control);
             if (!state) {
                 state = { control, shell: control, trigger: control, portal: document.body, native: true };
@@ -449,7 +451,9 @@
         });
         listen(document, 'keydown', event => {
             if (active || event.defaultPrevented || event.ctrlKey || event.metaKey ||
-                !['ArrowDown', 'ArrowUp', 'Enter', ' ', 'F4'].includes(event.key)) return;
+                !['ArrowDown', 'ArrowUp', 'Enter', ' ', 'F4'].includes(event.key)) {
+                return;
+            }
             const state = nativeState(event.target);
             if (!state) return;
             event.preventDefault();

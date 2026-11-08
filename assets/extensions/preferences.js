@@ -1,7 +1,13 @@
-/* LumaaGlaass - Optional per-account preferences. */
+/* LumaaGlaass - Preferences extension. */
 ;
 (() => {
     'use strict';
+
+    // =====================================================================
+    // Configuration
+    // =====================================================================
+    // Options - None of its own: the main script loads it when LumaaGlaassOptions.preferences is true.
+    // Docs: customization.md#settings-page.
 
     // =====================================================================
     // Instance

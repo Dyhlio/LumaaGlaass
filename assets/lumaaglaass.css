@@ -5435,7 +5435,7 @@ body #itemDetailPage.itemDetailPage[data-lg-detail-poster] {
             &:not(:disabled) {
                 appearance: none !important;
 
-                /* Phones keep 16px, under which iOS zooms into a focused field. */
+                /* Phones - They keep 16px, under which iOS zooms into a focused field. */
                 @media not all and (max-width: 640px) {
                     font-size: 14px !important;
                 }
