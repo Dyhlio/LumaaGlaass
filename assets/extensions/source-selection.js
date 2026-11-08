@@ -21,7 +21,8 @@
     const KEY = '__lumaaGlaassSourceSelection';
     window[KEY]?.stop();
     let stopped = false;
-    const selects = window.__lumaaGlaass?.selects || null;
+    // Selects - Read when used: a restarted main theme brings a new controller and stops the old one.
+    const selects = () => window.__lumaaGlaass?.selects || null;
 
     // =====================================================================
     // Localization
@@ -561,7 +562,7 @@
             const fields = ['.selectAudio', '.selectSubtitles'].map(selector => {
                 const wrapper = element('label', 'lg-source-dialog-field');
                 const label = element('span');
-                const picker = selects?.create({ portal: dialog });
+                const picker = selects()?.create({ portal: dialog });
                 const select = picker?.control || element('select', 'emby-select');
                 label.id = 'lg-source-dialog-' + selector.slice(1) + '-label';
                 if (picker) picker.trigger.setAttribute('aria-labelledby', label.id);

@@ -2349,6 +2349,8 @@
             clearLibraryPopovers();
             collectionFilterController.stop();
             window.__lumaaGlaassPreferences?.stop();
+            // Preferences - The next instance loads the settings page again only when its script is gone.
+            document.querySelector('#lg-preferences-script[data-lg-managed]')?.remove();
             clearDetails();
             clearSheetTrigger();
             tooltipController.stop();

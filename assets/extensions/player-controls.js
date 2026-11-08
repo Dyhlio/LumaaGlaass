@@ -22,7 +22,8 @@
     const KEY = '__lumaaGlaassPlayerControls';
     window[KEY]?.stop();
     let stopped = false;
-    const selects = window.__lumaaGlaass?.selects || null;
+    // Selects - Read when used: a restarted main theme brings a new controller and stops the old one.
+    const selects = () => window.__lumaaGlaass?.selects || null;
 
     // =====================================================================
     // Localization
@@ -621,7 +622,7 @@
             setStatus(status, 'MessageNoItemsAvailable');
             return;
         }
-        const seasonPicker = selects?.create({
+        const seasonPicker = selects()?.create({
             controlClass: 'lg-player-season-select', shellClass: 'lg-player-season-select-shell', portal: dialog
         });
         const select = seasonPicker?.control || element('select', 'emby-select lg-player-season-select');
