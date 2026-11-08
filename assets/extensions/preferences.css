@@ -1,6 +1,13 @@
 /* LumaaGlaass - Preferences extension. */
 /* Options - Loaded by the main script with preferences: true; docs/customization.md#settings-page. */
 
+/* Hidden - Jellyfin's .emby-button and the page's own rows set a display, which outranks the
+   browser's [hidden] rule: what the page hides (and the not-found view it fills) stays hidden. */
+#lg-preferences [hidden],
+#fallbackPage > [hidden] {
+    display: none !important;
+}
+
 /* Settings - The LumaaGlaass page (script): settings glass sections holding rows of a label and its
    switch or select. */
 #lg-preferences {
