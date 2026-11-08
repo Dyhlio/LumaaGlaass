@@ -537,7 +537,7 @@
     // while the file is not wanted.
     const PREFERENCE_ASSETS = {
         countIndicators: {
-            id: 'lg-hide-count-indicators-style', file: 'extensions/hide-count-indicators.css',
+            id: 'lg-hide-count-indicators-style', file: 'extensions/hide-count-indicators.css', rule: '.countIndicator',
             options: settings => settings.hideCountIndicators ? {} : null
         },
         playerControls: {
@@ -764,23 +764,21 @@
         } catch { /* The server copy is still removed when local storage is unavailable. */ }
     };
     // External - A file the theme did not add came from the server's Custom JavaScript or CSS, which
-    // decides for every account: the settings leave it alone. Stylesheets are found by their import.
+    // decides for every account: the settings leave it alone. A pasted script has no element, only its
+    // running instance; a stylesheet is its import (any query) or its pasted rule.
     function externalAsset(asset) {
         const node = document.getElementById(asset.id);
         if (node) return !node.hasAttribute('data-lg-managed');
-        if (asset.key) return false;
+        if (asset.key) return Boolean(window[asset.key]);
         for (const sheet of document.styleSheets) {
+            if (sheet.ownerNode instanceof Element && sheet.ownerNode.hasAttribute('data-lg-managed')) continue;
             let rules;
             try {
                 rules = sheet.cssRules;
             } catch { continue; }
-            // Imports lead a sheet, after @layer statements only.
             for (const rule of rules) {
-                if (rule instanceof CSSImportRule) {
-                    if (rule.href?.endsWith(asset.file)) return true;
-                } else if (!(window.CSSLayerStatementRule && rule instanceof CSSLayerStatementRule)) {
-                    break;
-                }
+                if (rule instanceof CSSImportRule && rule.href?.split(/[?#]/)[0].endsWith(asset.file)) return true;
+                if (rule instanceof CSSStyleRule && rule.selectorText === asset.rule && rule.style.display === 'none') return true;
             }
         }
         return false;
