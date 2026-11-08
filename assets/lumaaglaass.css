@@ -4428,7 +4428,7 @@ html.lg-has-library-card header.MuiAppBar-root {
             width: var(--lg-library-controls-width,calc(100vw - 80px));
             align-items: center;
             justify-content: center;
-            gap: 12px;
+            gap: var(--lg-space-button-group);
         }
 
         /* Compact - Flatten the native groups so every control joins the centered rows. */
@@ -4486,13 +4486,13 @@ html.lg-has-library-card header.MuiAppBar-root {
         }
 
         /* Row 2 - Without Play All, a zero-height break fills the primary row so the range
-           stays alone; -12px cancels its gap. */
+           stays alone; its negative margin cancels the row gap. */
         & > .lg-is-compact:not(:has(> .MuiStack-root > .MuiBox-root .MuiButtonGroup-root > button:first-child, > .MuiStack-root .MuiButton-containedPrimary:not([class*="MuiButtonGroup-grouped"])))::after {
             content: "";
             order: 4;
             flex: 0 0 100%;
             height: 0;
-            margin-block-end: -12px;
+            margin-block-end: calc(-1 * var(--lg-space-button-group));
         }
     }
 }
