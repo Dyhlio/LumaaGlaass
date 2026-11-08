@@ -143,7 +143,8 @@
     };
     const route = () => location.hash.split('?')[0].replace(/\.html$/, '');
     const home = () => route() === '#/home';
-    const enabled = () => getComputedStyle(document.documentElement).getPropertyValue('--lg-color-accent').trim() !== '';
+    // Theme - Only the stylesheet defines --lg-motion: the settings page writes other tokens inline on <html>.
+    const enabled = () => getComputedStyle(document.documentElement).getPropertyValue('--lg-motion').trim() !== '';
     const currentClient = () => {
         try {
             return window.ApiClient || window.ConnectionManager?.currentApiClient?.();
