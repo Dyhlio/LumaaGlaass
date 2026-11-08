@@ -660,15 +660,21 @@
         }
     }
     THEME_GUARDS.forEach(([query]) => listen(query, 'change', () => applyThemeVariables(themeValues)));
-    // Colors - A computed color as channels; color-mix() computes to color(srgb …) in some engines.
+    // Colors - A computed color as sRGB channels, painted on a pixel: computed values keep their own
+    // space (oklch(), lab(), color(display-p3 …), color(srgb …) from color-mix()).
+    let colorContext = null;
     function colorChannels(text) {
-        const rgb = /rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)(?:[\s,/]+([\d.]+)(%?))?/.exec(text);
-        const srgb = /color\(srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)(?:\s*\/\s*([\d.]+)(%?))?/.exec(text);
-        const match = rgb || srgb;
-        if (!match) return { r: 0, g: 0, b: 0, a: 1 };
-        const scale = rgb ? 1 : 255;
-        const alpha = match[4] === undefined ? 1 : Number(match[4]) / (match[5] ? 100 : 1);
-        return { r: Math.round(match[1] * scale), g: Math.round(match[2] * scale), b: Math.round(match[3] * scale), a: alpha };
+        if (!colorContext) {
+            const canvas = element('canvas');
+            canvas.width = canvas.height = 1;
+            colorContext = canvas.getContext('2d', { willReadFrequently: true });
+        }
+        colorContext.clearRect(0, 0, 1, 1);
+        colorContext.fillStyle = '#000';
+        colorContext.fillStyle = text;
+        colorContext.fillRect(0, 0, 1, 1);
+        const [r, g, b, a] = colorContext.getImageData(0, 0, 1, 1).data;
+        return { r, g, b, a: a / 255 };
     }
     // Colors - What a value (or, empty, the theme's own value) computes to, read on a probe while
     // the root's own value is set aside.
@@ -1087,7 +1093,10 @@
         form.addEventListener('input', event => {
             const entry = state.theme.get(event.target.dataset?.lgVariable);
             if (entry) {
-                if (entry.variable.type.control === 'color') entry.set = true;
+                if (entry.variable.type.control === 'color') {
+                    entry.set = true;
+                    entry.text = '';
+                }
                 previewTheme(state);
             }
             setText(state.status, '');
@@ -1458,7 +1467,9 @@
         const label = element('code', 'lg-preference-label', name);
         text.append(label, element('span', 'fieldDescription lg-preference-help', translate(name)));
         const control = element('div', 'lg-theme-control');
-        const entry = { variable, set: false, input: null, alpha: null, reset: element('button', 'paper-icon-button-light lg-theme-reset') };
+        const entry = {
+            variable, set: false, text: '', input: null, alpha: null, reset: element('button', 'paper-icon-button-light lg-theme-reset')
+        };
         if (type.control === 'color') {
             entry.input = element('input', 'lg-theme-color');
             entry.input.type = 'color';
@@ -1519,6 +1530,7 @@
         input.removeAttribute('aria-invalid');
         if (variable.type.control === 'color') {
             entry.set = Boolean(value);
+            entry.text = value;
             const channels = computedColor(variable.name, value);
             input.value = hex(channels);
             alpha.value = String(Math.round(channels.a * 100));
@@ -1530,9 +1542,11 @@
         entry.select?.sync();
         entry.reset.disabled = !value;
     }
-    function themeEntryValue({ variable, input, alpha, set }) {
+    // Theme - A color keeps its written value (any color syntax) until its swatch or opacity changes.
+    function themeEntryValue({ variable, input, alpha, set, text }) {
         if (variable.type.control === 'color') {
             if (!set) return '';
+            if (text) return text;
             if (alpha.value === '100') return input.value;
             const [r, g, b] = [1, 3, 5].map(start => parseInt(input.value.slice(start, start + 2), 16));
             return `rgba(${r}, ${g}, ${b}, ${Number(alpha.value) / 100})`;
