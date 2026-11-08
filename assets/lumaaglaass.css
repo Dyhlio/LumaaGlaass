@@ -95,6 +95,10 @@
     /* Legacy header - Its bottom edge (TV and legacy layouts); two rows with tabs at 1000px and
        less (Part 2 Tokens). */
     --lg-legacy-header-bottom: calc(88px + env(safe-area-inset-top,0px));
+    /* Home banner - Its base height, and the limit it grows to (16:9 backdrops): by default the base
+       height, or 80% of a taller window. */
+    --lg-hero-base-height: calc(clamp(460px, 42vw, 680px) + 120px + clamp(0px, 1vw, 20px));
+    --lg-hero-max-height: max(var(--lg-hero-base-height), 80vh);
     --lg-page-card-height: 304px;
     --lg-page-card-inset: clamp(24px, 4vw, 64px);
     --lg-page-card-title-size: clamp(30px, 3.5vw, 56px);
@@ -3848,7 +3852,9 @@ html body .cardImageContainer.defaultCardBackground {
     overflow: hidden;
     margin: 0 var(--lg-space-gutter) 36px;
     border-radius: var(--lg-radius-panel);
-    min-height: calc(clamp(460px,42vw,680px) + 120px + clamp(0px,1vw,20px));
+    /* Size - Backdrops are 16:9: the banner (page width less the gutters) grows from its base height
+       toward that shape, up to --lg-hero-max-height. aspect-ratio would narrow it instead. */
+    min-height: min(var(--lg-hero-max-height),max(var(--lg-hero-base-height),calc((100vw - var(--lg-scrollbar-width,0px) - 2 * var(--lg-space-gutter)) * 9 / 16)));
     display: flex;
     flex-direction: column;
     justify-content: flex-end;

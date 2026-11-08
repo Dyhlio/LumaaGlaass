@@ -537,6 +537,7 @@ html:root {
 | Lighter blur, or none | `--lg-blur-control: 8px;` `--lg-blur-panel: 12px;` (or `0px` for both) |
 | Snappier or calmer motion | `--lg-duration: 0.12s;` `--lg-duration-slow: 0.3s;` (double them for calmer) |
 | Tighter page layout | `--lg-space-gutter: 16px;` `--lg-space-header-gap: 20px;` |
+| Taller or shorter home banner | `--lg-hero-max-height: 90vh;` (more of the image) or `70vh` (more rows in view) |
 | Bigger or smaller posters in grids | `--lg-poster-min-width: 240px;` (fewer per row) or `150px` (more per row) |
 | Another font | `--lg-font: "Inter", sans-serif;` (load the font yourself, for example with an `@import` before the theme) |
 
@@ -591,6 +592,7 @@ set directly, such as `--lg-radius: 6px;`, replaces that role at every scale.
 | `--lg-space-option` / `--lg-space-popup` | `2px` / `6px` | Space between menu rows, then inside menus |
 | `--lg-space-list-option` | `8px` | Space between source, version and episode choices (extensions) |
 | `--lg-size-action` / `--lg-size-option` | `44px` / `44px` | Round actions, then menu rows; keep at least `44px` for touch |
+| `--lg-hero-max-height` | auto | Maximum height of the home banner as a share of the window, such as `70vh` (more rows in view) or `90vh` (more of the image). The banner grows toward the 16:9 shape of the backdrops up to it and never cuts its text; phones keep `500px`. Auto keeps its base height (`820px` on wide windows) and lets taller windows reach `80vh`. The settings page sets it in `5vh` steps |
 | `--lg-page-card-height` | `304px` | Height of the library and collection page card |
 | `--lg-cast-width` | `clamp(112px, 10vw, 180px)` | Width of cast cards on details pages |
 | `--lg-poster-min-width` | unset | Minimum width of each poster, its spacing included, in library grids (posters and albums), collections and a series' seasons. Each row holds as many as fit and stretches them to its full width: at least three per row in a library and two elsewhere, and never under `80px`. Unset, libraries keep Jellyfin's own columns, collections `180px` and seasons `160px`. The settings page shows it as **Auto** while unset and sets it in `10px` steps from `80px` |
@@ -617,7 +619,7 @@ Reduced-motion preferences remove these animations whatever their values.
 
 Variables not listed above are internal: the accent channels
 (`--lg-color-accent-rgb`), the state hooks (`--lg-state-*`, overridden by the
-accessibility modes), `--lg-focus-ring`, `--lg-motion`, `--lg-select-arrow`, `--lg-poster-track` and the
+accessibility modes), `--lg-focus-ring`, `--lg-motion`, `--lg-select-arrow`, `--lg-poster-track`, `--lg-hero-base-height` and the
 values the script writes (`--lg-header-bottom`, `--lg-content-top`,
 `--lg-scrollbar-width`, `--lg-library-controls-*`…) with `--lg-page-start`, derived
 from them. Overriding them can break states or layout.

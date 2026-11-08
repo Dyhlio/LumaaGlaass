@@ -204,6 +204,7 @@
             '--lg-space-list-option': 'Space between source, version and episode choices (extensions).',
             '--lg-size-action': 'Round actions; keep at least 44px for touch.',
             '--lg-size-option': 'Menu rows; keep at least 44px for touch.',
+            '--lg-hero-max-height': 'Maximum height of the home banner, in % of the window; Auto keeps its usual size.',
             '--lg-page-card-height': 'Height of the library and collection page card.',
             '--lg-cast-width': 'Width of cast cards on details pages.',
             '--lg-poster-min-width': 'Minimum poster width in grids; Auto keeps the usual columns.',
@@ -386,6 +387,7 @@
             '--lg-space-list-option': 'Espace entre les choix de source, de version et d’épisode (extensions).',
             '--lg-size-action': 'Actions rondes ; gardez au moins 44 px pour le tactile.',
             '--lg-size-option': 'Lignes de menu ; gardez au moins 44 px pour le tactile.',
+            '--lg-hero-max-height': 'Hauteur maximale de la bannière d’accueil, en % de la fenêtre ; Auto garde sa taille habituelle.',
             '--lg-page-card-height': 'Hauteur de la carte de page des médiathèques et collections.',
             '--lg-cast-width': 'Largeur des cartes de distribution sur les pages de détails.',
             '--lg-poster-min-width': 'Largeur minimale des affiches dans les grilles ; Auto garde les colonnes habituelles.',
@@ -576,6 +578,7 @@
         // Columns - 10px steps reach every usual posters-per-row count (20px skip some, such as ten
         // on a 1920px screen), from the stylesheet's 80px floor.
         column: number('px', 10, 80),
+        vh: number('vh', 5),
         scale: number('', 0.05),
         seconds: number('s', 0.01),
         weight: { control: 'weight', valid: value => /^[1-9]00$/.test(value) },
@@ -607,7 +610,7 @@
             ['space-gutter', 'css', 'clamp(16px, 3.4vw, 64px)', 'width'], ['space-header-gap', 'px', '32px'],
             ['space-button-group', 'px', '8px'], ['space-option', 'px', '2px'], ['space-popup', 'px', '6px'],
             ['space-list-option', 'px', '8px'], ['size-action', 'px', '44px'], ['size-option', 'px', '44px'],
-            ['page-card-height', 'px', '304px'], ['cast-width', 'css', 'clamp(112px, 10vw, 180px)', 'width'],
+            ['hero-max-height', 'vh'], ['page-card-height', 'px', '304px'], ['cast-width', 'css', 'clamp(112px, 10vw, 180px)', 'width'],
             ['poster-min-width', 'column']
         ]],
         ['SettingsText', [
