@@ -6626,7 +6626,8 @@ html.lg-has-now-playing-bar .backgroundContainer.withBackdrop {
     /* Transparency - The plain page color replaces every backdrop artwork, details included. */
     @media (prefers-reduced-transparency: reduce) {
         html:is(.lg-has-home-backdrop,.lg-has-last-backdrop,.lg-has-page-card-backdrop) .backgroundContainer::before,
-        #itemDetailPage[data-lg-detail-poster] > .itemBackdrop {
+        #itemDetailPage[data-lg-detail-poster] > .itemBackdrop,
+        .backdropContainer {
             display: none !important;
         }
     }
