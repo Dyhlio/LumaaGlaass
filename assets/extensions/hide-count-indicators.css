@@ -1,4 +1,5 @@
 /* LumaaGlaass - Hide count indicators extension. */
+/* Options - None: importing the file is the choice; docs/customization.md#hide-count-indicators. */
 .countIndicator {
     display: none !important;
 }
