@@ -583,12 +583,12 @@
     const backdropArt = url => 'url(' + JSON.stringify(url) + ')';
     const imageUrl = (api, id, type, tag, maxWidth) =>
         api.getUrl('Items/' + encodeURIComponent(id) + '/Images/' + type, { tag, maxWidth, quality: 90 });
-    function backdropUrl(api, item) {
+    function backdropUrl(api, item, width = 1920) {
         const id = item.BackdropImageTags?.length ? item.Id : item.ParentBackdropItemId;
         const tag = item.BackdropImageTags?.[0] || item.ParentBackdropImageTags?.[0];
         if (!id || !tag) return '';
         try {
-            return imageUrl(api, id, 'Backdrop/0', tag, 1920);
+            return imageUrl(api, id, 'Backdrop/0', tag, width);
         } catch { return ''; }
     }
     // Images - Load off-screen: loaded resolves with the image once it has pixels, or with null on
@@ -744,6 +744,9 @@
     let elapsed = 0, lastTick = 0, frame = 0, wasRunning = false, hovered = false, touching = false;
     let action = 0;
     const SLIDE_COUNT = 8, SLIDE_DURATION = 9000, COLLECTION_BUDGET = 60;
+    // Sharpness - The sizes slides are asked in: few, so the server resizes and caches each once.
+    const SLIDE_WIDTHS = [1920, 2560, 3840];
+    let slideWidth = SLIDE_WIDTHS[0];
     const motion = matchMedia('(prefers-reduced-motion: reduce)');
     // Details pages - The item id each page last showed (viewbeforeshow, in the task that shows the page;
     // viewshow comes frames later): the collection mark waits for the page of its item.
@@ -993,12 +996,21 @@
         }, true);
         return hero;
     }
+    // Sharpness - A backdrop covers the banner: it fills its width, or its height when the banner is
+    // narrower than 16:9 (phones). Device pixels count up to a ratio of 2; a hidden page uses the window.
+    function slideImageWidth() {
+        const box = hero.getBoundingClientRect();
+        const width = box.width || document.documentElement.clientWidth;
+        const needed = Math.max(width, box.height * 16 / 9) * Math.min(window.devicePixelRatio || 1, 2);
+        return SLIDE_WIDTHS.find(size => size >= needed) || SLIDE_WIDTHS[SLIDE_WIDTHS.length - 1];
+    }
     function fillHero() {
         const backdrops = element('div', 'lg-hero-backdrops');
         backdrops.setAttribute('aria-hidden', 'true');
+        slideWidth = slideImageWidth();
         for (const item of items) {
             const slide = element('div');
-            slide.style.backgroundImage = backdropArt(backdropUrl(client, item));
+            slide.style.backgroundImage = backdropArt(backdropUrl(client, item, slideWidth));
             backdrops.append(slide);
         }
         const parts = {
@@ -1052,7 +1064,8 @@
         wasRunning = false;
         index = (next + items.length) % items.length;
         const item = items[index], parts = heroParts;
-        const art = backdropArt(backdropUrl(client, item));
+        // The page backdrop reuses the slide's own URL: one download per image.
+        const art = backdropArt(backdropUrl(client, item, slideWidth));
         showHomeBackdrop(art);
         rememberBackdrop(art, identity, hero);
         parts.slides.forEach((n, i) => n.classList.toggle('lg-is-active', i === index));
